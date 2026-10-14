@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "666057379267",
+    "project_id": "aplicativo-de-ventas-d8bcd",
+    "storage_bucket": "aplicativo-de-ventas-d8bcd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:666057379267:android:1bb2dc5f8682f8b7c20176",
+        "android_client_info": {
+          "package_name": "com.estebanbarrero.ventas_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANvjCkW0Y_z1G4QJXWz1cy3eM0SYXZkwg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

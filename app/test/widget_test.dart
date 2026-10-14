@@ -10,6 +10,9 @@ void main() {
     // Titulo en la AppBar y en el encabezado.
     expect(find.text('Aplicativo de Ventas'), findsWidgets);
 
+    // Estado de la conexion con Firebase.
+    expect(find.text('Firebase conectado'), findsOneWidget);
+
     // Algunos modulos esperados.
     expect(find.text('Catálogo'), findsOneWidget);
     expect(find.text('Ventas'), findsOneWidget);

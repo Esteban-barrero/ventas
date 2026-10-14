@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../firebase_options.dart';
+
 /// Pantalla de inicio (esqueleto) con los modulos principales.
 ///
-/// Es una prueba inicial de la aplicacion; los modulos se iran implementando
-/// segun las specs 001-015.
+/// Muestra el estado de la conexion con Firebase y sirve de prueba inicial;
+/// los modulos se iran implementando segun las specs 001-015.
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -27,6 +29,8 @@ class HomePage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: <Widget>[
           _Encabezado(scheme: scheme),
+          const SizedBox(height: 16),
+          const _EstadoFirebase(),
           const SizedBox(height: 24),
           Text('Módulos', style: theme.textTheme.titleLarge),
           const SizedBox(height: 12),
@@ -62,6 +66,48 @@ class HomePage extends StatelessWidget {
   void _proximamente(BuildContext context, String nombre) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('$nombre: módulo en construcción')),
+    );
+  }
+}
+
+/// Tarjeta que confirma la conexion con el proyecto Firebase.
+class _EstadoFirebase extends StatelessWidget {
+  const _EstadoFirebase();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final options = DefaultFirebaseOptions.currentPlatform;
+
+    return Card(
+      color: scheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: <Widget>[
+            Icon(Icons.cloud_done_outlined, color: scheme.primary, size: 32),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'Firebase conectado',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Proyecto: ${options.projectId}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
