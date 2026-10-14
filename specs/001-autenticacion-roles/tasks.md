@@ -7,22 +7,22 @@
 
 ## Fase 1 — Preparación
 
-- [ ] T001 Crear estructura de carpetas de `features/auth`
-- [ ] T002 Definir entidades `Usuario`, `Rol` y `Permiso`
-- [ ] T003 Configurar Firebase (proyecto, Authentication, Firestore)
+- [x] T001 Crear estructura de carpetas de `features/auth`
+- [x] T002 Definir entidades `Usuario`, `Rol` y `Permiso`
+- [x] T003 Configurar Firebase (proyecto, Authentication, Firestore)
 
 ## Fase 2 — Lógica de Negocio
 
-- [ ] T010 Implementar `AuthRepository` (login, logout, recuperar contraseña)
-- [ ] T011 Implementar cálculo de permisos (unión de roles) en `domain`
+- [x] T010 Implementar `AuthRepository` (login, logout, recuperar contraseña)
+- [x] T011 Implementar cálculo de permisos (unión de roles) en `domain`
 - [ ] T012 Implementar validación de licencia (llamada a Cloud Function)
-- [ ] T013 Implementar Google Sign-In
+- [x] T013 Implementar Google Sign-In
 - [ ] T014 Cachear permisos y sesión para uso offline
 
 ## Fase 3 — Interfaz de Usuario
 
-- [ ] T020 Pantalla de login (correo/contraseña + Google)
-- [ ] T021 Pantalla de recuperación de contraseña
+- [x] T020 Pantalla de login (correo/contraseña + Google)
+- [x] T021 Pantalla de recuperación de contraseña
 - [ ] T022 Pantalla de "Licencia vencida" con datos de contacto del proveedor
 - [ ] T023 Guardas de navegación según permisos
 
@@ -37,7 +37,7 @@
 
 - [ ] T040 Pruebas unitarias de permisos y licencia
 - [ ] T041 Pruebas de widget de login y licencia vencida
-- [ ] T042 Ejecutar `flutter analyze` y `flutter test`
+- [x] T042 Ejecutar `flutter analyze` y `flutter test`
 - [ ] T043 Actualizar documentación
 
 ---
