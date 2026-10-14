@@ -1,0 +1,26 @@
+# Archivos temporales de Office
+~$*
+*.tmp
+*.bak
+
+# Sistema operativo
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Flutter / Dart (para cuando se agregue el codigo)
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+
+# Node / herramientas
+node_modules/
+
+# Variables de entorno y secretos
+.env
+*.keystore
+key.properties
+google-services.json
+GoogleService-Info.plist
