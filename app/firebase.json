@@ -1,1 +1,28 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"aplicativo-de-ventas-d8bcd","appId":"1:666057379267:android:1bb2dc5f8682f8b7c20176","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"aplicativo-de-ventas-d8bcd","configurations":{"android":"1:666057379267:android:1bb2dc5f8682f8b7c20176","ios":"1:666057379267:ios:5985231478fa19adc20176","web":"1:666057379267:web:0814436ce2ce7ac8c20176","windows":"1:666057379267:web:4d32dbf43432d9f2c20176"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "aplicativo-de-ventas-d8bcd",
+          "appId": "1:666057379267:android:1bb2dc5f8682f8b7c20176",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "aplicativo-de-ventas-d8bcd",
+          "configurations": {
+            "android": "1:666057379267:android:1bb2dc5f8682f8b7c20176",
+            "ios": "1:666057379267:ios:5985231478fa19adc20176",
+            "web": "1:666057379267:web:0814436ce2ce7ac8c20176",
+            "windows": "1:666057379267:web:4d32dbf43432d9f2c20176"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

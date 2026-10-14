@@ -1,0 +1,42 @@
+rules_version = '2';
+
+// Reglas de Firestore - Aplicativo de Ventas (multitenant).
+// Ver specs 001 (autenticacion y roles) y 002 (empresas).
+//
+// NOTA: en esta etapa inicial se permite que cada usuario cree/lea su propio
+// perfil. Se endureceran cuando exista el flujo de administracion de usuarios
+// y empresas (spec 002) y los custom claims (spec 001).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    // Perfil de usuario: cada quien lee su propio documento.
+    match /usuarios/{uid} {
+      allow read: if autenticado() && request.auth.uid == uid;
+
+      // Al registrarse, el usuario crea SU documento y no puede suplantar a otro.
+      allow create: if autenticado()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid;
+
+      // Permite editar el propio perfil (temporal, hasta el flujo de usuarios).
+      allow update: if autenticado() && request.auth.uid == uid;
+
+      allow delete: if false;
+    }
+
+    // Empresas: por ahora solo lectura para usuarios autenticados.
+    match /empresas/{empresaId} {
+      allow read: if autenticado();
+      allow write: if false;
+    }
+
+    // Todo lo demas queda denegado por defecto.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
