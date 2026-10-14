@@ -1,14 +1,15 @@
+import 'package:flutter/material.dart';
+import 'package:ventas_app/features/home/home_page.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ventas_app/main.dart';
-
 void main() {
-  testWidgets('La pantalla de inicio muestra el titulo y los modulos',
+  testWidgets('HomePage muestra modulo Catalogo y Firebase conectado',
       (WidgetTester tester) async {
-    await tester.pumpWidget(const VentasApp());
-
-    // Titulo en la AppBar y en el encabezado.
-    expect(find.text('Aplicativo de Ventas'), findsWidgets);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: HomePage(email: 'test@ejemplo.com', onCerrarSesion: _dummy),
+      ),
+    );
 
     // Estado de la conexion con Firebase.
     expect(find.text('Firebase conectado'), findsOneWidget);
@@ -20,3 +21,5 @@ void main() {
     expect(find.text('Reportes'), findsOneWidget);
   });
 }
+
+Future<void> _dummy() async {}

@@ -4,10 +4,17 @@ import '../../firebase_options.dart';
 
 /// Pantalla de inicio (esqueleto) con los modulos principales.
 ///
-/// Muestra el estado de la conexion con Firebase y sirve de prueba inicial;
-/// los modulos se iran implementando segun las specs 001-015.
+/// Muestra el estado de la conexion con Firebase y el usuario autenticado.
+/// Los modulos se iran implementando segun las specs 001-015.
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  const HomePage({
+    super.key,
+    required this.email,
+    required this.onCerrarSesion,
+  });
+
+  final String email;
+  final Future<void> Function() onCerrarSesion;
 
   static const List<_Modulo> _modulos = <_Modulo>[
     _Modulo('Catálogo', Icons.inventory_2_outlined),
@@ -24,11 +31,22 @@ class HomePage extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Aplicativo de Ventas')),
+      appBar: AppBar(
+        title: const Text('Aplicativo de Ventas'),
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'Cerrar sesión',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await onCerrarSesion();
+            },
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          _Encabezado(scheme: scheme),
+          _Encabezado(scheme: scheme, email: email),
           const SizedBox(height: 16),
           const _EstadoFirebase(),
           const SizedBox(height: 24),
@@ -113,9 +131,10 @@ class _EstadoFirebase extends StatelessWidget {
 }
 
 class _Encabezado extends StatelessWidget {
-  const _Encabezado({required this.scheme});
+  const _Encabezado({required this.scheme, required this.email});
 
   final ColorScheme scheme;
+  final String email;
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +160,7 @@ class _Encabezado extends StatelessWidget {
               Text('Mi Empresa', style: theme.textTheme.titleLarge),
               const SizedBox(height: 4),
               Text(
-                'Aplicativo de Ventas · Multitenant',
+                email.isEmpty ? 'Sesión iniciada' : email,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: scheme.secondary,
                 ),

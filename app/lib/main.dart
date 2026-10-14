@@ -2,7 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'core/theme.dart';
-import 'features/home/home_page.dart';
+import 'features/auth/presentation/auth_gate.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -28,7 +28,7 @@ class VentasApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
-      home: const HomePage(),
+      home: const AuthGate(),
     );
   }
 }
