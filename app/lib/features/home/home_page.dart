@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../core/navegacion/guardia_permiso.dart';
 import '../../firebase_options.dart';
 import '../auth/domain/permisos.dart';
 import '../auth/domain/roles.dart';
 import '../auth/domain/usuario.dart';
 import '../licencia/domain/licencia.dart';
 import '../licencia/presentation/aviso_licencia.dart';
+import 'modulo_screen.dart';
 
 /// Pantalla de inicio (esqueleto). Muestra el usuario autenticado, sus roles y
 /// los modulos a los que tiene permiso. Ver spec 001.
@@ -86,7 +88,16 @@ class HomePage extends StatelessWidget {
                   Card(
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
-                      onTap: () => _proximamente(context, m.nombre),
+                      onTap: () => irAProtegido(
+                        context,
+                        usuario: usuario,
+                        permiso: m.permiso,
+                        constructor: (_) => ModuloScreen(
+                          nombre: m.nombre,
+                          icono: m.icono,
+                          permiso: m.permiso,
+                        ),
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
@@ -108,12 +119,6 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  void _proximamente(BuildContext context, String nombre) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$nombre: módulo en construcción')),
     );
   }
 }

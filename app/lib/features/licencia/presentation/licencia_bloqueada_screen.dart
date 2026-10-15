@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/avisos/marco_aviso.dart';
 import '../domain/licencia.dart';
 
 /// Pantalla de licencia agotada / acceso bloqueado (spec 001, T022).
@@ -20,19 +21,33 @@ class LicenciaBloqueadaScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _MarcoLicencia(
-      titulo: 'Tu licencia se ha agotado',
-      mensaje: 'Comunícate con tu proveedor para renovarla y recuperar el '
-          'acceso.',
-      detalleExtra: 'Todos los usuarios de la empresa volverán a ingresar '
-          'cuando se renueve la licencia.',
-      onCerrarSesion: onCerrarSesion,
-      onReintentar: onReintentar,
-      cuerpo: <Widget>[
-        _DetalleLicencia(estado: estado),
-        const SizedBox(height: 16),
-        _ContactoProveedor(contacto: estado.contactoProveedor),
-      ],
+    return Scaffold(
+      body: MarcoAviso(
+        icono: Icons.hourglass_bottom,
+        titulo: 'Tu licencia se ha agotado',
+        mensaje: 'Comunícate con tu proveedor para renovarla y recuperar el '
+            'acceso.',
+        detalleExtra: 'Todos los usuarios de la empresa volverán a ingresar '
+            'cuando se renueve la licencia.',
+        cuerpo: <Widget>[
+          _DetalleLicencia(estado: estado),
+          const SizedBox(height: 16),
+          _ContactoProveedor(contacto: estado.contactoProveedor),
+        ],
+        acciones: <Widget>[
+          if (onReintentar != null)
+            OutlinedButton.icon(
+              onPressed: () async => onReintentar!(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+            ),
+          FilledButton.icon(
+            onPressed: () async => onCerrarSesion(),
+            icon: const Icon(Icons.logout),
+            label: const Text('Cerrar sesión'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -52,133 +67,26 @@ class LicenciaNoDisponibleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _MarcoLicencia(
-      titulo: 'No pudimos verificar tu licencia',
-      mensaje: detalle,
-      detalleExtra: 'Comunícate con tu proveedor si el problema continúa.',
-      onCerrarSesion: onCerrarSesion,
-      onReintentar: onReintentar,
-    );
-  }
-}
-
-/// Estructura visual compartida de las pantallas de bloqueo.
-///
-/// Usa tonos ámbar suaves (nada de rojo) para que el mensaje resulte amable.
-class _MarcoLicencia extends StatelessWidget {
-  const _MarcoLicencia({
-    required this.titulo,
-    required this.mensaje,
-    required this.detalleExtra,
-    required this.onCerrarSesion,
-    this.onReintentar,
-    this.cuerpo = const <Widget>[],
-  });
-
-  final String titulo;
-  final String mensaje;
-  final String detalleExtra;
-  final Future<void> Function() onCerrarSesion;
-  final Future<void> Function()? onReintentar;
-  final List<Widget> cuerpo;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final acentos = _AcentosLicencia.de(theme.brightness);
-
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: acentos.fondo,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.hourglass_bottom,
-                    size: 44,
-                    color: acentos.icono,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  titulo,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  mensaje,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  detalleExtra,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ...cuerpo,
-                const SizedBox(height: 24),
-                Row(
-                  children: <Widget>[
-                    if (onReintentar != null)
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () async => onReintentar!(),
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Reintentar'),
-                        ),
-                      ),
-                    if (onReintentar != null) const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () async => onCerrarSesion(),
-                        icon: const Icon(Icons.logout),
-                        label: const Text('Cerrar sesión'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+      body: MarcoAviso(
+        icono: Icons.help_outline,
+        titulo: 'No pudimos verificar tu licencia',
+        mensaje: detalle,
+        detalleExtra: 'Comunícate con tu proveedor si el problema continúa.',
+        acciones: <Widget>[
+          if (onReintentar != null)
+            OutlinedButton.icon(
+              onPressed: () async => onReintentar!(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
             ),
+          FilledButton.icon(
+            onPressed: () async => onCerrarSesion(),
+            icon: const Icon(Icons.logout),
+            label: const Text('Cerrar sesión'),
           ),
-        ),
+        ],
       ),
-    );
-  }
-}
-
-/// Colores suaves (ámbar) para las pantallas de bloqueo.
-class _AcentosLicencia {
-  const _AcentosLicencia({required this.icono, required this.fondo});
-
-  final Color icono;
-  final Color fondo;
-
-  factory _AcentosLicencia.de(Brightness brightness) {
-    if (brightness == Brightness.dark) {
-      return const _AcentosLicencia(
-        icono: Color(0xFFFFCC80),
-        fondo: Color(0xFF4E342E),
-      );
-    }
-    return const _AcentosLicencia(
-      icono: Color(0xFFE65100),
-      fondo: Color(0xFFFFF3E0),
     );
   }
 }

@@ -99,4 +99,25 @@ void main() {
 
     expect(find.textContaining('Tu licencia vence'), findsNothing);
   });
+
+  testWidgets('HomePage abre un módulo cuando el usuario tiene permiso',
+      (WidgetTester tester) async {
+    const usuario = Usuario(
+      uid: 'u5',
+      nombre: 'Admin',
+      email: 'admin@ejemplo.com',
+      roles: <String>['administrador'],
+    );
+
+    await _montar(
+      tester,
+      HomePage(usuario: usuario, onCerrarSesion: _dummy),
+    );
+
+    await tester.tap(find.text('Catálogo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Módulo en construcción.'), findsOneWidget);
+    expect(find.text('Requiere: Ver catálogo'), findsOneWidget);
+  });
 }
