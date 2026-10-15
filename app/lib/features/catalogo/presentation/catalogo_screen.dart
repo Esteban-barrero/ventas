@@ -1,0 +1,427 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/formato/fechas.dart';
+import '../../auth/domain/permisos.dart';
+import '../../auth/domain/usuario.dart';
+import '../../empresas/data/empresas_repository.dart';
+import '../../empresas/domain/parametros_empresa.dart';
+import '../data/categorias_repository.dart';
+import '../data/productos_repository.dart';
+import '../domain/categoria.dart';
+import '../domain/precio.dart';
+import '../domain/producto.dart';
+import 'categorias_screen.dart';
+import 'producto_detalle_screen.dart';
+import 'producto_form_screen.dart';
+import 'widgets/imagen_producto.dart';
+
+/// Catálogo de productos de la empresa (spec 003, RF-11).
+///
+/// Muestra las tarjetas (foto, nombre, medidas y precio), permite **buscar** y
+/// **filtrar por categoría**, y —si el usuario tiene `catalogo.editar`— crear,
+/// editar y gestionar categorías. Los clientes solo ven los productos activos.
+class CatalogoScreen extends StatefulWidget {
+  const CatalogoScreen({
+    super.key,
+    required this.usuario,
+    this.productosRepository,
+    this.categoriasRepository,
+    this.empresasRepository,
+  });
+
+  final Usuario usuario;
+  final ProductosRepository? productosRepository;
+  final CategoriasRepository? categoriasRepository;
+  final EmpresasRepository? empresasRepository;
+
+  @override
+  State<CatalogoScreen> createState() => _CatalogoScreenState();
+}
+
+class _CatalogoScreenState extends State<CatalogoScreen> {
+  late final ProductosRepository _productos =
+      widget.productosRepository ?? ProductosRepository();
+  late final CategoriasRepository _categorias =
+      widget.categoriasRepository ?? CategoriasRepository();
+  late final EmpresasRepository _empresas =
+      widget.empresasRepository ?? EmpresasRepository();
+
+  final TextEditingController _busqueda = TextEditingController();
+  ParametrosEmpresa _parametros = const ParametrosEmpresa();
+  String? _categoriaId;
+
+  String get _empresaId => widget.usuario.empresaId ?? '';
+  bool get _puedeEditar => widget.usuario.puede(Permiso.catalogoEditar);
+
+  @override
+  void initState() {
+    super.initState();
+    _busqueda.addListener(() => setState(() {}));
+    _cargarParametros();
+  }
+
+  @override
+  void dispose() {
+    _busqueda.dispose();
+    super.dispose();
+  }
+
+  Future<void> _cargarParametros() async {
+    if (_empresaId.isEmpty) return;
+    try {
+      final empresa = await _empresas.obtener(_empresaId);
+      if (!mounted || empresa == null) return;
+      setState(() => _parametros = empresa.parametros);
+    } catch (_) {
+      // Si no se pueden leer, se usan los parámetros por defecto.
+    }
+  }
+
+  Future<void> _nuevoProducto() async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => ProductoFormScreen(usuario: widget.usuario),
+      ),
+    );
+  }
+
+  Future<void> _abrirCategorias() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => CategoriasScreen(usuario: widget.usuario),
+      ),
+    );
+  }
+
+  Future<void> _abrirProducto(Producto producto) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ProductoDetalleScreen(
+          productoId: producto.id,
+          usuario: widget.usuario,
+          parametros: _parametros,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_empresaId.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Catálogo')),
+        body: const Center(child: Text('No perteneces a ninguna empresa.')),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Catálogo'),
+        actions: <Widget>[
+          if (_puedeEditar)
+            IconButton(
+              tooltip: 'Categorías',
+              icon: const Icon(Icons.category_outlined),
+              onPressed: _abrirCategorias,
+            ),
+        ],
+      ),
+      floatingActionButton: _puedeEditar
+          ? FloatingActionButton.extended(
+              onPressed: _nuevoProducto,
+              icon: const Icon(Icons.add),
+              label: const Text('Nuevo producto'),
+            )
+          : null,
+      body: StreamBuilder<List<Producto>>(
+        stream: _productos.escuchar(_empresaId),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(child: Text('No se pudo cargar el catálogo: ${snap.error}'));
+          }
+          final todos = snap.data ?? const <Producto>[];
+          final visibles = ProductosRepository.filtrar(
+            todos,
+            categoriaId: _categoriaId,
+            busqueda: _busqueda.text,
+            soloActivos: !_puedeEditar,
+          );
+          return Column(
+            children: <Widget>[
+              _Filtros(
+                busqueda: _busqueda,
+                categorias: _categorias.escuchar(_empresaId),
+                categoriaId: _categoriaId,
+                onCategoria: (String? id) => setState(() => _categoriaId = id),
+              ),
+              Expanded(
+                child: visibles.isEmpty
+                    ? _Vacio(todos: todos.isEmpty)
+                    : _Grid(
+                        productos: visibles,
+                        parametros: _parametros,
+                        onAbrir: _abrirProducto,
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Búsqueda por texto y filtro por categoría (RF-09).
+class _Filtros extends StatelessWidget {
+  const _Filtros({
+    required this.busqueda,
+    required this.categorias,
+    required this.categoriaId,
+    required this.onCategoria,
+  });
+
+  final TextEditingController busqueda;
+  final Stream<List<Categoria>> categorias;
+  final String? categoriaId;
+  final ValueChanged<String?> onCategoria;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Column(
+        children: <Widget>[
+          TextField(
+            controller: busqueda,
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search),
+              hintText: 'Buscar por nombre o código',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 8),
+          StreamBuilder<List<Categoria>>(
+            stream: categorias,
+            builder: (context, snap) {
+              final lista = snap.data ?? const <Categoria>[];
+              // Si la categoría elegida desaparece, se limpia el filtro.
+              final valor = lista.any((Categoria c) => c.id == categoriaId)
+                  ? categoriaId
+                  : null;
+              return DropdownButtonFormField<String?>(
+                initialValue: valor,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Categoría',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                items: <DropdownMenuItem<String?>>[
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Todas'),
+                  ),
+                  for (final c in lista)
+                    DropdownMenuItem<String?>(
+                      value: c.id,
+                      child: Text(c.nombre),
+                    ),
+                ],
+                onChanged: onCategoria,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Rejilla de tarjetas del catálogo (CA-06).
+class _Grid extends StatelessWidget {
+  const _Grid({
+    required this.productos,
+    required this.parametros,
+    required this.onAbrir,
+  });
+
+  final List<Producto> productos;
+  final ParametrosEmpresa parametros;
+  final ValueChanged<Producto> onAbrir;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.62,
+      ),
+      itemCount: productos.length,
+      itemBuilder: (context, i) =>
+          _TarjetaProducto(
+            producto: productos[i],
+            parametros: parametros,
+            onTap: () => onAbrir(productos[i]),
+          ),
+    );
+  }
+}
+
+/// Tarjeta de un producto: foto, nombre, medidas y precio de contado.
+class _TarjetaProducto extends StatelessWidget {
+  const _TarjetaProducto({
+    required this.producto,
+    required this.parametros,
+    required this.onTap,
+  });
+
+  final Producto producto;
+  final ParametrosEmpresa parametros;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final precio = producto.precio(TipoPrecio.contado, parametros);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Stack(
+              children: <Widget>[
+                AspectRatio(
+                  aspectRatio: 1.2,
+                  child: ImagenProducto(producto: producto),
+                ),
+                if (!producto.activo)
+                  Positioned(
+                    left: 6,
+                    top: 6,
+                    child: _Etiqueta(
+                      texto: 'Inactivo',
+                      color: scheme.error,
+                      onColor: scheme.onError,
+                    ),
+                  )
+                else if (producto.stockBajo)
+                  Positioned(
+                    left: 6,
+                    top: 6,
+                    child: _Etiqueta(
+                      texto: producto.stock <= 0 ? 'Agotado' : 'Stock bajo',
+                      color: scheme.tertiaryContainer,
+                      onColor: scheme.onTertiaryContainer,
+                    ),
+                  ),
+              ],
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      producto.nombre,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    if (!producto.medidas.vacio) ...<Widget>[
+                      const SizedBox(height: 2),
+                      Text(
+                        producto.medidas.resumen,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: scheme.onSurfaceVariant),
+                      ),
+                    ],
+                    const Spacer(),
+                    Text(
+                      formatearValor(precio),
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'Stock: ${producto.stock}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Etiqueta extends StatelessWidget {
+  const _Etiqueta({
+    required this.texto,
+    required this.color,
+    required this.onColor,
+  });
+
+  final String texto;
+  final Color color;
+  final Color onColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        texto,
+        style: TextStyle(color: onColor, fontSize: 11, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+}
+
+class _Vacio extends StatelessWidget {
+  const _Vacio({required this.todos});
+
+  /// `true` si la empresa no tiene ningún producto todavía.
+  final bool todos;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(Icons.inventory_2_outlined, size: 48),
+            const SizedBox(height: 12),
+            Text(
+              todos
+                  ? 'Todavía no hay productos en el catálogo.'
+                  : 'No se encontraron productos con esos filtros.',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

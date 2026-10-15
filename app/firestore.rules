@@ -33,6 +33,13 @@ service cloud.firestore {
       return esDeEmpresa(empresaId) && roles().hasAny(['administrador', 'developer']);
     }
 
+    // Puede gestionar el catálogo (Administrador o Marketing) de una empresa.
+    // Ver spec 003: el catálogo lo editan Administrador y Marketing.
+    function puedeGestionarCatalogo(empresaId) {
+      return esDeEmpresa(empresaId)
+        && roles().hasAny(['administrador', 'marketing']);
+    }
+
     // Permite solo modificar los campos indicados (update parcial controlado).
     function soloCambiaCampos(permitidos) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(permitidos);
@@ -133,6 +140,25 @@ service cloud.firestore {
       allow read: if esSuperAdmin() || gestionaEmpresa(resource.data.empresaId);
 
       allow update, delete: if false;
+    }
+
+    // Catálogo de productos (spec 003).
+    // - Lectura: el Super Admin o cualquier usuario de la empresa (incluye
+    //   clientes e invitados registrados).
+    // - Escritura: el Administrador o Marketing de la empresa.
+    match /productos/{productoId} {
+      allow read: if autenticado()
+        && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
+      allow create: if puedeGestionarCatalogo(request.resource.data.empresaId);
+      allow update, delete: if puedeGestionarCatalogo(resource.data.empresaId);
+    }
+
+    // Categorías del catálogo (spec 003, RF-10).
+    match /categorias/{categoriaId} {
+      allow read: if autenticado()
+        && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
+      allow create: if puedeGestionarCatalogo(request.resource.data.empresaId);
+      allow update, delete: if puedeGestionarCatalogo(resource.data.empresaId);
     }
 
     // Todo lo demas queda denegado por defecto (incluye `mail`: solo lo escribe

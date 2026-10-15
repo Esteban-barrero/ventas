@@ -144,11 +144,11 @@ void main() {
       HomePage(usuario: usuario, onCerrarSesion: _dummy),
     );
 
-    await tester.tap(find.text('Catálogo'));
+    await tester.tap(find.text('Ventas'));
     await tester.pumpAndSettle();
 
     expect(find.text('Módulo en construcción.'), findsOneWidget);
-    expect(find.text('Requiere: Ver catálogo'), findsOneWidget);
+    expect(find.text('Requiere: Ver ventas'), findsOneWidget);
   });
 
   testWidgets('HomePage avisa cuando se muestran datos guardados sin conexión',

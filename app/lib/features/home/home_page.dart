@@ -7,6 +7,7 @@ import '../auth/domain/permisos.dart';
 import '../auth/domain/roles.dart';
 import '../auth/domain/usuario.dart';
 import '../auth/presentation/usuarios_list_screen.dart';
+import '../catalogo/presentation/catalogo_screen.dart';
 import '../empresas/presentation/empresas_list_screen.dart';
 import '../empresas/presentation/mi_empresa_screen.dart';
 import '../licencia/domain/licencia.dart';
@@ -45,7 +46,8 @@ class HomePage extends StatelessWidget {
     // módulos globales (Empresas, Usuarios y Logs de errores).
     final modulos = <_Modulo>[
       _Modulo('Catálogo', Icons.inventory_2_outlined, Permiso.catalogoVer,
-          requiereEmpresa: true),
+          requiereEmpresa: true,
+          constructor: (_, u) => CatalogoScreen(usuario: u)),
       _Modulo('Clientes', Icons.people_outline, Permiso.clientesVer,
           requiereEmpresa: true),
       _Modulo('Ventas', Icons.point_of_sale_outlined, Permiso.ventasVer,

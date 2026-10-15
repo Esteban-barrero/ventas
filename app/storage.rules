@@ -39,6 +39,15 @@ service firebase.storage {
       allow create, update: if puedeGestionar(empresaId) && esImagen('image/webp');
     }
 
+    // Imágenes de productos (spec 003, RF-03): máximo 5 MB y tipo imagen.
+    match /empresas/{empresaId}/productos/{productoId}/{archivo} {
+      allow read: if request.auth != null;
+      allow delete: if puedeGestionarCatalogo(empresaId);
+      allow create, update: if puedeGestionarCatalogo(empresaId)
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(png|jpeg|webp)');
+    }
+
     // Todo lo demás queda denegado.
     match /{allPaths=**} {
       allow read, write: if false;
@@ -50,6 +59,14 @@ service firebase.storage {
           && (request.auth.token.superAdmin == true
               || (request.auth.token.empresaId == empresaId
                   && request.auth.token.roles.hasAny(['administrador'])));
+    }
+
+    // Super Admin, o Administrador/Marketing de esa misma empresa (catálogo).
+    function puedeGestionarCatalogo(empresaId) {
+      return request.auth != null
+          && (request.auth.token.superAdmin == true
+              || (request.auth.token.empresaId == empresaId
+                  && request.auth.token.roles.hasAny(['administrador', 'marketing'])));
     }
 
     // Una imagen de máximo 500 KB (RN-07) con el tipo de contenido correcto.

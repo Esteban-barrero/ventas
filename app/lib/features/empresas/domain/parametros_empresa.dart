@@ -1,8 +1,9 @@
 /// Parámetros por defecto de una empresa (spec 002, RF-04).
 ///
 /// Se crean automáticamente al dar de alta la empresa y el Administrador puede
-/// ajustarlos. Incluyen márgenes de ganancia por tipo de venta (detal, por
-/// mayor, distribuidores), costo de envío y el tema visual de la empresa.
+/// ajustarlos. Incluyen los márgenes de ganancia (generales por canal y los
+/// **duales de contado/crédito** que usa el catálogo, spec 003), costo de envío
+/// y el tema visual de la empresa.
 library;
 
 /// Parámetros configurables de una empresa (`empresas/{id}.parametros`).
@@ -11,6 +12,8 @@ class ParametrosEmpresa {
     this.margenDetal = 30,
     this.margenMayor = 20,
     this.margenDistribuidor = 10,
+    this.margenContado = 30,
+    this.margenCredito = 40,
     this.costoEnvio = 0,
     this.iva = 19,
     this.moneda = 'COP',
@@ -22,6 +25,13 @@ class ParametrosEmpresa {
   final double margenDetal;
   final double margenMayor;
   final double margenDistribuidor;
+
+  /// Margen de ganancia **dual** (contado y crédito), spec 003.
+  ///
+  /// Es el margen general de la empresa; un producto puede definir el suyo
+  /// propio y, si no lo hace, hereda estos (RN-01).
+  final double margenContado;
+  final double margenCredito;
 
   /// Costo de envío por defecto.
   final double costoEnvio;
@@ -43,6 +53,8 @@ class ParametrosEmpresa {
         'margenDetal': margenDetal,
         'margenMayor': margenMayor,
         'margenDistribuidor': margenDistribuidor,
+        'margenContado': margenContado,
+        'margenCredito': margenCredito,
         'costoEnvio': costoEnvio,
         'iva': iva,
         'moneda': moneda,
@@ -60,6 +72,8 @@ class ParametrosEmpresa {
       margenDetal: (data['margenDetal'] as num?)?.toDouble() ?? 30,
       margenMayor: (data['margenMayor'] as num?)?.toDouble() ?? 20,
       margenDistribuidor: (data['margenDistribuidor'] as num?)?.toDouble() ?? 10,
+      margenContado: (data['margenContado'] as num?)?.toDouble() ?? 30,
+      margenCredito: (data['margenCredito'] as num?)?.toDouble() ?? 40,
       costoEnvio: (data['costoEnvio'] as num?)?.toDouble() ?? 0,
       iva: (data['iva'] as num?)?.toDouble() ?? 19,
       moneda: (data['moneda'] as String?) ?? 'COP',
@@ -72,6 +86,8 @@ class ParametrosEmpresa {
     double? margenDetal,
     double? margenMayor,
     double? margenDistribuidor,
+    double? margenContado,
+    double? margenCredito,
     double? costoEnvio,
     double? iva,
     String? moneda,
@@ -82,6 +98,8 @@ class ParametrosEmpresa {
       margenDetal: margenDetal ?? this.margenDetal,
       margenMayor: margenMayor ?? this.margenMayor,
       margenDistribuidor: margenDistribuidor ?? this.margenDistribuidor,
+      margenContado: margenContado ?? this.margenContado,
+      margenCredito: margenCredito ?? this.margenCredito,
       costoEnvio: costoEnvio ?? this.costoEnvio,
       iva: iva ?? this.iva,
       moneda: moneda ?? this.moneda,
