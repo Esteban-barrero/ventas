@@ -45,7 +45,12 @@ La documentación de requerimientos está en:
 - **RBAC:** validar permisos por rol. Un usuario puede tener varios roles; los permisos efectivos son la **UNIÓN**.
 - **Auditoría:** toda escritura (INSERT/UPDATE/DELETE) debe quedar registrada en `_auditoria`.
 - **Licencias:** si la licencia de la empresa está vencida, se bloquea el ingreso.
-- **No subir secretos** (`.env`, `google-services.json`, `GoogleService-Info.plist`, llaves).
+- **No subir secretos** (`.env`, llaves privadas, `serviceAccountKey.json`).
+  - **Excepción documentada:** `google-services.json` y `firebase_options.dart`
+    **sí** se versionan. Son identificadores públicos del cliente (apiKey,
+    appId, projectId) y el plugin de Gradle de Android requiere el primero para
+    compilar. La seguridad real está en las reglas de Firestore/Storage y en
+    Authentication. Ver la nota en `.gitignore` y en el `README.md`.
 - **No romper el funcionamiento offline** (Firestore sincroniza al recuperar conexión).
 
 ---

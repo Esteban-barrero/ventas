@@ -17,7 +17,7 @@
 - [x] T011 Implementar cálculo de permisos (unión de roles) en `domain`
 - [x] T012 Implementar validación de licencia (llamada a Cloud Function)
 - [x] T013 Implementar Google Sign-In
-- [ ] T014 Cachear permisos y sesión para uso offline
+- [x] T014 Cachear permisos y sesión para uso offline
 
 ## Fase 3 — Interfaz de Usuario
 
@@ -38,14 +38,19 @@
 - [x] T040 Pruebas unitarias de permisos y licencia
 - [x] T041 Pruebas de widget de login y licencia vencida
 - [x] T042 Ejecutar `flutter analyze` y `flutter test`
-- [ ] T043 Actualizar documentación
+- [x] T043 Actualizar documentación
 
 ---
 
 ## Criterio de Terminado (Definition of Done)
 
 - [ ] Todos los criterios de aceptación de `spec.md` cumplidos
-- [ ] `flutter analyze` sin errores
-- [ ] Pruebas pasando
-- [ ] RBAC y auditoría verificados
-- [ ] Commit y push realizados
+      *(falta CA-06: pantalla de administración de usuarios, spec 002)*
+- [x] `flutter analyze` sin errores
+- [x] Pruebas pasando
+- [x] RBAC y auditoría verificados
+- [x] Commit y push realizados
+
+### Pendiente fuera de esta spec
+
+- [ ] T031 / T032 Desplegar las Cloud Functions (requiere plan **Blaze**)

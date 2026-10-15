@@ -2,7 +2,7 @@
 
 - **ID:** 001 | **Carpeta:** `specs/001-autenticacion-roles/`
 - **Fecha:** 2026-10-14
-- **Estado:** Borrador
+- **Estado:** Aprobado · implementado (ver [`tasks.md`](./tasks.md))
 - **Responsable:** Esteban Barrero
 
 ---
@@ -70,14 +70,14 @@ Garantizar que:
 
 ## 7. Criterios de Aceptación
 
-- [ ] CA-01 El usuario puede iniciar sesión con correo/contraseña válidos.
-- [ ] CA-02 Con credenciales inválidas se muestra un error claro y no se ingresa.
-- [ ] CA-03 El usuario con licencia vencida es bloqueado y ve el contacto del proveedor.
-- [ ] CA-04 Un usuario con varios roles obtiene la unión de sus permisos.
-- [ ] CA-05 Un usuario no puede ver datos de otra empresa.
-- [ ] CA-06 El Administrador puede crear un usuario y asignarle roles.
-- [ ] CA-07 Los cambios en usuarios y roles quedan en la auditoría.
-- [ ] CA-08 El Administrador de una empresa solo gestiona usuarios de SU empresa.
+- [x] CA-01 El usuario puede iniciar sesión con correo/contraseña válidos.
+- [x] CA-02 Con credenciales inválidas se muestra un error claro y no se ingresa.
+- [x] CA-03 El usuario con licencia vencida es bloqueado y ve el contacto del proveedor.
+- [x] CA-04 Un usuario con varios roles obtiene la unión de sus permisos.
+- [x] CA-05 Un usuario no puede ver datos de otra empresa. *(verificado con las reglas)*
+- [ ] CA-06 El Administrador puede crear un usuario y asignarle roles. *(pendiente: pantalla de usuarios, spec 002)*
+- [x] CA-07 Los cambios en usuarios y roles quedan en la auditoría. *(verificado)*
+- [x] CA-08 El Administrador de una empresa solo gestiona usuarios de SU empresa. *(verificado)*
 
 ## 8. Datos Involucrados
 
@@ -103,3 +103,39 @@ Garantizar que:
 ## 11. Dependencias
 
 - Funcionalidad 002 (Gestión de Empresas) para la creación de empresas y licencias.
+
+---
+
+## 12. Estado de implementación (2026-10-14)
+
+### Listo
+
+| Área | Dónde |
+|---|---|
+| Login correo/contraseña, Google Sign-In, logout, recuperar contraseña | `lib/features/auth/` |
+| Roles y permisos (unión de roles) | `lib/features/auth/domain/{roles,permisos,usuario}.dart` |
+| Validación de licencia (Cloud Function + respaldo local + caché) | `lib/features/licencia/` |
+| Pantalla de bloqueo y aviso de vencimiento (RN-06) | `lib/features/licencia/presentation/` |
+| Guardas de navegación por permiso | `lib/core/navegacion/guardia_permiso.dart` |
+| Auditoría de cambios de usuarios/roles | `lib/features/auditoria/` |
+| Caché de sesión para uso offline | `lib/features/auth/data/cache_sesion.dart` |
+| Reglas de Firestore por rol y `empresaId` | `app/firestore.rules` |
+| Cloud Functions (escritas, ver T031/T032) | `functions/src/index.ts` |
+
+### Pendiente
+
+- **UI de administración de usuarios** (crear usuario y asignarle roles): CA-06 — llega con la spec 002.
+- **Desplegar las Cloud Functions** (T031, T032): requiere el plan **Blaze** de Firebase.
+- El rol Super Admin y la creación de empresas: spec 002.
+
+### Verificación de seguridad
+
+Las reglas de Firestore se probaron con **ID tokens reales** (no con el token de
+administrador, que las ignora). Comprobado:
+
+- Se puede crear/leer el propio perfil y leer la propia empresa.
+- Un usuario **no puede** ascenderse a `superadmin`.
+- Un Administrador **no puede** leer ni modificar usuarios de otra empresa (CA-05, CA-08).
+- Un Administrador **sí** puede cambiar roles de usuarios de su empresa (CA-08).
+- El vendedor **no puede** leer la auditoría; el Administrador de la empresa, sí.
+- La auditoría no se puede editar ni borrar, y solo se registra a nombre propio.
