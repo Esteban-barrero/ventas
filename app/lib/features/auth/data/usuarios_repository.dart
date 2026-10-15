@@ -1,25 +1,57 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/firebase/errores.dart';
 import '../../auditoria/data/auditoria_repository.dart';
+import '../../auditoria/domain/auditoria.dart';
+import '../domain/datos_usuario.dart';
 import '../domain/perfil_cargado.dart';
 import '../domain/usuario.dart';
 import 'cache_sesion.dart';
+import 'crear_usuario_local.dart';
+
+/// Resultado de crear un usuario (spec 001, CA-06).
+class ResultadoCrearUsuario {
+  const ResultadoCrearUsuario({
+    required this.uid,
+    this.enlaceActivacion,
+    this.desdeRespaldo = false,
+  });
+
+  final String uid;
+
+  /// Enlace para que el usuario defina su contraseña (si se pudo generar).
+  final String? enlaceActivacion;
+
+  /// `true` si la cuenta se creó con el respaldo local (la Cloud Function
+  /// `crearUsuario` no estaba disponible).
+  final bool desdeRespaldo;
+}
 
 /// Acceso a la coleccion `usuarios` en Firestore. Ver spec 001.
 class UsuariosRepository {
   UsuariosRepository({
     FirebaseFirestore? firestore,
+    FirebaseFunctions? functions,
     AuditoriaRepository? auditoria,
     CacheSesion? cache,
-  })  : _db = firestore ?? FirebaseFirestore.instance,
+    CreadorUsuarioLocal? creadorLocal,
+  })  : _firestoreOverride = firestore,
+        _functionsOverride = functions,
         _auditoria = auditoria ?? AuditoriaRepository(),
-        _cache = cache ?? CacheSesion();
+        _cache = cache ?? CacheSesion(),
+        _creadorLocal = creadorLocal ?? const CreadorUsuarioLocal();
 
-  final FirebaseFirestore _db;
+  final FirebaseFirestore? _firestoreOverride;
+  final FirebaseFunctions? _functionsOverride;
   final AuditoriaRepository _auditoria;
   final CacheSesion _cache;
+  final CreadorUsuarioLocal _creadorLocal;
+
+  FirebaseFirestore get _db => _firestoreOverride ?? FirebaseFirestore.instance;
+  FirebaseFunctions get _functions =>
+      _functionsOverride ?? FirebaseFunctions.instance;
 
   CollectionReference<Map<String, dynamic>> get _usuarios =>
       _db.collection('usuarios');
@@ -119,5 +151,158 @@ class UsuariosRepository {
       despues: despues,
       autor: autor,
     );
+  }
+
+  /// Escucha, en tiempo real, los usuarios de una empresa (spec 001, CA-06).
+  ///
+  /// El Administrador solo puede leer los de su propia empresa (reglas de
+  /// Firestore).
+  Stream<List<Usuario>> escucharDeEmpresa(String empresaId) {
+    return _usuarios
+        .where('empresaId', isEqualTo: empresaId)
+        .snapshots()
+        .map(_aLista);
+  }
+
+  /// Escucha **todos** los usuarios (solo Super Admin, lo permiten las reglas).
+  Stream<List<Usuario>> escucharTodos() => _usuarios.snapshots().map(_aLista);
+
+  List<Usuario> _aLista(QuerySnapshot<Map<String, dynamic>> snap) {
+    final lista = snap.docs
+        .map((doc) => Usuario.fromMap(doc.id, doc.data()))
+        .toList(growable: false);
+    final ordenada = lista.toList()
+      ..sort((a, b) => a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase()));
+    return ordenada;
+  }
+
+  /// Crea un usuario llamando a la Cloud Function `crearUsuario`.
+  ///
+  /// Si la función no está desplegada o no hay conexión, usa el respaldo local
+  /// ([CreadorUsuarioLocal]) + escritura directa del perfil (ADR-001/ADR-005).
+  ///
+  /// [empresaId] solo es necesario cuando quien crea es el Super Admin (no
+  /// tiene empresa propia).
+  Future<ResultadoCrearUsuario> crear(
+    DatosNuevoUsuario datos, {
+    bool requiereEmpresa = false,
+  }) async {
+    final error = datos.validar(requiereEmpresa: requiereEmpresa);
+    if (error != null) {
+      throw ArgumentError(error);
+    }
+
+    try {
+      final callable = _functions.httpsCallable('crearUsuario');
+      final respuesta = await callable.call(datos.toMap());
+      final mapa = Map<String, dynamic>.from(respuesta.data as Map);
+      return ResultadoCrearUsuario(
+        uid: (mapa['uid'] as String?) ?? '',
+        enlaceActivacion: mapa['enlaceActivacion'] as String?,
+      );
+    } on FirebaseFunctionsException catch (e) {
+      // Los errores "de negocio" de la función se muestran tal cual; el resto
+      // (función no desplegada, sin conexión) cae al respaldo local.
+      if (_esErrorDeNegocio(e.code)) rethrow;
+    }
+
+    return _crearLocal(datos);
+  }
+
+  Future<ResultadoCrearUsuario> _crearLocal(DatosNuevoUsuario datos) async {
+    final empresaId = datos.empresaId;
+    if (empresaId == null || empresaId.isEmpty) {
+      throw StateError('El respaldo local necesita una empresa.');
+    }
+
+    final uid = await _creadorLocal.crearCuenta(
+      email: datos.email.trim().toLowerCase(),
+      nombre: datos.nombre.trim(),
+    );
+
+    final usuario = Usuario(
+      uid: uid,
+      nombre: datos.nombre.trim(),
+      email: datos.email.trim().toLowerCase(),
+      telefono: datos.telefono.trim(),
+      empresaId: empresaId,
+      roles: datos.roles,
+      activo: datos.activo,
+      fechaCreacion: DateTime.now(),
+    );
+
+    await _usuarios.doc(uid).set(usuario.toMap());
+    await _auditoria.registrarEvento(
+      empresaId: empresaId,
+      operacion: OperacionAuditoria.insert,
+      tabla: 'usuarios',
+      documentoId: uid,
+      datos: usuario.toMap(),
+    );
+
+    return ResultadoCrearUsuario(uid: uid, desdeRespaldo: true);
+  }
+
+  /// Activa o desactiva un usuario, dejando constancia en la auditoría.
+  ///
+  /// Si se desactiva, el trigger `onUsuarioEscrito` revoca sus tokens.
+  Future<void> actualizarActivo(
+    String uid,
+    bool activo, {
+    String? autor,
+  }) {
+    return _actualizarCampos(uid, <String, dynamic>{'activo': activo}, autor: autor);
+  }
+
+  /// Actualiza el nombre y/o el teléfono de un usuario, con auditoría.
+  Future<void> actualizarDatos(
+    String uid, {
+    String? nombre,
+    String? telefono,
+    String? autor,
+  }) {
+    final cambios = <String, dynamic>{
+      if (nombre != null) 'nombre': nombre.trim(),
+      if (telefono != null) 'telefono': telefono.trim(),
+    };
+    if (cambios.isEmpty) return Future<void>.value();
+    return _actualizarCampos(uid, cambios, autor: autor);
+  }
+
+  Future<void> _actualizarCampos(
+    String uid,
+    Map<String, dynamic> cambios, {
+    String? autor,
+  }) async {
+    final ref = _usuarios.doc(uid);
+    final snap = await ref.get();
+    final antes = snap.data() ?? const <String, dynamic>{};
+
+    // Solo se auditan los campos que se están modificando.
+    final antesParcial = <String, dynamic>{
+      for (final clave in cambios.keys) clave: antes[clave],
+    };
+
+    await ref.update(cambios);
+
+    await _auditoria.registrarCambios(
+      empresaId: (antes['empresaId'] as String?) ?? '',
+      tabla: 'usuarios',
+      documentoId: uid,
+      antes: antesParcial,
+      despues: cambios,
+      autor: autor,
+    );
+  }
+
+  /// Errores de la función que NO deben caer al respaldo local.
+  static bool _esErrorDeNegocio(String codigo) {
+    return const <String>{
+      'permission-denied',
+      'unauthenticated',
+      'invalid-argument',
+      'already-exists',
+      'failed-precondition',
+    }.contains(codigo);
   }
 }

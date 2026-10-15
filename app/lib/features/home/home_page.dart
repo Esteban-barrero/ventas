@@ -6,6 +6,7 @@ import '../../firebase_options.dart';
 import '../auth/domain/permisos.dart';
 import '../auth/domain/roles.dart';
 import '../auth/domain/usuario.dart';
+import '../auth/presentation/usuarios_list_screen.dart';
 import '../empresas/presentation/empresas_list_screen.dart';
 import '../empresas/presentation/mi_empresa_screen.dart';
 import '../licencia/domain/licencia.dart';
@@ -35,6 +36,8 @@ class HomePage extends StatelessWidget {
 
   /// Módulos disponibles según el usuario (permisos y empresa).
   static List<_Modulo> _modulosDe(Usuario usuario) {
+    final empresaId = usuario.empresaId;
+
     final modulos = <_Modulo>[
       _Modulo('Catálogo', Icons.inventory_2_outlined, Permiso.catalogoVer),
       _Modulo('Clientes', Icons.people_outline, Permiso.clientesVer),
@@ -43,6 +46,19 @@ class HomePage extends StatelessWidget {
       _Modulo('Caja', Icons.account_balance_wallet_outlined, Permiso.cajaVer),
       _Modulo('Reportes', Icons.bar_chart_outlined, Permiso.reportesVer),
       _Modulo(
+        'Usuarios',
+        Icons.manage_accounts_outlined,
+        Permiso.usuariosGestionar,
+        constructor: (_, u) => UsuariosListScreen(usuario: u),
+      ),
+      if (empresaId != null && empresaId.isNotEmpty)
+        _Modulo(
+          'Mi empresa',
+          Icons.store_outlined,
+          Permiso.parametrosEditar,
+          constructor: (_, _) => MiEmpresaScreen(empresaId: empresaId),
+        ),
+      _Modulo(
         'Empresas',
         Icons.business_outlined,
         Permiso.empresasGestionar,
@@ -50,20 +66,6 @@ class HomePage extends StatelessWidget {
       ),
       _Modulo('Logs de errores', Icons.bug_report_outlined, Permiso.logsVer),
     ];
-
-    final empresaId = usuario.empresaId;
-    if (empresaId != null && empresaId.isNotEmpty) {
-      modulos.insert(
-        6,
-        _Modulo(
-          'Mi empresa',
-          Icons.store_outlined,
-          Permiso.parametrosEditar,
-          constructor: (_, _) =>
-              MiEmpresaScreen(empresaId: empresaId),
-        ),
-      );
-    }
 
     return modulos
         .where((m) => usuario.puede(m.permiso))

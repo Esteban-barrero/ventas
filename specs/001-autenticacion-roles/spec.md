@@ -75,7 +75,7 @@ Garantizar que:
 - [x] CA-03 El usuario con licencia vencida es bloqueado y ve el contacto del proveedor.
 - [x] CA-04 Un usuario con varios roles obtiene la unión de sus permisos.
 - [x] CA-05 Un usuario no puede ver datos de otra empresa. *(verificado con las reglas)*
-- [ ] CA-06 El Administrador puede crear un usuario y asignarle roles. *(pendiente: pantalla de usuarios, spec 002)*
+- [x] CA-06 El Administrador puede crear un usuario y asignarle roles. *(verificado con la Cloud Function `crearUsuario`)*
 - [x] CA-07 Los cambios en usuarios y roles quedan en la auditoría. *(verificado)*
 - [x] CA-08 El Administrador de una empresa solo gestiona usuarios de SU empresa. *(verificado)*
 
@@ -120,13 +120,15 @@ Garantizar que:
 | Auditoría de cambios de usuarios/roles | `lib/features/auditoria/` |
 | Caché de sesión para uso offline | `lib/features/auth/data/cache_sesion.dart` |
 | Reglas de Firestore por rol y `empresaId` | `app/firestore.rules` |
-| Cloud Functions (escritas, ver T031/T032) | `functions/src/index.ts` |
+| **Gestión de usuarios** (lista, crear, editar roles, activar/desactivar) | `lib/features/auth/presentation/{usuarios_list_screen,usuario_form_screen}.dart` |
+| Cloud Functions (desplegadas, ver T031/T032 y T050) | `functions/src/` |
 
 ### Pendiente
 
-- **UI de administración de usuarios** (crear usuario y asignarle roles): CA-06 — llega con la spec 002.
-- **Desplegar las Cloud Functions** (T031, T032): requiere el plan **Blaze** de Firebase.
-- El rol Super Admin y la creación de empresas: spec 002.
+- **Correos de activación automáticos**: `crearUsuario` devuelve el enlace para
+  que el usuario defina su contraseña; el envío por correo requiere instalar la
+  extensión *Trigger Email from Firestore*.
+- El rol Super Admin y la creación de empresas: spec 002 (implementada).
 
 ### Verificación de seguridad
 
@@ -139,3 +141,16 @@ administrador, que las ignora). Comprobado:
 - Un Administrador **sí** puede cambiar roles de usuarios de su empresa (CA-08).
 - El vendedor **no puede** leer la auditoría; el Administrador de la empresa, sí.
 - La auditoría no se puede editar ni borrar, y solo se registra a nombre propio.
+
+### Verificación de la gestión de usuarios (CA-06)
+
+Probada de extremo a extremo con un Administrador real de la empresa `demo`:
+
+- La llamada a `crearUsuario` **sin token** se rechaza con **401**.
+- El Administrador crea un usuario en **su** empresa (`empresaId` tomado de sus
+  *claims*, no del cuerpo de la petición); el usuario nace `activo` y se registra
+  la auditoría `INSERT` en `_auditoria`.
+- El Administrador **no puede** asignar el rol `superadmin` (**403**) ni omitir
+  roles (**400**).
+- El límite de usuarios del plan (RF-11) se aplica en el servidor
+  (`FAILED_PRECONDITION`).

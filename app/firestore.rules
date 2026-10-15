@@ -51,13 +51,20 @@ service cloud.firestore {
 
       // Al registrarse, el usuario crea SU documento y no puede suplantar a
       // otro. El Super Admin puede crear el perfil de un administrador de
-      // empresa (spec 002, RF-03).
+      // empresa (spec 002, RF-03). El Administrador puede crear usuarios en SU
+      // empresa (spec 001, RF-03 / CA-06), pero nunca con el rol Super Admin.
       allow create: if autenticado() && (
         (request.auth.uid == uid && request.resource.data.uid == uid)
         || (esSuperAdmin()
             && request.resource.data.uid == uid
             && request.resource.data.roles is list
             && request.resource.data.empresaId is string
+            && request.resource.data.activo is bool)
+        || (esDeEmpresa(request.resource.data.empresaId)
+            && roles().hasAny(['administrador'])
+            && request.resource.data.uid == uid
+            && request.resource.data.roles is list
+            && !request.resource.data.roles.hasAny(['superadmin'])
             && request.resource.data.activo is bool)
       );
 

@@ -73,7 +73,11 @@ service cloud.firestore {
     match /usuarios/{uid} {
       allow read: if esSuperAdmin() || uid == request.auth.uid ||
                      resource.data.empresaId == miEmpresa();
-      allow write: if esSuperAdmin() || esAdminDeEmpresa(resource.data.empresaId);
+      allow create: if esSuperAdmin() || uid == request.auth.uid ||
+                       (esAdminDeEmpresa(request.resource.data.empresaId) &&
+                        !request.resource.data.roles.hasAny(['superadmin']));
+      allow update: if esSuperAdmin() ||
+                       esAdminDeEmpresa(resource.data.empresaId);
     }
 
     match /empresas/{empresaId} {
@@ -97,3 +101,48 @@ abstract class AuthRepository {
   Future<ResultadoLicencia> validarLicencia(String empresaId);
 }
 ```
+
+---
+
+## 6. Cloud Function: `crearUsuario`
+
+**Tipo:** HTTPS Callable (us-central1)
+**Autorización:** Super Admin, o Administrador de la empresa.
+
+**Entrada:**
+
+```json
+{
+  "nombre": "Ana Pérez",
+  "email": "ana@empresa.com",
+  "telefono": "3001234567",
+  "roles": ["vendedor"],
+  "activo": true,
+  "empresaId": "empresa_001"
+}
+```
+
+> `empresaId` solo lo usa el Super Admin; el Administrador crea siempre dentro de
+> su propia empresa (se toma de sus *custom claims*). El rol `superadmin` solo lo
+> puede asignar el Super Admin.
+
+**Salida:**
+
+```json
+{ "uid": "abc123", "enlaceActivacion": "https://…" }
+```
+
+**Errores:**
+
+| Código | Motivo |
+|---|---|
+| `unauthenticated` | Sin sesión |
+| `permission-denied` | No es Super Admin/Administrador, o intenta asignar `superadmin` |
+| `invalid-argument` | Nombre/correo vacíos o sin roles |
+| `already-exists` | El correo ya está registrado |
+| `failed-precondition` | Empresa inexistente o límite de usuarios del plan alcanzado |
+
+**Respaldo local (ADR-004):** si la función no está disponible, la app crea la
+cuenta con una **instancia secundaria de Firebase** (sin cerrar la sesión del
+Administrador) y escribe el perfil. Las reglas permiten al Administrador crear
+usuarios en su empresa, nunca con el rol `superadmin`.

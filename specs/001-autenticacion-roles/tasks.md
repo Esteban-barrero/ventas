@@ -41,18 +41,32 @@
 - [x] T042 Ejecutar `flutter analyze` y `flutter test`
 - [x] T043 Actualizar documentación
 
+## Fase 6 — Gestión de Usuarios (CA-06)
+
+- [x] T050 Cloud Function `crearUsuario` (Admin SDK) — desplegada en us-central1.
+      Fuerza el `empresaId` del llamante, impide asignar `superadmin` y aplica el
+      límite de usuarios del plan (RF-11).
+- [x] T051 Repositorio y respaldo local: `UsuariosRepository.crear`,
+      `escucharDeEmpresa`/`escucharTodos`, `actualizarRoles`, `actualizarActivo`,
+      `actualizarDatos`; `CreadorUsuarioLocal` con instancia secundaria (ADR-004).
+- [x] T052 Pantallas `usuarios_list_screen.dart` y `usuario_form_screen.dart`
+      (módulo "Usuarios" en el inicio) + reglas de Firestore para que el
+      Administrador cree usuarios de su empresa (nunca `superadmin`).
+- [x] T053 Pruebas (dominio y widget) y verificación E2E de `crearUsuario`.
+
 ---
 
 ## Criterio de Terminado (Definition of Done)
 
-- [ ] Todos los criterios de aceptación de `spec.md` cumplidos
-      *(falta CA-06: pantalla de administración de usuarios, spec 002)*
+- [x] Todos los criterios de aceptación de `spec.md` cumplidos
+      *(CA-01 a CA-08, incluida CA-06)*
 - [x] `flutter analyze` sin errores
-- [x] Pruebas pasando
+- [x] Pruebas pasando (120)
 - [x] RBAC y auditoría verificados
 - [x] Commit y push realizados
 
 ### Pendiente fuera de esta spec
 
-- [ ] CA-06 (pantalla de administración de usuarios).
+- [ ] Envío automático de correos de activación/vencimiento (extensión
+      *Trigger Email from Firestore*).
 - [x] T031 / T032 Cloud Functions desplegadas y verificadas (plan **Blaze** activo).

@@ -20,6 +20,7 @@ se deriva de ella.
 - [Seguridad: roles, permisos y multi-tenant](#seguridad-roles-permisos-y-multi-tenant)
 - [Licencias](#licencias)
 - [Gestión de empresas (multi-tenant)](#gestión-de-empresas-multi-tenant)
+- [Gestión de usuarios](#gestión-de-usuarios)
 - [Auditoría](#auditoría)
 - [Funcionamiento sin conexión](#funcionamiento-sin-conexión)
 - [Base de datos](#base-de-datos)
@@ -31,7 +32,8 @@ se deriva de ella.
 
 ## Estado del proyecto
 
-**Spec 001 — Autenticación y Roles:** implementada y verificada.
+**Spec 001 — Autenticación y Roles:** implementada y verificada (incluida la
+gestión de usuarios, CA-06).
 **Spec 002 — Gestión de Empresas:** implementada, desplegada y verificada. El
 proyecto está en el plan **Blaze** con las Cloud Functions y las reglas de
 Firestore y Storage ya desplegadas.
@@ -51,7 +53,7 @@ Firestore y Storage ya desplegadas.
 | Licencia, plan, renovación y suspensión | ✅ |
 | Tablero de vencimientos | ✅ |
 | Logo de la empresa y "Mi empresa" (Administrador) | ✅ |
-| Interfaz de administración de usuarios | ⏳ spec 001 (CA-06) |
+| Interfaz de administración de usuarios (CA-06) | ✅ |
 | Cloud Functions desplegadas | ✅ |
 | Reglas de Firestore y Storage desplegadas | ✅ |
 
@@ -116,6 +118,7 @@ Funciones desplegadas:
 | Función | Región | Tipo |
 |---|---|---|
 | `crearEmpresa` | us-central1 | Callable (Super Admin) |
+| `crearUsuario` | us-central1 | Callable (Super Admin / Administrador) |
 | `actualizarLicencia` | us-central1 | Callable (Super Admin) |
 | `cambiarEstadoEmpresa` | us-central1 | Callable (Super Admin) |
 | `validarLicencia` | us-central1 | Callable |
@@ -302,6 +305,39 @@ Administrador y sus *custom claims*.
 
 ---
 
+## Gestión de usuarios
+
+El **Administrador** de cada empresa gestiona su equipo desde el módulo
+**"Usuarios"**:
+
+- **Crear** usuarios indicando nombre, correo, teléfono y uno o varios **roles**
+  (los permisos son la **unión** de los roles). El usuario nace **activo**.
+- **Editar** el nombre, el teléfono, los roles y el estado (activo/inactivo). El
+  correo de acceso no se cambia desde aquí.
+- **Buscar** por nombre o correo y ver el **límite de usuarios** de su plan.
+
+El **Super Admin** ve los usuarios de **todas** las empresas y elige la empresa
+al crear uno.
+
+Al crear un usuario se ejecuta la Cloud Function `crearUsuario` (Admin SDK),
+que:
+
+- toma el `empresaId` de los *custom claims* de quien llama (un Administrador no
+  puede crear usuarios en otra empresa),
+- **impide** asignar el rol `superadmin` (solo lo reparte el Super Admin),
+- valida el **límite de usuarios** del plan de la empresa, y
+- devuelve un **enlace de activación** para que el usuario defina su contraseña.
+
+> **Respaldo local (ADR-004).** Si la función no está disponible, la app crea la
+> cuenta con una **instancia secundaria de Firebase** (sin cerrar la sesión del
+> Administrador) y escribe el perfil; las reglas de Firestore permiten al
+> Administrador crear usuarios en su empresa, nunca con el rol `superadmin`.
+
+La cuenta se crea **sin contraseña**: el usuario define la suya desde el enlace
+de activación o con "¿Olvidaste tu contraseña?".
+
+---
+
 ## Auditoría
 
 Toda escritura relevante (INSERT/UPDATE/DELETE) se registra en la colección
@@ -317,7 +353,8 @@ Toda escritura relevante (INSERT/UPDATE/DELETE) se registra en la colección
 - Retención mínima: **6 meses**.
 
 El cambio de roles (`UsuariosRepository.actualizarRoles`) compara el antes y el
-después y deja constancia automáticamente.
+después y deja constancia automáticamente. La creación de usuarios se audita en
+el servidor (dentro de `crearUsuario`) y, en el respaldo local, desde el cliente.
 
 ---
 
@@ -384,14 +421,15 @@ Cada carpeta contiene `spec.md`, `plan.md` y `tasks.md`.
 ```bash
 cd app
 flutter analyze   # sin errores
-flutter test      # 103 pruebas
+flutter test      # 120 pruebas
 ```
 
 Las pruebas cubren: permisos y unión de roles, cálculo de la licencia (incluido
 el de las empresas), pantallas de licencia y acceso denegado, guardas de
 navegación, caché de sesión, clasificación de errores de red, el registro de
-auditoría, y el dominio e interfaz de la gestión de empresas (validaciones del
-formulario, resumen de vencimientos y validación del logo).
+auditoría, el dominio e interfaz de la gestión de empresas (validaciones del
+formulario, resumen de vencimientos y validación del logo) y la gestión de
+usuarios (validación de datos, roles asignables, lista, búsqueda y formulario).
 
 Además, las **reglas de Firestore se verifican con ID tokens reales** (no con el
 token de administrador, que las ignora). Se comprueba, entre otras cosas, que un

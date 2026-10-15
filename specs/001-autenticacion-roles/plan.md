@@ -2,7 +2,7 @@
 
 - **ID:** 001 | **Spec:** [`spec.md`](./spec.md)
 - **Fecha:** 2026-10-14
-- **Estado:** Borrador
+- **Estado:** Aprobado · implementado (ver [`tasks.md`](./tasks.md))
 
 ---
 
@@ -52,6 +52,7 @@ Ver [`data-model.md`](./data-model.md). Colecciones: `empresas`, `usuarios`, `ro
 Ver [`contracts/auth-contracts.md`](./contracts/auth-contracts.md).
 
 - Cloud Function `validarLicencia(empresaId)` → `{ vigente, estado, fechaFin, diasRestantes }`
+- Cloud Function `crearUsuario(datos)` → `{ uid, enlaceActivacion }` (Super Admin o Administrador).
 - Cloud Function `onUsuarioCreado` (trigger) → asigna `empresaId` y roles al token.
 
 ## 6. Reglas de Seguridad (Firestore Rules)
@@ -94,3 +95,7 @@ Reglas clave:
 - **ADR-001:** Usar custom claims para `empresaId` y `roles` (mejora reglas y rendimiento).
 - **ADR-002:** Validar licencia en Cloud Function (evita confiar en el cliente).
 - **ADR-003:** Permisos como unión de roles en una capa `domain` reutilizable.
+- **ADR-004:** Crear usuarios con la Cloud Function `crearUsuario` (Admin SDK),
+  que fuerza el `empresaId` del llamante, impide asignar `superadmin` y aplica el
+  límite del plan. Respaldo local con una **instancia secundaria de Firebase**
+  (no cierra la sesión del Administrador) cuando la función no está disponible.

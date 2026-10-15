@@ -21,6 +21,76 @@ export function exigirSuperAdmin(request: CallableRequest): void {
   }
 }
 
+/** Roles validos del sistema (deben coincidir con el enum Rol de Dart). */
+export const ROLES_VALIDOS = [
+  'superadmin',
+  'administrador',
+  'gerente',
+  'vendedor',
+  'marketing',
+  'cajero',
+  'cliente',
+  'invitado',
+  'developer',
+];
+
+/** Contexto de quien llama: uid, si es Super Admin, su empresa y sus roles. */
+export interface ContextoGestion {
+  uid: string;
+  esSuper: boolean;
+  empresaId: string | null;
+  roles: string[];
+}
+
+/** Lee el contexto de gestion a partir de los custom claims de quien llama. */
+export function contextoGestion(request: CallableRequest): ContextoGestion {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Usuario no autenticado');
+  }
+  const token = (request.auth.token ?? {}) as Record<string, unknown>;
+  const roles = Array.isArray(token.roles) ? (token.roles as string[]) : [];
+  const empresaId =
+    typeof token.empresaId === 'string' && token.empresaId.length > 0
+      ? token.empresaId
+      : null;
+  return {
+    uid: request.auth.uid,
+    esSuper: token.superAdmin === true || roles.includes('superadmin'),
+    empresaId,
+    roles,
+  };
+}
+
+/**
+ * Exige ser Super Admin o Administrador de una empresa (gestion de usuarios,
+ * spec 001, RF-03). Devuelve el contexto para reutilizarlo.
+ */
+export function exigirGestionUsuarios(
+  request: CallableRequest
+): ContextoGestion {
+  const ctx = contextoGestion(request);
+  const puede =
+    ctx.esSuper ||
+    (ctx.empresaId !== null && ctx.roles.includes('administrador'));
+  if (!puede) {
+    throw new HttpsError(
+      'permission-denied',
+      'Solo el Super Admin o el Administrador de la empresa pueden gestionar usuarios'
+    );
+  }
+  return ctx;
+}
+
+/** Deja solo los roles validos, sin repetir ni vacios. */
+export function normalizarRoles(valor: unknown): string[] {
+  const lista = Array.isArray(valor) ? valor : [];
+  const limpios = lista
+    .filter((r): r is string => typeof r === 'string')
+    .map((r) => r.trim().toLowerCase())
+    .filter((r) => ROLES_VALIDOS.includes(r));
+  return Array.from(new Set(limpios));
+}
+
 /** Convierte un valor de Firestore (string ISO o Timestamp) a Date. */
 export function aFecha(valor: unknown): Date | null {
   if (!valor) return null;

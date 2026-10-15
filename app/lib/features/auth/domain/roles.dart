@@ -94,6 +94,15 @@ enum Rol {
         Rol.developer => <Permiso>{Permiso.logsVer},
       };
 
+  /// Roles que se pueden asignar desde la gestión de usuarios (spec 001,
+  /// CA-06).
+  ///
+  /// Se excluye [Rol.superAdmin]: ese rol pertenece al proveedor del
+  /// aplicativo y no a una empresa (RN-04), así que no se reparte desde la
+  /// interfaz de una empresa.
+  static List<Rol> get asignables =>
+      values.where((Rol r) => r != Rol.superAdmin).toList(growable: false);
+
   /// Devuelve el rol con ese id, o `null` si no existe.
   static Rol? desdeId(String id) {
     for (final r in values) {

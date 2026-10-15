@@ -47,7 +47,8 @@
 | empresaId | string | Empresa a la que pertenece (null para Super Admin) |
 | roles | array&lt;string&gt; | Lista de roles asignados |
 | activo | boolean | Si puede ingresar |
-| fechaCreacion | timestamp | Fecha de creación |
+| fechaCreacion | timestamp | Fecha de creación (se persiste como ISO-8601) |
+| creadoPor | string | UID de quien creó el usuario (opcional) |
 
 ---
 
