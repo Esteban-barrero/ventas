@@ -51,3 +51,77 @@ Muestra tres grupos:
 - [`plan.md`](./plan.md) — cómo
 - [`data-model.md`](./data-model.md) — estructura de datos
 - [`contracts/empresas-contracts.md`](./contracts/empresas-contracts.md) — contratos
+
+---
+
+## Puesta en marcha del entorno (despliegue)
+
+Pasos que se siguieron para dejar el proyecto operativo. Sirven para replicar el
+entorno o para entender qué hace falta.
+
+### 1. Activar el plan Blaze
+
+Las Cloud Functions y Storage requieren **Blaze** (pago por uso, con capa gratuita):
+
+1. Firebase Console → proyecto → **Upgrade** → **Blaze**.
+2. Asociar una **cuenta de facturación** de Google Cloud (tarjeta).
+3. Verificar que quedó vinculada:
+   ```
+   GET https://cloudbilling.googleapis.com/v1/projects/<proyecto>/billingInfo
+   ```
+   (`billingEnabled` debe ser `true`). Crear la cuenta de facturación **no** basta:
+   hay que **vincularla** al proyecto.
+
+### 2. Permisos de IAM para las Functions
+
+El CLI no siempre puede fijar los *bindings* de los *service agents*. Hacen falta:
+
+| Miembro | Rol |
+|---|---|
+| `service-<num>@gcp-sa-pubsub.iam.gserviceaccount.com` | `roles/iam.serviceAccountTokenCreator` |
+| `<num>-compute@developer.gserviceaccount.com` | `roles/run.invoker` |
+| `<num>-compute@developer.gserviceaccount.com` | `roles/eventarc.eventReceiver` |
+
+(Si faltan, el despliegue falla con *«Failed to verify the project has the correct
+IAM bindings»*.) Tras aplicarlos, Eventarc puede tardar unos minutos en propagar:
+si `onUsuarioEscrito` falla, reintentar el despliegue.
+
+### 3. Crear el bucket de Storage
+
+`firebase deploy --only storage` exige que el bucket exista. Si la consola no se ha
+usado, se crea el bucket por defecto con la API de Firebase Storage:
+
+```
+POST https://firebasestorage.googleapis.com/v1alpha/projects/<proyecto>/defaultBucket
+{ "location": "us-central1" }
+```
+
+(Crear el bucket con la API cruda de GCS con el sufijo `.firebasestorage.app` falla
+por verificación de dominio; la API de Storage sí lo crea correctamente.)
+
+### 4. Desplegar
+
+```bash
+# Reglas (no requieren Blaze)
+firebase deploy --only "firestore:rules"
+firebase deploy --only "storage"
+
+# Funciones (requieren Blaze). --force configura la política de limpieza de imágenes.
+cd functions
+npm install
+npm run build
+cd ..
+firebase deploy --only functions --force
+```
+
+### Notas de implementación
+
+- **Runtime:** Node.js **22** (`nodejs22`); el 20 queda descontinuado en 2026-10-30.
+- **`firebase-admin` en ESM:** el paquete `functions` es `"type": "module"`; hay que
+  usar `import admin from 'firebase-admin'` (import por defecto). Con
+  `import * as admin` el runtime falla con `admin.initializeApp is not a function`.
+- **API key web para pruebas REST:** está en `app/lib/firebase_options.dart`
+  (`web.apiKey`). Ojo: es fácil confundir un carácter.
+- **Borrar cuentas por REST:** es `POST /v1/projects/<proyecto>/accounts:delete`,
+  no `DELETE .../accounts`.
+

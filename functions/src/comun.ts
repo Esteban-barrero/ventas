@@ -1,4 +1,4 @@
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 import {HttpsError, CallableRequest} from 'firebase-functions/v2/https';
 
 /** Roles y bandera de Super Admin a partir de los custom claims. */

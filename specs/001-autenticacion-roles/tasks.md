@@ -29,8 +29,9 @@
 ## Fase 4 — Seguridad y Auditoría
 
 - [x] T030 Definir reglas de Firestore por rol y `empresaId`
-- [ ] T031 Cloud Function `validarLicencia`
-- [ ] T032 Cloud Function (trigger) para claims `empresaId` y `roles`
+- [x] T031 Cloud Function `validarLicencia` — desplegada en us-central1
+- [x] T032 Cloud Function (trigger) para claims `empresaId` y `roles` —
+      `onUsuarioEscrito`, desplegada en southamerica-east1 y verificada
 - [x] T033 Registrar auditoría en cambios de usuario y roles
 
 ## Fase 5 — Pruebas y Cierre
@@ -53,4 +54,5 @@
 
 ### Pendiente fuera de esta spec
 
-- [ ] T031 / T032 Desplegar las Cloud Functions (requiere plan **Blaze**)
+- [ ] CA-06 (pantalla de administración de usuarios).
+- [x] T031 / T032 Cloud Functions desplegadas y verificadas (plan **Blaze** activo).

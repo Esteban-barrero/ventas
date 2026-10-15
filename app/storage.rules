@@ -3,23 +3,59 @@ rules_version = '2';
 // Reglas de Firebase Storage — Aplicativo de Ventas
 // Solo se almacenan logos de empresa: empresas/{empresaId}/logo.{ext}
 // Límites: PNG/JPG/WebP, máximo 500 KB (RF-06).
+//
+// Nota: en las reglas de Storage un segmento de ruta no puede mezclar texto y
+// variable (`logo{ext}`); por eso se enumeran las extensiones permitidas.
+// El límite de tamaño solo aplica a create/update: al borrar, `request.resource`
+// es nulo.
+//
+// Quién puede escribir: el Super Admin (cualquier empresa) o el Administrador
+// de esa misma empresa. Los claims los emite la Cloud Function
+// `onUsuarioEscrito` a partir de `usuarios/{uid}` (spec 001).
 service firebase.storage {
   match /b/{bucket}/o {
 
-    match /empresas/{empresaId}/logo{ext} {
-      // Lectura: cualquier usuario autenticado (el logo se muestra en la app).
+    match /empresas/{empresaId}/logo.png {
       allow read: if request.auth != null;
-
-      // Escritura: usuario autenticado, imagen <= 500 KB.
-      // TODO(spec 002 · Cloud Function): restringir a Super Admin/Developer mediante
-      // custom claims cuando se desplieguen las Cloud Functions (hoy no se emiten claims).
-      allow write: if request.auth != null
-                   && request.resource.size <= 512 * 1024
-                   && request.resource.contentType.matches('image/(png|jpeg|webp)');
+      allow delete: if puedeGestionar(empresaId);
+      allow create, update: if puedeGestionar(empresaId) && esImagen('image/png');
     }
 
+    match /empresas/{empresaId}/logo.jpg {
+      allow read: if request.auth != null;
+      allow delete: if puedeGestionar(empresaId);
+      allow create, update: if puedeGestionar(empresaId) && esImagen('image/jpeg');
+    }
+
+    match /empresas/{empresaId}/logo.jpeg {
+      allow read: if request.auth != null;
+      allow delete: if puedeGestionar(empresaId);
+      allow create, update: if puedeGestionar(empresaId) && esImagen('image/jpeg');
+    }
+
+    match /empresas/{empresaId}/logo.webp {
+      allow read: if request.auth != null;
+      allow delete: if puedeGestionar(empresaId);
+      allow create, update: if puedeGestionar(empresaId) && esImagen('image/webp');
+    }
+
+    // Todo lo demás queda denegado.
     match /{allPaths=**} {
       allow read, write: if false;
+    }
+
+    // Super Admin, o Administrador de esa misma empresa.
+    function puedeGestionar(empresaId) {
+      return request.auth != null
+          && (request.auth.token.superAdmin == true
+              || (request.auth.token.empresaId == empresaId
+                  && request.auth.token.roles.hasAny(['administrador'])));
+    }
+
+    // Una imagen de máximo 500 KB (RN-07) con el tipo de contenido correcto.
+    function esImagen(tipo) {
+      return request.resource.size <= 512 * 1024
+          && request.resource.contentType == tipo;
     }
   }
 }

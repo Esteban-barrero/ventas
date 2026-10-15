@@ -32,8 +32,9 @@ se deriva de ella.
 ## Estado del proyecto
 
 **Spec 001 — Autenticación y Roles:** implementada y verificada.
-**Spec 002 — Gestión de Empresas:** implementada (Cloud Functions y Storage
-pendientes de desplegar con el plan Blaze).
+**Spec 002 — Gestión de Empresas:** implementada, desplegada y verificada. El
+proyecto está en el plan **Blaze** con las Cloud Functions y las reglas de
+Firestore y Storage ya desplegadas.
 
 | Funcionalidad | Estado |
 |---|---|
@@ -49,9 +50,10 @@ pendientes de desplegar con el plan Blaze).
 | Listado, creación y detalle de empresas (Super Admin) | ✅ |
 | Licencia, plan, renovación y suspensión | ✅ |
 | Tablero de vencimientos | ✅ |
-| Logo de la empresa y "Mi empresa" (Administrador) | ✅ código · ⏳ Storage |
+| Logo de la empresa y "Mi empresa" (Administrador) | ✅ |
 | Interfaz de administración de usuarios | ⏳ spec 001 (CA-06) |
-| Cloud Functions desplegadas | ⏳ requiere plan Blaze |
+| Cloud Functions desplegadas | ✅ |
+| Reglas de Firestore y Storage desplegadas | ✅ |
 
 Las demás especificaciones (003 a 015) están definidas y pendientes de
 implementación. Ver [`specs/`](./specs).
@@ -95,6 +97,7 @@ flutter test
 ```bash
 cd app
 firebase deploy --only "firestore:rules"
+firebase deploy --only "storage"
 ```
 
 ### Cloud Functions
@@ -104,12 +107,24 @@ firebase deploy --only "firestore:rules"
 cd functions
 npm install
 npm run build
-firebase deploy --only functions
+cd ..
+firebase deploy --only functions --force
 ```
 
-> ⚠️ El despliegue de Cloud Functions requiere el plan **Blaze** (pago por uso).
-> Mientras no esté activo, la validación de licencia usa el respaldo local
-> descrito en [Licencias](#licencias).
+Funciones desplegadas:
+
+| Función | Región | Tipo |
+|---|---|---|
+| `crearEmpresa` | us-central1 | Callable (Super Admin) |
+| `actualizarLicencia` | us-central1 | Callable (Super Admin) |
+| `cambiarEstadoEmpresa` | us-central1 | Callable (Super Admin) |
+| `validarLicencia` | us-central1 | Callable |
+| `notificarVencimientos` | us-central1 | Programada (diaria 8:00) |
+| `onUsuarioEscrito` | southamerica-east1 | Disparador de Firestore (claims) |
+
+> Runtime **Node.js 22**. El proyecto está en el plan **Blaze**; los pasos
+> detallados de puesta en marcha están en
+> [`specs/002-gestion-empresas/quickstart.md`](./specs/002-gestion-empresas/quickstart.md).
 
 ---
 
@@ -236,9 +251,9 @@ gratis o personalizado).
 
 Cadena de validación (`licencias_repository.dart`):
 
-1. **Cloud Function `validarLicencia`** — autoritativa (requiere plan Blaze).
+1. **Cloud Function `validarLicencia`** — autoritativa (ya desplegada).
 2. **Respaldo local** — lee `empresas/{empresaId}` y aplica la misma lógica
-   (permite operar mientras las funciones no estén desplegadas).
+   (permite operar si la función no responde).
 3. **Caché del dispositivo** — si no hay conexión, recalcula con la copia
    guardada de la empresa, usando la **fecha actual** (si la licencia venció
    sin conexión, el ingreso igualmente se bloquea).
@@ -268,6 +283,12 @@ Solo el **Super Admin** administra las empresas. Desde su panel puede:
 El **Administrador** de cada empresa dispone del módulo **"Mi empresa"**, donde
 actualiza su logo y sus parámetros (márgenes, costo de envío, tema), pero no
 gestiona otras empresas.
+
+El **logo** se guarda en Firebase Storage (`empresas/{empresaId}/logo.{ext}`).
+Las reglas (`app/storage.rules`) solo permiten escribirlo al **Super Admin** o al
+**Administrador de esa misma empresa**, y exigen una imagen PNG/JPG/WebP de
+**máximo 500 KB**. Antes de subir, la app refresca el ID token para que las
+reglas vean los *custom claims* vigentes.
 
 Al crear una empresa se ejecuta la Cloud Function `crearEmpresa` (Admin SDK),
 que en una sola operación crea el documento de la empresa, el usuario
@@ -321,7 +342,7 @@ Firestore (NoSQL, con soporte offline).
 |---|---|
 | `empresas/{empresaId}` | Datos de la empresa, estado, licencia, parámetros y límites. |
 | `usuarios/{uid}` | Perfil, `empresaId`, `roles[]`. |
-| `planes/{planId}` | Límites y valor por plan (gratis, básico, premium). |
+| `planes/{planId}` | Límites y valor por plan (gratis, básico, premium). Ya sembrados. |
 | `notificaciones/{id}` | Avisos de vencimiento dentro de la app. |
 | `mail/{id}` | Correos pendientes (extensión *Trigger Email*). |
 | `_auditoria/{id}` | Registro de cambios (solo inserción). |

@@ -2,7 +2,7 @@
 
 - **ID:** 002 | **Spec:** [`spec.md`](./spec.md)
 - **Fecha:** 2026-10-14
-- **Estado:** Implementado (Cloud Functions y Storage pendientes de desplegar con Blaze)
+- **Estado:** Implementado, desplegado y verificado
 
 ---
 

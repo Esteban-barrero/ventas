@@ -2,7 +2,7 @@
 
 - **ID:** 002 | **Plan:** [`plan.md`](./plan.md)
 - **Fecha:** 2026-10-14
-- **Estado:** Implementado (Cloud Functions y Storage escritos, pendientes de desplegar con Blaze)
+- **Estado:** Implementado, desplegado y verificado
 
 ---
 
@@ -43,7 +43,8 @@
 
 - [x] T040 Pruebas unitarias de licencia y validaciones
 - [x] T041 Pruebas de widget del formulario y del listado
-- [ ] T042 Prueba de integración: `crearEmpresa` (requiere Functions desplegadas / emulador)
+- [x] T042 Prueba de integración: `crearEmpresa` contra las Functions desplegadas
+      (empresa activa + administrador + límites del plan + auditoría)
 - [x] T043 Ejecutar `flutter analyze` y `flutter test` (103 pruebas, análisis limpio)
 - [x] T044 Actualizar documentación
 
@@ -51,18 +52,19 @@
 
 ## Criterio de Terminado (Definition of Done)
 
-- [x] Todos los criterios de aceptación de `spec.md` cumplidos (CA-01..CA-08; ver `spec.md` §13)
+- [x] Todos los criterios de aceptación de `spec.md` cumplidos (CA-01..CA-09; ver `spec.md` §13)
 - [x] `flutter analyze` sin errores
-- [x] Pruebas pasando
-- [ ] Aislamiento multi-tenant y auditoría verificados *(auditoría sí; falta la matriz multi-tenant de empresas)*
-- [ ] Commit y push realizados
+- [x] Pruebas pasando (103 unitarias/widget + pruebas de reglas con tokens reales)
+- [x] Aislamiento multi-tenant y auditoría verificados
+- [x] Commit y push realizados
 
-## Pendiente bloqueado por Blaze
+## Desplegado y verificado (plan Blaze activo)
 
-Los siguientes puntos quedan escritos y listos, pero **no se pueden desplegar** hasta
-activar el plan Blaze:
+- **Cloud Functions** desplegadas y verificadas end-to-end:
+  `crearEmpresa`, `actualizarLicencia`, `cambiarEstadoEmpresa`, `validarLicencia`
+  (us-central1) y `onUsuarioEscrito` (southamerica-east1, sincroniza *custom claims*).
+- **Storage**: bucket `aplicativo-de-ventas-d8bcd.firebasestorage.app` creado y
+  `app/storage.rules` desplegadas. Probado: subida propia OK; tipo de contenido
+  inválido, más de 500 KB y logo de otra empresa → **403**.
+- **Colección `planes`** sembrada (gratis/básico/premium).
 
-- Desplegar `functions` (`crearEmpresa`, `actualizarLicencia`, `cambiarEstadoEmpresa`,
-  `notificarVencimientos`).
-- Crear el bucket de Storage y desplegar `app/storage.rules` (subida del logo).
-- T042 (prueba de integración contra las Functions reales).

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 /// Error de validación de un archivo subido (por ejemplo, el logo).
@@ -53,6 +54,16 @@ class AlmacenamientoRepository {
   }) async {
     validarLogo(bytes, extension: extension);
 
+    // Refresca el ID token para que las reglas de Storage vean los claims
+    // actuales (`superAdmin`, `empresaId`, `roles`), que emite la Cloud Function
+    // `onUsuarioEscrito`. Sin esto, un token anterior a la asignación de claims
+    // no autorizaría la escritura.
+    try {
+      await FirebaseAuth.instance.currentUser?.getIdToken(true);
+    } catch (_) {
+      // Si no se puede refrescar (p. ej. sin conexión), se intenta igualmente.
+    }
+
     final ref = _storage.ref('empresas/$empresaId/logo.$extension');
     final tarea = await ref.putData(
       bytes,
@@ -72,11 +83,16 @@ class AlmacenamientoRepository {
   }
 
   /// Borra el logo (al eliminar una empresa o reemplazarlo).
+  ///
+  /// Prueba todas las extensiones permitidas: el archivo puede ser `.png`,
+  /// `.jpg`, `.jpeg` o `.webp`. Si alguno no existe, no es un error.
   Future<void> borrarLogo(String empresaId) async {
-    try {
-      await _storage.ref('empresas/$empresaId/logo.png').delete();
-    } on FirebaseException {
-      // Si no existe, no es un error.
+    for (final ext in extensionesPermitidas) {
+      try {
+        await _storage.ref('empresas/$empresaId/logo.$ext').delete();
+      } on FirebaseException {
+        // Si no existe, no es un error.
+      }
     }
   }
 

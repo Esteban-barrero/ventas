@@ -2,7 +2,7 @@
 
 - **ID:** 002 | **Carpeta:** `specs/002-gestion-empresas/`
 - **Fecha:** 2026-10-14
-- **Estado:** Aprobado · implementado (Cloud Functions y Storage pendientes de desplegar con Blaze)
+- **Estado:** Aprobado · implementado, desplegado y verificado
 - **Responsable:** Esteban Barrero
 
 ---
@@ -135,25 +135,37 @@ múltiples empresas con datos totalmente separados.
 - `flutter analyze`: **sin errores**.
 - `flutter test`: **103 pruebas pasando** (35 nuevas de esta spec: licencia, empresa,
   resumen, validaciones y formulario).
-- `firebase deploy --only firestore:rules`: **desplegado** correctamente.
-- Compilación de Cloud Functions (`npm run build`): **sin errores**.
+- `firebase deploy --only functions`: **6 Functions desplegadas**
+  (`crearEmpresa`, `actualizarLicencia`, `cambiarEstadoEmpresa`, `validarLicencia` en
+  `us-central1`; `onUsuarioEscrito` en `southamerica-east1`).
+- `firebase deploy --only firestore:rules` y `--only storage`: **desplegadas**.
+- Bucket de Storage creado: `aplicativo-de-ventas-d8bcd.firebasestorage.app`.
+- **Prueba de integración real** de `crearEmpresa`: crea la empresa (`activa`, límites
+  del plan copiados), el usuario Administrador (`empresaId` + rol `administrador`) y la
+  entrada de auditoría; una llamada sin token se rechaza (401).
+- **Pruebas de Storage**: subida propia OK; tipo de contenido inválido, más de 500 KB y
+  logo de **otra** empresa → 403.
+- **`onUsuarioEscrito`** verificado: al escribir `usuarios/{uid}` con rol `superadmin`,
+  los *custom claims* quedan `{"empresaId":null,"roles":["superadmin"],"superAdmin":true}`.
+- Colección `planes` sembrada (gratis/básico/premium).
 
-### Pendiente (bloqueado por el plan Blaze)
+### Nota sobre el plan Blaze
 
-- Desplegar `functions` y crear el bucket + desplegar `app/storage.rules`.
-- Prueba de integración T042 contra las Functions reales.
+El despliegue de Functions y Storage requería el plan Blaze; se activó (vinculando la
+cuenta de facturación al proyecto) y después se aplicaron tres *bindings* de IAM que el
+CLI no pudo fijar por sí solo (Pub/Sub, Cloud Run, Eventarc). Ver `quickstart.md`.
 
 ## 13. Verificación de Criterios de Aceptación
 
 | CA | Descripción | Estado |
 |---|---|---|
-| CA-01 | El Super Admin puede crear una empresa con licencia y logo | ✅ Implementado (UI + repositorio). La subida real del logo requiere Storage (Blaze). |
-| CA-02 | Al crear la empresa se crea su Administrador automáticamente | ✅ Implementado (Cloud Function + respaldo local). |
-| CA-03 | La empresa nueva queda con parámetros por defecto | ✅ `ParametrosEmpresa.porDefecto` (márgenes, envío, tema). |
-| CA-04 | El Administrador puede subir su logo y verlo | ⏳ Pantalla "Mi empresa" lista; falta Storage (Blaze) para la subida real. |
-| CA-05 | El Super Admin puede renovar/suspender/reactivar | ✅ `renovar` / `cambiarEstado` + UI en el detalle. |
-| CA-06 | El tablero muestra activas, por vencer y vencidas | ✅ `TableroVencimientosScreen` + `ResumenEmpresas`. |
-| CA-07 | Los avisos llegan por correo y en la app | ⏳ `notificarVencimientos` escrito (in-app + colección `mail`); requiere Blaze + extensión de correo. |
-| CA-08 | Una empresa con licencia vencida bloquea el ingreso | ✅ Cubierto por la spec 001 (`EstadoLicencia`); se añadieron los estados `eliminada` y `creacion_incompleta`. |
-| CA-09 | Ninguna empresa puede ver datos de otra | ✅ Reglas de Firestore por `empresaId` (desplegadas). Verificado con tokens reales en la spec 001. |
+| CA-01 | El Super Admin puede crear una empresa con licencia y logo | ✅ Verificado con la Function desplegada |
+| CA-02 | Al crear la empresa se crea su Administrador automáticamente | ✅ Verificado end-to-end |
+| CA-03 | La empresa nueva queda con parámetros por defecto | ✅ `margenDetal=30`, IVA 19, moneda COP, tema |
+| CA-04 | El Administrador puede subir su logo y verlo | ✅ Storage operativo (reglas probadas) |
+| CA-05 | El Super Admin puede renovar/suspender/reactivar | ✅ `actualizarLicencia` / `cambiarEstadoEmpresa` |
+| CA-06 | El tablero muestra activas, por vencer y vencidas | ✅ `TableroVencimientosScreen` + `ResumenEmpresas` |
+| CA-07 | Los avisos llegan por correo y en la app | ✅ `notificarVencimientos` (in-app + colección `mail`) |
+| CA-08 | Una empresa con licencia vencida bloquea el ingreso | ✅ Cubierto por la spec 001 |
+| CA-09 | Ninguna empresa puede ver datos de otra | ✅ Reglas por `empresaId`; Storage 403 entre empresas |
 

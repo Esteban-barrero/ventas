@@ -1,4 +1,4 @@
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 import {onSchedule} from 'firebase-functions/v2/scheduler';
 
 import {aFecha, diasEntre} from './comun.js';
