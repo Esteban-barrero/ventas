@@ -6,6 +6,7 @@ import '../../licencia/data/licencias_repository.dart';
 import '../../licencia/domain/licencia.dart';
 import '../../licencia/presentation/licencia_bloqueada_screen.dart';
 import '../data/auth_repository.dart';
+import '../data/cache_sesion.dart';
 import '../data/usuarios_repository.dart';
 import '../domain/usuario.dart';
 import 'login_screen.dart';
@@ -40,6 +41,13 @@ class _AuthGateState extends State<AuthGate> {
       widget.usuariosRepository ?? UsuariosRepository();
   late final LicenciasRepository _licencias =
       widget.licenciasRepository ?? LicenciasRepository();
+  final CacheSesion _cache = CacheSesion();
+
+  /// Cierra la sesión y borra la copia local de datos (spec 001, T014).
+  Future<void> _cerrarSesion() async {
+    await _cache.limpiar();
+    await _auth.cerrarSesion();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +68,7 @@ class _AuthGateState extends State<AuthGate> {
           user: user,
           usuarios: _usuarios,
           licencias: _licencias,
-          onCerrarSesion: _auth.cerrarSesion,
+          onCerrarSesion: _cerrarSesion,
         );
       },
     );
@@ -91,6 +99,7 @@ class _SesionLoaderState extends State<_SesionLoader> {
   ResultadoLicencia? _licencia;
   Object? _error;
   bool _cargando = true;
+  bool _desdeCache = false;
 
   @override
   void initState() {
@@ -105,7 +114,9 @@ class _SesionLoaderState extends State<_SesionLoader> {
     });
 
     try {
-      final usuario = await widget.usuarios.obtenerOCrear(widget.user);
+      final perfil = await widget.usuarios.obtenerOCrear(widget.user);
+      final usuario = perfil.usuario;
+      var desdeCache = perfil.desdeCache;
 
       // El Super Admin no pertenece a ninguna empresa (RN-04): sin licencia.
       ResultadoLicencia? licencia;
@@ -114,12 +125,14 @@ class _SesionLoaderState extends State<_SesionLoader> {
           empresaId.isNotEmpty &&
           !usuario.esSuperAdmin) {
         licencia = await widget.licencias.validar(empresaId);
+        desdeCache = desdeCache || licencia.desdeCache;
       }
 
       if (!mounted) return;
       setState(() {
         _usuario = usuario;
         _licencia = licencia;
+        _desdeCache = desdeCache;
         _cargando = false;
       });
     } catch (e) {
@@ -163,11 +176,13 @@ class _SesionLoaderState extends State<_SesionLoader> {
           usuario: usuario,
           onCerrarSesion: widget.onCerrarSesion,
           avisoLicencia: estado.debeAvisar ? estado : null,
+          datosGuardados: _desdeCache,
         );
       case null:
         return HomePage(
           usuario: usuario,
           onCerrarSesion: widget.onCerrarSesion,
+          datosGuardados: _desdeCache,
         );
     }
   }

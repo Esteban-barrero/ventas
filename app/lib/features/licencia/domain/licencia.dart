@@ -148,19 +148,23 @@ class EstadoLicencia {
 
 /// Resultado de validar la licencia de la empresa del usuario.
 sealed class ResultadoLicencia {
-  const ResultadoLicencia();
+  const ResultadoLicencia({this.desdeCache = false});
+
+  /// `true` cuando el resultado salio de la copia local del dispositivo
+  /// (no hubo conexion; ver spec 001, T014).
+  final bool desdeCache;
 }
 
 /// La licencia esta vigente: se permite el ingreso.
 class LicenciaVigente extends ResultadoLicencia {
-  const LicenciaVigente(this.estado);
+  const LicenciaVigente(this.estado, {super.desdeCache});
 
   final EstadoLicencia estado;
 }
 
 /// La licencia esta vencida o la empresa suspendida: se bloquea el ingreso.
 class LicenciaBloqueada extends ResultadoLicencia {
-  const LicenciaBloqueada(this.estado);
+  const LicenciaBloqueada(this.estado, {super.desdeCache});
 
   final EstadoLicencia estado;
 }
@@ -168,7 +172,7 @@ class LicenciaBloqueada extends ResultadoLicencia {
 /// No se pudo verificar la licencia (sin conexion, sin datos, etc.).
 /// Por seguridad se bloquea el ingreso.
 class LicenciaNoDisponible extends ResultadoLicencia {
-  const LicenciaNoDisponible(this.detalle);
+  const LicenciaNoDisponible(this.detalle, {super.desdeCache});
 
   final String detalle;
 }

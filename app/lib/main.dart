@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'core/theme.dart';
@@ -14,6 +16,17 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Persistencia local de Firestore para poder operar sin conexion
+  // (spec 001, T014). En movil ya viene activada por defecto; en Web hay que
+  // pedirla explicitamente. `cacheSizeBytes` no aplica en Web.
+  final firestore = FirebaseFirestore.instance;
+  firestore.settings = kIsWeb
+      ? const Settings(persistenceEnabled: true)
+      : const Settings(
+          persistenceEnabled: true,
+          cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+        );
 
   runApp(const VentasApp());
 }

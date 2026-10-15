@@ -120,4 +120,39 @@ void main() {
     expect(find.text('Módulo en construcción.'), findsOneWidget);
     expect(find.text('Requiere: Ver catálogo'), findsOneWidget);
   });
+
+  testWidgets('HomePage avisa cuando se muestran datos guardados sin conexión',
+      (WidgetTester tester) async {
+    const usuario = Usuario(
+      uid: 'u6',
+      nombre: 'Admin',
+      email: 'admin@ejemplo.com',
+      roles: <String>['administrador'],
+    );
+
+    await _montar(
+      tester,
+      HomePage(usuario: usuario, onCerrarSesion: _dummy, datosGuardados: true),
+    );
+
+    expect(find.text('Sin conexión'), findsOneWidget);
+    expect(find.textContaining('información guardada'), findsOneWidget);
+  });
+
+  testWidgets('HomePage no avisa de conexión cuando los datos son frescos',
+      (WidgetTester tester) async {
+    const usuario = Usuario(
+      uid: 'u7',
+      nombre: 'Admin',
+      email: 'admin@ejemplo.com',
+      roles: <String>['administrador'],
+    );
+
+    await _montar(
+      tester,
+      HomePage(usuario: usuario, onCerrarSesion: _dummy),
+    );
+
+    expect(find.text('Sin conexión'), findsNothing);
+  });
 }

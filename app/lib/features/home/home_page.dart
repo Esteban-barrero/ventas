@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/avisos/aviso_offline.dart';
 import '../../core/navegacion/guardia_permiso.dart';
 import '../../firebase_options.dart';
 import '../auth/domain/permisos.dart';
@@ -17,6 +18,7 @@ class HomePage extends StatelessWidget {
     required this.usuario,
     required this.onCerrarSesion,
     this.avisoLicencia,
+    this.datosGuardados = false,
   });
 
   final Usuario usuario;
@@ -24,6 +26,10 @@ class HomePage extends StatelessWidget {
 
   /// Si la licencia esta por vencer, se muestra un aviso (RN-06).
   final EstadoLicencia? avisoLicencia;
+
+  /// Si el perfil/licencia salieron de la copia local (sin conexion), se
+  /// muestra un aviso (spec 001, T014).
+  final bool datosGuardados;
 
   static const List<_Modulo> _todosLosModulos = <_Modulo>[
     _Modulo('Catálogo', Icons.inventory_2_outlined, Permiso.catalogoVer),
@@ -61,6 +67,10 @@ class HomePage extends StatelessWidget {
         children: <Widget>[
           _Encabezado(usuario: usuario, scheme: scheme),
           const SizedBox(height: 16),
+          if (datosGuardados) ...<Widget>[
+            const AvisoOffline(),
+            const SizedBox(height: 16),
+          ],
           if (avisoLicencia != null) ...<Widget>[
             AvisoLicencia(estado: avisoLicencia!),
             const SizedBox(height: 16),

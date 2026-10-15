@@ -1,15 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
+import '../../../core/firebase/errores.dart';
+import '../../auth/data/cache_sesion.dart';
 import '../domain/licencia.dart';
 
-/// Valida la licencia de una empresa (spec 001, T012).
+/// Valida la licencia de una empresa (spec 001, T012 / T014).
 ///
 /// Flujo:
 /// 1. Llama a la Cloud Function `validarLicencia` (autoritativa, verifica
 ///    permisos en el servidor).
 /// 2. Si la funcion no esta desplegada o falla, valida localmente leyendo
 ///    `empresas/{empresaId}` con la misma logica de negocio.
+/// 3. Si no hay conexion, recalcula la licencia con la copia del documento de
+///    empresa guardada en el dispositivo.
 ///
 /// La validacion local existe para poder operar mientras las Cloud Functions
 /// no esten desplegadas (requieren plan Blaze). Al desplegarlas, el paso 1
@@ -18,11 +22,14 @@ class LicenciasRepository {
   LicenciasRepository({
     FirebaseFunctions? functions,
     FirebaseFirestore? firestore,
+    CacheSesion? cache,
   })  : _functionsOverride = functions,
-        _firestoreOverride = firestore;
+        _firestoreOverride = firestore,
+        _cache = cache ?? CacheSesion();
 
   final FirebaseFunctions? _functionsOverride;
   final FirebaseFirestore? _firestoreOverride;
+  final CacheSesion _cache;
 
   // Se resuelven de forma perezosa para poder construir el repositorio en
   // pruebas sin inicializar Firebase.
@@ -63,12 +70,32 @@ class LicenciasRepository {
           'La empresa no tiene licencia configurada.',
         );
       }
+      // Se guarda una copia para poder validar sin conexion la proxima vez.
+      await _cache.guardarEmpresa(empresaId, data);
       return _decidir(EstadoLicencia.desdeEmpresa(data));
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      if (esErrorDeRed(e)) return _desdeCache(empresaId);
       return const LicenciaNoDisponible('No se pudo verificar la licencia.');
+    } catch (_) {
+      return _desdeCache(empresaId);
     }
   }
 
-  ResultadoLicencia _decidir(EstadoLicencia estado) =>
-      estado.vigente ? LicenciaVigente(estado) : LicenciaBloqueada(estado);
+  /// Recalcula la licencia con el documento de empresa guardado en el
+  /// dispositivo. Se usa la fecha actual, de modo que si la licencia vencio
+  /// mientras el equipo estaba sin conexion, el ingreso igualmente se bloquea.
+  Future<ResultadoLicencia> _desdeCache(String empresaId) async {
+    final guardado = await _cache.leerEmpresa(empresaId);
+    if (guardado == null) {
+      return const LicenciaNoDisponible(
+        'No hay conexion y no se guardo la licencia de esta empresa.',
+      );
+    }
+    return _decidir(EstadoLicencia.desdeEmpresa(guardado), desdeCache: true);
+  }
+
+  ResultadoLicencia _decidir(EstadoLicencia estado, {bool desdeCache = false}) =>
+      estado.vigente
+          ? LicenciaVigente(estado, desdeCache: desdeCache)
+          : LicenciaBloqueada(estado, desdeCache: desdeCache);
 }
