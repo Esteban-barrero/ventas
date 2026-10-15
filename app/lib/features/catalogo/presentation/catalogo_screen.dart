@@ -50,6 +50,10 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
   ParametrosEmpresa _parametros = const ParametrosEmpresa();
   String? _categoriaId;
   String? _colorFiltro;
+  bool _soloConStock = false;
+
+  /// Filtro de estado: `null` = todos, `true` = activos, `false` = inactivos.
+  bool? _estadoFiltro;
 
   String get _empresaId => widget.usuario.empresaId ?? '';
   bool get _puedeEditar => widget.usuario.puede(Permiso.catalogoEditar);
@@ -149,7 +153,8 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
             categoriaId: _categoriaId,
             color: _colorFiltro,
             busqueda: _busqueda.text,
-            soloActivos: !_puedeEditar,
+            soloConStock: _soloConStock,
+            activo: _puedeEditar ? _estadoFiltro : true,
           );
           return Column(
             children: <Widget>[
@@ -161,6 +166,11 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
                 colores: ProductosRepository.coloresDisponibles(todos),
                 color: _colorFiltro,
                 onColor: (String? c) => setState(() => _colorFiltro = c),
+                soloConStock: _soloConStock,
+                onSoloConStock: (bool v) => setState(() => _soloConStock = v),
+                puedeEditar: _puedeEditar,
+                estado: _estadoFiltro,
+                onEstado: (bool? v) => setState(() => _estadoFiltro = v),
               ),
               Expanded(
                 child: visibles.isEmpty
@@ -189,6 +199,11 @@ class _Filtros extends StatelessWidget {
     required this.colores,
     required this.color,
     required this.onColor,
+    required this.soloConStock,
+    required this.onSoloConStock,
+    required this.puedeEditar,
+    required this.estado,
+    required this.onEstado,
   });
 
   final TextEditingController busqueda;
@@ -198,6 +213,11 @@ class _Filtros extends StatelessWidget {
   final List<String> colores;
   final String? color;
   final ValueChanged<String?> onColor;
+  final bool soloConStock;
+  final ValueChanged<bool> onSoloConStock;
+  final bool puedeEditar;
+  final bool? estado;
+  final ValueChanged<bool?> onEstado;
 
   @override
   Widget build(BuildContext context) {
@@ -273,6 +293,38 @@ class _Filtros extends StatelessWidget {
                   onChanged: onColor,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: <Widget>[
+              FilterChip(
+                label: const Text('Solo con stock'),
+                selected: soloConStock,
+                onSelected: onSoloConStock,
+              ),
+              const SizedBox(width: 8),
+              if (puedeEditar)
+                Expanded(
+                  child: DropdownButtonFormField<bool?>(
+                    initialValue: estado,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Estado',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    items: const <DropdownMenuItem<bool?>>[
+                      DropdownMenuItem<bool?>(
+                          value: null, child: Text('Todos')),
+                      DropdownMenuItem<bool?>(
+                          value: true, child: Text('Activos')),
+                      DropdownMenuItem<bool?>(
+                          value: false, child: Text('Inactivos')),
+                    ],
+                    onChanged: onEstado,
+                  ),
+                ),
             ],
           ),
         ],

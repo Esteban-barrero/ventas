@@ -58,32 +58,41 @@ class ProductosRepository {
   Future<List<Producto>> listar(
     String empresaId, {
     String? categoriaId,
+    String? color,
     String? busqueda,
-    bool soloActivos = false,
+    bool soloConStock = false,
+    bool? activo,
   }) async {
     final snap =
         await _productos.where('empresaId', isEqualTo: empresaId).get();
     return filtrar(
       _aLista(snap),
       categoriaId: categoriaId,
+      color: color,
       busqueda: busqueda,
-      soloActivos: soloActivos,
+      soloConStock: soloConStock,
+      activo: activo,
     );
   }
 
-  /// Aplica los filtros de la lista (categoría, color, búsqueda y estado).
+  /// Aplica los filtros de la lista (estado, stock, categoría, color y texto).
   ///
-  /// La búsqueda es por **prefijo** en nombre o código (ADR-004).
+  /// - [activo] `null` no filtra por estado; `true`/`false` exige activos o
+  ///   inactivos.
+  /// - [soloConStock] deja únicamente los productos con existencias.
+  /// - La búsqueda es por **subcadena** en nombre o código (ADR-004).
   static List<Producto> filtrar(
     List<Producto> productos, {
     String? categoriaId,
     String? color,
     String? busqueda,
-    bool soloActivos = false,
+    bool soloConStock = false,
+    bool? activo,
   }) {
     final q = (busqueda ?? '').trim().toLowerCase();
     return productos.where((p) {
-      if (soloActivos && !p.activo) return false;
+      if (activo != null && p.activo != activo) return false;
+      if (soloConStock && p.stock <= 0) return false;
       if (categoriaId != null &&
           categoriaId.isNotEmpty &&
           p.categoriaId != categoriaId) {

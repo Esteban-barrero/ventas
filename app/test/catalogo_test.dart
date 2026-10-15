@@ -119,6 +119,7 @@ void main() {
         nombre: 'Camiseta Polo',
         categoriaId: 'rop',
         color: 'Rojo',
+        stock: 5,
       ),
       Producto(
         id: '2',
@@ -159,9 +160,19 @@ void main() {
       );
     });
 
-    test('soloActivos excluye los inactivos', () {
-      final r = ProductosRepository.filtrar(productos, soloActivos: true);
+    test('soloConStock deja solo los que tienen existencias', () {
+      final r = ProductosRepository.filtrar(productos, soloConStock: true);
       expect(r.map((p) => p.id), <String>['1']);
+    });
+
+    test('activo: true excluye los inactivos', () {
+      final r = ProductosRepository.filtrar(productos, activo: true);
+      expect(r.map((p) => p.id), <String>['1']);
+    });
+
+    test('activo: false deja solo los inactivos', () {
+      final r = ProductosRepository.filtrar(productos, activo: false);
+      expect(r.map((p) => p.id), <String>['2']);
     });
   });
 
