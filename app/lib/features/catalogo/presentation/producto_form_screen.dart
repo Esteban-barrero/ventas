@@ -83,7 +83,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
       _material.text = p.medidas.material;
       _dimensiones.text = p.medidas.dimensiones;
       _peso.text = p.medidas.peso;
-      _color.text = p.medidas.color;
+      _color.text = p.color;
       _costo.text = _textoNumero(p.costo);
       _margenContado.text =
           p.margenContado == null ? '' : _textoNumero(p.margenContado!);
@@ -215,9 +215,9 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
           material: _material.text.trim(),
           dimensiones: _dimensiones.text.trim(),
           peso: _peso.text.trim(),
-          color: _color.text.trim(),
         ),
         categoriaId: _categoriaId ?? '',
+        color: _color.text.trim(),
         fotoPrincipal: fotoUrl,
         galeria: widget.producto?.galeria ?? const <String>[],
         costo: costo,
@@ -268,7 +268,10 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
           _campo(_material, 'Material'),
           _campo(_dimensiones, 'Dimensiones / tallas'),
           _campo(_peso, 'Peso'),
+          const SizedBox(height: 8),
+          _seccion(theme, 'Color'),
           _campo(_color, 'Color'),
+          _chipsColor(),
           const SizedBox(height: 8),
           _seccion(theme, 'Categoría'),
           _dropdownCategoria(),
@@ -344,6 +347,22 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
     );
   }
 
+  /// Chips con los colores más comunes; al tocar uno se llena el campo.
+  Widget _chipsColor() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: <Widget>[
+        for (final c in coloresComunes)
+          ChoiceChip(
+            label: Text(c),
+            selected: _color.text.trim().toLowerCase() == c.toLowerCase(),
+            onSelected: (_) => setState(() => _color.text = c),
+          ),
+      ],
+    );
+  }
+
   /// Convierte el texto en un número opcional (`null` si está vacío o no es
   /// válido), para distinguir "heredar" de "0".
   static double? _opcional(String texto) {
@@ -358,6 +377,22 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
     return valor.toString();
   }
 }
+
+/// Colores sugeridos para elegir con un toque en el formulario.
+const List<String> coloresComunes = <String>[
+  'Negro',
+  'Blanco',
+  'Rojo',
+  'Azul',
+  'Verde',
+  'Amarillo',
+  'Naranja',
+  'Rosa',
+  'Morado',
+  'Marrón',
+  'Gris',
+  'Beige',
+];
 
 /// Selector y vista previa de la foto principal.
 class _Foto extends StatelessWidget {

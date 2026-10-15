@@ -71,12 +71,13 @@ class ProductosRepository {
     );
   }
 
-  /// Aplica los filtros de la lista (categoría, búsqueda y estado).
+  /// Aplica los filtros de la lista (categoría, color, búsqueda y estado).
   ///
   /// La búsqueda es por **prefijo** en nombre o código (ADR-004).
   static List<Producto> filtrar(
     List<Producto> productos, {
     String? categoriaId,
+    String? color,
     String? busqueda,
     bool soloActivos = false,
   }) {
@@ -88,6 +89,9 @@ class ProductosRepository {
           p.categoriaId != categoriaId) {
         return false;
       }
+      if (color != null && color.isNotEmpty && p.color != color) {
+        return false;
+      }
       if (q.isNotEmpty) {
         final nombre = p.nombre.toLowerCase();
         final codigo = p.codigo.toLowerCase();
@@ -95,6 +99,18 @@ class ProductosRepository {
       }
       return true;
     }).toList(growable: false);
+  }
+
+  /// Colores distintos presentes en una lista de productos (para el filtro).
+  ///
+  /// Devuelve una lista ordenada, sin valores vacíos.
+  static List<String> coloresDisponibles(List<Producto> productos) {
+    final colores = <String>{
+      for (final p in productos)
+        if (p.color.trim().isNotEmpty) p.color.trim(),
+    }.toList();
+    colores.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return colores;
   }
 
   /// Obtiene un producto por su id.

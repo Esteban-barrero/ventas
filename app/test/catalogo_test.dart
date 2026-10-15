@@ -118,6 +118,7 @@ void main() {
         codigo: 'A-1',
         nombre: 'Camiseta Polo',
         categoriaId: 'rop',
+        color: 'Rojo',
       ),
       Producto(
         id: '2',
@@ -125,6 +126,7 @@ void main() {
         codigo: 'B-2',
         nombre: 'Gorra',
         categoriaId: 'acc',
+        color: 'Azul',
         activo: false,
       ),
     ];
@@ -132,6 +134,18 @@ void main() {
     test('filtra por categoría', () {
       final r = ProductosRepository.filtrar(productos, categoriaId: 'rop');
       expect(r.map((p) => p.id), <String>['1']);
+    });
+
+    test('filtra por color', () {
+      final r = ProductosRepository.filtrar(productos, color: 'Azul');
+      expect(r.map((p) => p.id), <String>['2']);
+    });
+
+    test('coloresDisponibles devuelve los colores distintos, ordenados', () {
+      expect(
+        ProductosRepository.coloresDisponibles(productos),
+        <String>['Azul', 'Rojo'],
+      );
     });
 
     test('busca por nombre o código', () {
@@ -168,6 +182,18 @@ void main() {
       expect(vuelta.margenContado, 50);
       expect(vuelta.margenCredito, isNull);
       expect(vuelta.empresaId, 'e');
+    });
+
+    test('guarda y recupera el color del producto', () {
+      const p = Producto(
+        id: 'p',
+        empresaId: 'e',
+        codigo: 'C',
+        nombre: 'N',
+        color: 'Verde',
+      );
+      final vuelta = Producto.fromMap('p', p.toMap());
+      expect(vuelta.color, 'Verde');
     });
   });
 

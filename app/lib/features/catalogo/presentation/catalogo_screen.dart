@@ -49,6 +49,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
   final TextEditingController _busqueda = TextEditingController();
   ParametrosEmpresa _parametros = const ParametrosEmpresa();
   String? _categoriaId;
+  String? _colorFiltro;
 
   String get _empresaId => widget.usuario.empresaId ?? '';
   bool get _puedeEditar => widget.usuario.puede(Permiso.catalogoEditar);
@@ -146,6 +147,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
           final visibles = ProductosRepository.filtrar(
             todos,
             categoriaId: _categoriaId,
+            color: _colorFiltro,
             busqueda: _busqueda.text,
             soloActivos: !_puedeEditar,
           );
@@ -156,6 +158,9 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
                 categorias: _categorias.escuchar(_empresaId),
                 categoriaId: _categoriaId,
                 onCategoria: (String? id) => setState(() => _categoriaId = id),
+                colores: ProductosRepository.coloresDisponibles(todos),
+                color: _colorFiltro,
+                onColor: (String? c) => setState(() => _colorFiltro = c),
               ),
               Expanded(
                 child: visibles.isEmpty
@@ -174,19 +179,25 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
   }
 }
 
-/// Búsqueda por texto y filtro por categoría (RF-09).
+/// Búsqueda por texto y filtros por categoría y color (RF-09).
 class _Filtros extends StatelessWidget {
   const _Filtros({
     required this.busqueda,
     required this.categorias,
     required this.categoriaId,
     required this.onCategoria,
+    required this.colores,
+    required this.color,
+    required this.onColor,
   });
 
   final TextEditingController busqueda;
   final Stream<List<Categoria>> categorias;
   final String? categoriaId;
   final ValueChanged<String?> onCategoria;
+  final List<String> colores;
+  final String? color;
+  final ValueChanged<String?> onColor;
 
   @override
   Widget build(BuildContext context) {
@@ -204,36 +215,65 @@ class _Filtros extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          StreamBuilder<List<Categoria>>(
-            stream: categorias,
-            builder: (context, snap) {
-              final lista = snap.data ?? const <Categoria>[];
-              // Si la categoría elegida desaparece, se limpia el filtro.
-              final valor = lista.any((Categoria c) => c.id == categoriaId)
-                  ? categoriaId
-                  : null;
-              return DropdownButtonFormField<String?>(
-                initialValue: valor,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Categoría',
-                  border: OutlineInputBorder(),
-                  isDense: true,
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: StreamBuilder<List<Categoria>>(
+                  stream: categorias,
+                  builder: (context, snap) {
+                    final lista = snap.data ?? const <Categoria>[];
+                    // Si la categoría elegida desaparece, se limpia el filtro.
+                    final valor =
+                        lista.any((Categoria c) => c.id == categoriaId)
+                            ? categoriaId
+                            : null;
+                    return DropdownButtonFormField<String?>(
+                      initialValue: valor,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Categoría',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: <DropdownMenuItem<String?>>[
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Todas'),
+                        ),
+                        for (final c in lista)
+                          DropdownMenuItem<String?>(
+                            value: c.id,
+                            child: Text(c.nombre),
+                          ),
+                      ],
+                      onChanged: onCategoria,
+                    );
+                  },
                 ),
-                items: <DropdownMenuItem<String?>>[
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('Todas'),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownButtonFormField<String?>(
+                  initialValue:
+                      colores.contains(color) ? color : null,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Color',
+                    border: OutlineInputBorder(),
+                    isDense: true,
                   ),
-                  for (final c in lista)
-                    DropdownMenuItem<String?>(
-                      value: c.id,
-                      child: Text(c.nombre),
+                  items: <DropdownMenuItem<String?>>[
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('Todos'),
                     ),
-                ],
-                onChanged: onCategoria,
-              );
-            },
+                    for (final c in colores)
+                      DropdownMenuItem<String?>(value: c, child: Text(c)),
+                  ],
+                  onChanged: onColor,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -349,6 +389,25 @@ class _TarjetaProducto extends StatelessWidget {
                             ?.copyWith(color: scheme.onSurfaceVariant),
                       ),
                     ],
+                    if (producto.color.trim().isNotEmpty) ...<Widget>[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: <Widget>[
+                          Icon(Icons.circle,
+                              size: 10, color: _colorDe(producto.color)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              producto.color,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall
+                                  ?.copyWith(color: scheme.onSurfaceVariant),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const Spacer(),
                     Text(
                       formatearValor(precio),
@@ -394,6 +453,49 @@ class _Etiqueta extends StatelessWidget {
         style: TextStyle(color: onColor, fontSize: 11, fontWeight: FontWeight.bold),
       ),
     );
+  }
+}
+
+/// Color visual aproximado a partir del nombre (para el punto de color).
+///
+/// Es solo una ayuda visual; el color real lo describe el texto del producto.
+Color _colorDe(String nombre) {
+  switch (nombre.trim().toLowerCase()) {
+    case 'negro':
+      return Colors.black;
+    case 'blanco':
+      return Colors.white;
+    case 'rojo':
+      return Colors.red;
+    case 'azul':
+      return Colors.blue;
+    case 'verde':
+      return Colors.green;
+    case 'amarillo':
+      return Colors.amber;
+    case 'naranja':
+      return Colors.orange;
+    case 'rosa':
+      return Colors.pink;
+    case 'morado':
+    case 'violeta':
+    case 'púrpura':
+      return Colors.purple;
+    case 'marrón':
+    case 'marron':
+    case 'café':
+    case 'cafe':
+      return Colors.brown;
+    case 'gris':
+      return Colors.grey;
+    case 'dorado':
+      return const Color(0xFFB8860B);
+    case 'plateado':
+      return const Color(0xFFB0B0B0);
+    case 'beige':
+      return const Color(0xFFD8C3A5);
+    default:
+      return Colors.blueGrey;
   }
 }
 

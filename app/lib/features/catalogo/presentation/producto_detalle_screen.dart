@@ -292,10 +292,10 @@ class _ProductoDetalleScreenState extends State<ProductoDetalleScreen> {
               ),
           ],
         ),
-        if (!producto.medidas.vacio) ...<Widget>[
+        if (!producto.medidas.vacio || producto.color.trim().isNotEmpty) ...<Widget>[
           const SizedBox(height: 12),
           TarjetaDatos(
-            titulo: 'Medidas',
+            titulo: 'Medidas y color',
             icono: Icons.straighten_outlined,
             filas: <FilaDato>[
               if (producto.medidas.material.isNotEmpty)
@@ -304,8 +304,8 @@ class _ProductoDetalleScreenState extends State<ProductoDetalleScreen> {
                 FilaDato('Dimensiones', producto.medidas.dimensiones),
               if (producto.medidas.peso.isNotEmpty)
                 FilaDato('Peso', producto.medidas.peso),
-              if (producto.medidas.color.isNotEmpty)
-                FilaDato('Color', producto.medidas.color),
+              if (producto.color.trim().isNotEmpty)
+                FilaDato('Color', producto.color),
             ],
           ),
         ],

@@ -13,8 +13,9 @@
 | codigo | string | Código único por empresa |
 | nombre | string | Nombre del producto |
 | descripcion | string | Descripción general |
-| medidas | map | `{ material, dimensiones, peso, color }` |
+| medidas | map | `{ material, dimensiones, peso }` |
 | categoriaId | string | Referencia a `categorias` |
+| color | string | Color del producto (se muestra y se filtra) |
 | fotoPrincipal | string | URL en Storage |
 | galeria | array&lt;string&gt; | URLs adicionales |
 | costo | number | Costo de compra al proveedor |
@@ -34,8 +35,9 @@
   "codigo": "PROD-001",
   "nombre": "Camiseta Polo",
   "descripcion": "Camiseta de algodón",
-  "medidas": { "material": "Algodón", "dimensiones": "M/L/XL", "peso": "200g", "color": "Azul" },
+  "medidas": { "material": "Algodón", "dimensiones": "M/L/XL", "peso": "200g" },
   "categoriaId": "cat_rop",
+  "color": "Azul",
   "fotoPrincipal": "empresas/empresa_001/productos/PROD-001/foto.png",
   "galeria": [],
   "costo": 20000,

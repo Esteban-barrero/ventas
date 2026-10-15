@@ -7,20 +7,17 @@ class Medidas {
     this.material = '',
     this.dimensiones = '',
     this.peso = '',
-    this.color = '',
   });
 
   final String material;
   final String dimensiones;
   final String peso;
-  final String color;
 
   /// `true` si no se definió ninguna medida.
   bool get vacio =>
       material.trim().isEmpty &&
       dimensiones.trim().isEmpty &&
-      peso.trim().isEmpty &&
-      color.trim().isEmpty;
+      peso.trim().isEmpty;
 
   /// Resumen legible para las tarjetas del catálogo (ej. "Algodón · M/L/XL").
   String get resumen {
@@ -28,7 +25,6 @@ class Medidas {
       if (material.trim().isNotEmpty) material.trim(),
       if (dimensiones.trim().isNotEmpty) dimensiones.trim(),
       if (peso.trim().isNotEmpty) peso.trim(),
-      if (color.trim().isNotEmpty) color.trim(),
     ];
     return partes.join(' · ');
   }
@@ -37,7 +33,6 @@ class Medidas {
         'material': material,
         'dimensiones': dimensiones,
         'peso': peso,
-        'color': color,
       };
 
   factory Medidas.fromMap(Map<String, dynamic>? data) {
@@ -46,7 +41,6 @@ class Medidas {
       material: (m['material'] as String?) ?? '',
       dimensiones: (m['dimensiones'] as String?) ?? '',
       peso: (m['peso'] as String?) ?? '',
-      color: (m['color'] as String?) ?? '',
     );
   }
 }
@@ -61,6 +55,7 @@ class Producto {
     this.descripcion = '',
     this.medidas = const Medidas(),
     this.categoriaId = '',
+    this.color = '',
     this.fotoPrincipal = '',
     this.galeria = const <String>[],
     this.costo = 0,
@@ -81,6 +76,9 @@ class Producto {
   final String descripcion;
   final Medidas medidas;
   final String categoriaId;
+
+  /// Color del producto (característica propia, para mostrar y filtrar).
+  final String color;
   final String fotoPrincipal;
   final List<String> galeria;
 
@@ -129,6 +127,7 @@ class Producto {
     String? descripcion,
     Medidas? medidas,
     String? categoriaId,
+    String? color,
     String? fotoPrincipal,
     List<String>? galeria,
     double? costo,
@@ -149,6 +148,7 @@ class Producto {
       descripcion: descripcion ?? this.descripcion,
       medidas: medidas ?? this.medidas,
       categoriaId: categoriaId ?? this.categoriaId,
+      color: color ?? this.color,
       fotoPrincipal: fotoPrincipal ?? this.fotoPrincipal,
       galeria: galeria ?? this.galeria,
       costo: costo ?? this.costo,
@@ -176,6 +176,7 @@ class Producto {
       'descripcion': descripcion,
       'medidas': medidas.toMap(),
       'categoriaId': categoriaId,
+      'color': color,
       'fotoPrincipal': fotoPrincipal,
       'galeria': galeria,
       'costo': costo,
@@ -203,6 +204,7 @@ class Producto {
       medidas: Medidas.fromMap(
           (data['medidas'] as Map?)?.cast<String, dynamic>()),
       categoriaId: (data['categoriaId'] as String?) ?? '',
+      color: (data['color'] as String?) ?? '',
       fotoPrincipal: (data['fotoPrincipal'] as String?) ?? '',
       galeria: (data['galeria'] as List<dynamic>?)
               ?.map((dynamic e) => e.toString())
