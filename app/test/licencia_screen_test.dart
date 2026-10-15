@@ -107,4 +107,52 @@ void main() {
 
     expect(find.text('Tu licencia vence mañana.'), findsOneWidget);
   });
+
+  testWidgets('AvisoLicencia se oculta solo tras la duración configurada',
+      (tester) async {
+    await _montar(
+      tester,
+      const Scaffold(
+        body: AvisoLicencia(
+          estado: EstadoLicencia(
+            vigente: true,
+            estado: EstadoEmpresa.activa,
+            diasRestantes: 3,
+          ),
+          duracion: Duration(milliseconds: 100),
+        ),
+      ),
+    );
+
+    expect(find.text('Tu licencia vence en 3 días.'), findsOneWidget);
+
+    // Pasa la duración + el desvanecido + la animación de reacomodo.
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tu licencia vence en 3 días.'), findsNothing);
+  });
+
+  testWidgets('AvisoLicencia se oculta al tocar la X', (tester) async {
+    await _montar(
+      tester,
+      const Scaffold(
+        body: AvisoLicencia(
+          estado: EstadoLicencia(
+            vigente: true,
+            estado: EstadoEmpresa.activa,
+            diasRestantes: 3,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Tu licencia vence en 3 días.'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Ocultar aviso'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tu licencia vence en 3 días.'), findsNothing);
+  });
 }
