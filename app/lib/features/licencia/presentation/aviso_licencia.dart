@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../domain/licencia.dart';
@@ -5,17 +7,79 @@ import '../domain/licencia.dart';
 /// Aviso de vencimiento proximo de la licencia (spec 001, RN-06).
 ///
 /// Se muestra en el inicio cuando faltan `diasAvisoVencimiento` dias o menos
-/// (por defecto 5).
-class AvisoLicencia extends StatelessWidget {
-  const AvisoLicencia({super.key, required this.estado});
+/// (por defecto 5). Permanece visible [duracion] (40 s por defecto) y luego se
+/// desvanece y se quita solo, dejando que el contenido de abajo se reacomode.
+/// Tambien se puede ocultar manualmente con la "x".
+class AvisoLicencia extends StatefulWidget {
+  const AvisoLicencia({
+    super.key,
+    required this.estado,
+    this.duracion = const Duration(seconds: 40),
+  });
 
   final EstadoLicencia estado;
 
+  /// Tiempo que el aviso permanece visible antes de ocultarse solo.
+  final Duration duracion;
+
+  @override
+  State<AvisoLicencia> createState() => _AvisoLicenciaState();
+}
+
+class _AvisoLicenciaState extends State<AvisoLicencia> {
+  static const Duration _animacion = Duration(milliseconds: 400);
+
+  Timer? _temporizador;
+  Timer? _temporizadorSalida;
+  bool _visible = true;
+  double _opacidad = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _temporizador = Timer(widget.duracion, _ocultar);
+  }
+
+  @override
+  void dispose() {
+    _temporizador?.cancel();
+    _temporizadorSalida?.cancel();
+    super.dispose();
+  }
+
+  /// Desvanece el aviso y luego lo quita para que el resto se reacomode.
+  void _ocultar() {
+    if (!mounted || !_visible) return;
+    _temporizador?.cancel();
+    setState(() => _opacidad = 0);
+    _temporizadorSalida = Timer(_animacion, () {
+      if (mounted) setState(() => _visible = false);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    return AnimatedSize(
+      duration: _animacion,
+      curve: Curves.easeInOut,
+      alignment: Alignment.topCenter,
+      child: _visible
+          ? AnimatedOpacity(
+              opacity: _opacidad,
+              duration: _animacion,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _tarjeta(context),
+              ),
+            )
+          : const SizedBox(width: double.infinity, height: 0),
+    );
+  }
+
+  Widget _tarjeta(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final dias = estado.diasRestantes;
+    final dias = widget.estado.diasRestantes;
 
     final String mensaje;
     if (dias == null) {
@@ -31,7 +95,7 @@ class AvisoLicencia extends StatelessWidget {
     return Card(
       color: scheme.secondaryContainer,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -59,6 +123,12 @@ class AvisoLicencia extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+            IconButton(
+              tooltip: 'Ocultar aviso',
+              visualDensity: VisualDensity.compact,
+              icon: Icon(Icons.close, color: scheme.onSecondaryContainer),
+              onPressed: _ocultar,
             ),
           ],
         ),
