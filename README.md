@@ -129,6 +129,28 @@ Funciones desplegadas:
 > detallados de puesta en marcha están en
 > [`specs/002-gestion-empresas/quickstart.md`](./specs/002-gestion-empresas/quickstart.md).
 
+### CORS del bucket de Storage
+
+Flutter **Web** descarga las imágenes por HTTP (no con un `<img>`), así que el
+bucket de Storage debe responder con cabeceras **CORS**; si faltan, los logos no
+se ven en el navegador (el widget cae a las iniciales). La configuración está en
+[`cors.json`](./cors.json):
+
+```bash
+# Requiere Google Cloud SDK (gsutil) autenticado en el proyecto.
+gsutil cors set cors.json gs://aplicativo-de-ventas-d8bcd.firebasestorage.app
+
+# Alternativa con gcloud:
+gcloud storage buckets update gs://aplicativo-de-ventas-d8bcd.firebasestorage.app --cors-file=cors.json
+
+# Verificar:
+gsutil cors get gs://aplicativo-de-ventas-d8bcd.firebasestorage.app
+```
+
+> Es independiente de `app/storage.rules`: las reglas controlan **quién** puede
+> leer/escribir; la CORS controla **desde qué origen** el navegador puede
+> descargar el archivo.
+
 ---
 
 ## Estructura del repositorio
@@ -138,6 +160,7 @@ Funciones desplegadas:
 ├── AGENTS.md                 Guía para agentes de IA
 ├── README.md                 Este archivo
 ├── firebase.json             Configuración de Firebase
+├── cors.json                 CORS del bucket de Storage (logos en Web)
 ├── .specify/memory/          Constitución del proyecto
 ├── Documentacion/            Levantamiento de requerimientos (Word)
 ├── specs/                    Especificaciones SDD (001 a 015)
