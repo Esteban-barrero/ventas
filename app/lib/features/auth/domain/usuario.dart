@@ -33,6 +33,9 @@ class Usuario {
   List<Rol> get rolesTipados =>
       roles.map(Rol.desdeId).whereType<Rol>().toList(growable: false);
 
+  /// Super Admin: acceso global y sin empresa (RN-04).
+  bool get esSuperAdmin => roles.contains(Rol.superAdmin.id);
+
   /// Permisos efectivos (union de los roles).
   Set<Permiso> get permisos => permisosDeRoles(rolesTipados);
 

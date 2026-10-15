@@ -2,6 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../home/home_page.dart';
+import '../../licencia/data/licencias_repository.dart';
+import '../../licencia/domain/licencia.dart';
+import '../../licencia/presentation/licencia_bloqueada_screen.dart';
 import '../data/auth_repository.dart';
 import '../data/usuarios_repository.dart';
 import '../domain/usuario.dart';
@@ -10,15 +13,21 @@ import 'login_screen.dart';
 /// Decide qué mostrar según el estado de sesión (spec 001).
 ///
 /// - Sin usuario -> [LoginScreen]
-/// - Con usuario -> carga el perfil (`usuarios/{uid}`) y muestra [HomePage]
-///
-/// Si el perfil no existe todavía, se crea automáticamente (bootstrap).
+/// - Con usuario -> carga el perfil (`usuarios/{uid}`) y valida la licencia de
+///   su empresa. Si la licencia está vencida o la empresa suspendida, bloquea
+///   el ingreso ([LicenciaBloqueadaScreen]).
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key, this.authRepository, this.usuariosRepository});
+  const AuthGate({
+    super.key,
+    this.authRepository,
+    this.usuariosRepository,
+    this.licenciasRepository,
+  });
 
   /// Permiten inyectar repositorios distintos en las pruebas.
   final AuthRepository? authRepository;
   final UsuariosRepository? usuariosRepository;
+  final LicenciasRepository? licenciasRepository;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -29,6 +38,8 @@ class _AuthGateState extends State<AuthGate> {
       widget.authRepository ?? AuthRepository();
   late final UsuariosRepository _usuarios =
       widget.usuariosRepository ?? UsuariosRepository();
+  late final LicenciasRepository _licencias =
+      widget.licenciasRepository ?? LicenciasRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -44,10 +55,11 @@ class _AuthGateState extends State<AuthGate> {
           return LoginScreen(repository: _auth);
         }
 
-        return _PerfilLoader(
+        return _SesionLoader(
           key: ValueKey<String>(user.uid),
           user: user,
           usuarios: _usuarios,
+          licencias: _licencias,
           onCerrarSesion: _auth.cerrarSesion,
         );
       },
@@ -55,51 +67,109 @@ class _AuthGateState extends State<AuthGate> {
   }
 }
 
-class _PerfilLoader extends StatefulWidget {
-  const _PerfilLoader({
+/// Carga el perfil y la licencia antes de mostrar el inicio.
+class _SesionLoader extends StatefulWidget {
+  const _SesionLoader({
     super.key,
     required this.user,
     required this.usuarios,
+    required this.licencias,
     required this.onCerrarSesion,
   });
 
   final User user;
   final UsuariosRepository usuarios;
+  final LicenciasRepository licencias;
   final Future<void> Function() onCerrarSesion;
 
   @override
-  State<_PerfilLoader> createState() => _PerfilLoaderState();
+  State<_SesionLoader> createState() => _SesionLoaderState();
 }
 
-class _PerfilLoaderState extends State<_PerfilLoader> {
-  late Future<Usuario> _futuro;
+class _SesionLoaderState extends State<_SesionLoader> {
+  Usuario? _usuario;
+  ResultadoLicencia? _licencia;
+  Object? _error;
+  bool _cargando = true;
 
   @override
   void initState() {
     super.initState();
-    _futuro = widget.usuarios.obtenerOCrear(widget.user);
+    _cargar();
+  }
+
+  Future<void> _cargar() async {
+    setState(() {
+      _cargando = true;
+      _error = null;
+    });
+
+    try {
+      final usuario = await widget.usuarios.obtenerOCrear(widget.user);
+
+      // El Super Admin no pertenece a ninguna empresa (RN-04): sin licencia.
+      ResultadoLicencia? licencia;
+      final empresaId = usuario.empresaId;
+      if (empresaId != null &&
+          empresaId.isNotEmpty &&
+          !usuario.esSuperAdmin) {
+        licencia = await widget.licencias.validar(empresaId);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _usuario = usuario;
+        _licencia = licencia;
+        _cargando = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e;
+        _cargando = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Usuario>(
-      future: _futuro,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const _Cargando();
-        }
-        if (snapshot.hasError) {
-          return _ErrorPerfil(
-            error: snapshot.error!,
-            onCerrarSesion: widget.onCerrarSesion,
-          );
-        }
+    if (_cargando) return const _Cargando();
+
+    if (_error != null) {
+      return _ErrorPerfil(
+        error: _error!,
+        onCerrarSesion: widget.onCerrarSesion,
+        onReintentar: _cargar,
+      );
+    }
+
+    final usuario = _usuario!;
+
+    switch (_licencia) {
+      case LicenciaBloqueada(:final estado):
+        return LicenciaBloqueadaScreen(
+          estado: estado,
+          onCerrarSesion: widget.onCerrarSesion,
+          onReintentar: _cargar,
+        );
+      case LicenciaNoDisponible(:final detalle):
+        return LicenciaNoDisponibleScreen(
+          detalle: detalle,
+          onCerrarSesion: widget.onCerrarSesion,
+          onReintentar: _cargar,
+        );
+      case LicenciaVigente(:final estado):
         return HomePage(
-          usuario: snapshot.data!,
+          usuario: usuario,
+          onCerrarSesion: widget.onCerrarSesion,
+          avisoLicencia: estado.debeAvisar ? estado : null,
+        );
+      case null:
+        return HomePage(
+          usuario: usuario,
           onCerrarSesion: widget.onCerrarSesion,
         );
-      },
-    );
+    }
   }
 }
 
@@ -115,10 +185,15 @@ class _Cargando extends StatelessWidget {
 }
 
 class _ErrorPerfil extends StatelessWidget {
-  const _ErrorPerfil({required this.error, required this.onCerrarSesion});
+  const _ErrorPerfil({
+    required this.error,
+    required this.onCerrarSesion,
+    this.onReintentar,
+  });
 
   final Object error;
   final Future<void> Function() onCerrarSesion;
+  final Future<void> Function()? onReintentar;
 
   @override
   Widget build(BuildContext context) {
@@ -143,10 +218,22 @@ class _ErrorPerfil extends StatelessWidget {
                 style: TextStyle(color: scheme.onSurfaceVariant),
               ),
               const SizedBox(height: 24),
-              OutlinedButton.icon(
-                onPressed: () async => onCerrarSesion(),
-                icon: const Icon(Icons.logout),
-                label: const Text('Cerrar sesión'),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (onReintentar != null)
+                    OutlinedButton.icon(
+                      onPressed: () async => onReintentar!(),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Reintentar'),
+                    ),
+                  if (onReintentar != null) const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    onPressed: () async => onCerrarSesion(),
+                    icon: const Icon(Icons.logout),
+                    label: const Text('Cerrar sesión'),
+                  ),
+                ],
               ),
             ],
           ),

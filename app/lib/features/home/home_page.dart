@@ -4,6 +4,8 @@ import '../../firebase_options.dart';
 import '../auth/domain/permisos.dart';
 import '../auth/domain/roles.dart';
 import '../auth/domain/usuario.dart';
+import '../licencia/domain/licencia.dart';
+import '../licencia/presentation/aviso_licencia.dart';
 
 /// Pantalla de inicio (esqueleto). Muestra el usuario autenticado, sus roles y
 /// los modulos a los que tiene permiso. Ver spec 001.
@@ -12,10 +14,14 @@ class HomePage extends StatelessWidget {
     super.key,
     required this.usuario,
     required this.onCerrarSesion,
+    this.avisoLicencia,
   });
 
   final Usuario usuario;
   final Future<void> Function() onCerrarSesion;
+
+  /// Si la licencia esta por vencer, se muestra un aviso (RN-06).
+  final EstadoLicencia? avisoLicencia;
 
   static const List<_Modulo> _todosLosModulos = <_Modulo>[
     _Modulo('Catálogo', Icons.inventory_2_outlined, Permiso.catalogoVer),
@@ -53,6 +59,10 @@ class HomePage extends StatelessWidget {
         children: <Widget>[
           _Encabezado(usuario: usuario, scheme: scheme),
           const SizedBox(height: 16),
+          if (avisoLicencia != null) ...<Widget>[
+            AvisoLicencia(estado: avisoLicencia!),
+            const SizedBox(height: 16),
+          ],
           _TarjetaRoles(usuario: usuario),
           const SizedBox(height: 24),
           Text('Módulos', style: theme.textTheme.titleLarge),

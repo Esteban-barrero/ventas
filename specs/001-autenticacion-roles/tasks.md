@@ -15,7 +15,7 @@
 
 - [x] T010 Implementar `AuthRepository` (login, logout, recuperar contraseña)
 - [x] T011 Implementar cálculo de permisos (unión de roles) en `domain`
-- [ ] T012 Implementar validación de licencia (llamada a Cloud Function)
+- [x] T012 Implementar validación de licencia (llamada a Cloud Function)
 - [x] T013 Implementar Google Sign-In
 - [ ] T014 Cachear permisos y sesión para uso offline
 
@@ -23,7 +23,7 @@
 
 - [x] T020 Pantalla de login (correo/contraseña + Google)
 - [x] T021 Pantalla de recuperación de contraseña
-- [ ] T022 Pantalla de "Licencia vencida" con datos de contacto del proveedor
+- [x] T022 Pantalla de "Licencia vencida" con datos de contacto del proveedor
 - [ ] T023 Guardas de navegación según permisos
 
 ## Fase 4 — Seguridad y Auditoría
@@ -35,8 +35,8 @@
 
 ## Fase 5 — Pruebas y Cierre
 
-- [ ] T040 Pruebas unitarias de permisos y licencia
-- [ ] T041 Pruebas de widget de login y licencia vencida
+- [x] T040 Pruebas unitarias de permisos y licencia
+- [x] T041 Pruebas de widget de login y licencia vencida
 - [x] T042 Ejecutar `flutter analyze` y `flutter test`
 - [ ] T043 Actualizar documentación
 
