@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/formato/fechas.dart';
 import '../../../core/imagen/medir_imagen.dart';
+import '../../auth/data/usuarios_repository.dart';
 import '../../licencia/domain/licencia.dart' show EstadoEmpresa;
 import '../data/almacenamiento_repository.dart';
 import '../data/empresas_repository.dart';
@@ -20,11 +21,13 @@ class EmpresaDetalleScreen extends StatefulWidget {
     super.key,
     required this.empresaId,
     this.repository,
+    this.usuariosRepository,
     this.selectorImagen,
   });
 
   final String empresaId;
   final EmpresasRepository? repository;
+  final UsuariosRepository? usuariosRepository;
   final Future<XFile?> Function()? selectorImagen;
 
   @override
@@ -34,11 +37,16 @@ class EmpresaDetalleScreen extends StatefulWidget {
 class _EmpresaDetalleScreenState extends State<EmpresaDetalleScreen> {
   late final EmpresasRepository _repo =
       widget.repository ?? EmpresasRepository();
+  late final UsuariosRepository _usuarios =
+      widget.usuariosRepository ?? UsuariosRepository();
 
   Empresa? _empresa;
   bool _cargando = true;
   bool _cambio = false;
   String? _error;
+
+  /// Texto a mostrar como Administrador de la empresa (nombre y correo).
+  String _admin = 'Sin asignar';
 
   @override
   void initState() {
@@ -53,9 +61,14 @@ class _EmpresaDetalleScreenState extends State<EmpresaDetalleScreen> {
     });
     try {
       final empresa = await _repo.obtener(widget.empresaId);
+      var admin = 'Sin asignar';
+      if (empresa != null && empresa.adminId.isNotEmpty) {
+        admin = await _describirAdmin(empresa.adminId);
+      }
       if (!mounted) return;
       setState(() {
         _empresa = empresa;
+        _admin = admin;
         _cargando = false;
         if (empresa == null) _error = 'La empresa ya no existe.';
       });
@@ -65,6 +78,21 @@ class _EmpresaDetalleScreenState extends State<EmpresaDetalleScreen> {
         _error = '$e';
         _cargando = false;
       });
+    }
+  }
+
+  /// Nombre y correo del Administrador a partir de su UID (spec 002).
+  ///
+  /// Si no se puede leer el perfil, se muestra el UID como respaldo.
+  Future<String> _describirAdmin(String uid) async {
+    try {
+      final usuario = await _usuarios.obtener(uid);
+      if (usuario == null) return uid;
+      final nombre = usuario.nombre.trim();
+      if (nombre.isEmpty) return usuario.email;
+      return '$nombre · ${usuario.email}';
+    } catch (_) {
+      return uid;
     }
   }
 
@@ -549,9 +577,7 @@ class _EmpresaDetalleScreenState extends State<EmpresaDetalleScreen> {
             FilaDato('Proveedor', empresa.contactoProveedor.isEmpty
                 ? '—'
                 : empresa.contactoProveedor),
-            FilaDato('Administrador', empresa.adminId.isEmpty
-                ? 'Sin asignar'
-                : empresa.adminId),
+            FilaDato('Administrador', _admin),
           ],
         ),
         const SizedBox(height: 12),

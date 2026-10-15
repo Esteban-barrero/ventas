@@ -115,6 +115,17 @@ class UsuariosRepository {
     });
   }
 
+  /// Obtiene el perfil de un usuario por su UID (una sola lectura).
+  ///
+  /// Se usa, por ejemplo, para mostrar el nombre y el correo del Administrador
+  /// de una empresa en la pantalla de detalle (spec 002). Devuelve `null` si el
+  /// usuario no existe.
+  Future<Usuario?> obtener(String uid) async {
+    final snap = await _usuarios.doc(uid).get();
+    if (!snap.exists || snap.data() == null) return null;
+    return Usuario.fromMap(uid, snap.data()!);
+  }
+
   /// Guarda (crea o reemplaza) el perfil.
   Future<void> guardar(Usuario usuario) async {
     await _usuarios.doc(usuario.uid).set(usuario.toMap());
