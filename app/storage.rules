@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Reglas de Firebase Storage — Aplicativo de Ventas
+// Solo se almacenan logos de empresa: empresas/{empresaId}/logo.{ext}
+// Límites: PNG/JPG/WebP, máximo 500 KB (RF-06).
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /empresas/{empresaId}/logo{ext} {
+      // Lectura: cualquier usuario autenticado (el logo se muestra en la app).
+      allow read: if request.auth != null;
+
+      // Escritura: usuario autenticado, imagen <= 500 KB.
+      // TODO(spec 002 · Cloud Function): restringir a Super Admin/Developer mediante
+      // custom claims cuando se desplieguen las Cloud Functions (hoy no se emiten claims).
+      allow write: if request.auth != null
+                   && request.resource.size <= 512 * 1024
+                   && request.resource.contentType.matches('image/(png|jpeg|webp)');
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

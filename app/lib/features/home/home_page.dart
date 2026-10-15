@@ -6,6 +6,8 @@ import '../../firebase_options.dart';
 import '../auth/domain/permisos.dart';
 import '../auth/domain/roles.dart';
 import '../auth/domain/usuario.dart';
+import '../empresas/presentation/empresas_list_screen.dart';
+import '../empresas/presentation/mi_empresa_screen.dart';
 import '../licencia/domain/licencia.dart';
 import '../licencia/presentation/aviso_licencia.dart';
 import 'modulo_screen.dart';
@@ -31,15 +33,42 @@ class HomePage extends StatelessWidget {
   /// muestra un aviso (spec 001, T014).
   final bool datosGuardados;
 
-  static const List<_Modulo> _todosLosModulos = <_Modulo>[
-    _Modulo('Catálogo', Icons.inventory_2_outlined, Permiso.catalogoVer),
-    _Modulo('Clientes', Icons.people_outline, Permiso.clientesVer),
-    _Modulo('Ventas', Icons.point_of_sale_outlined, Permiso.ventasVer),
-    _Modulo('Inventario', Icons.warehouse_outlined, Permiso.inventarioVer),
-    _Modulo('Caja', Icons.account_balance_wallet_outlined, Permiso.cajaVer),
-    _Modulo('Reportes', Icons.bar_chart_outlined, Permiso.reportesVer),
-    _Modulo('Logs de errores', Icons.bug_report_outlined, Permiso.logsVer),
-  ];
+  /// Módulos disponibles según el usuario (permisos y empresa).
+  static List<_Modulo> _modulosDe(Usuario usuario) {
+    final modulos = <_Modulo>[
+      _Modulo('Catálogo', Icons.inventory_2_outlined, Permiso.catalogoVer),
+      _Modulo('Clientes', Icons.people_outline, Permiso.clientesVer),
+      _Modulo('Ventas', Icons.point_of_sale_outlined, Permiso.ventasVer),
+      _Modulo('Inventario', Icons.warehouse_outlined, Permiso.inventarioVer),
+      _Modulo('Caja', Icons.account_balance_wallet_outlined, Permiso.cajaVer),
+      _Modulo('Reportes', Icons.bar_chart_outlined, Permiso.reportesVer),
+      _Modulo(
+        'Empresas',
+        Icons.business_outlined,
+        Permiso.empresasGestionar,
+        constructor: (_, _) => const EmpresasListScreen(),
+      ),
+      _Modulo('Logs de errores', Icons.bug_report_outlined, Permiso.logsVer),
+    ];
+
+    final empresaId = usuario.empresaId;
+    if (empresaId != null && empresaId.isNotEmpty) {
+      modulos.insert(
+        6,
+        _Modulo(
+          'Mi empresa',
+          Icons.store_outlined,
+          Permiso.parametrosEditar,
+          constructor: (_, _) =>
+              MiEmpresaScreen(empresaId: empresaId),
+        ),
+      );
+    }
+
+    return modulos
+        .where((m) => usuario.puede(m.permiso))
+        .toList(growable: false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +76,7 @@ class HomePage extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     // Solo los modulos para los que el usuario tiene permiso.
-    final modulos = _todosLosModulos
-        .where((m) => usuario.puede(m.permiso))
-        .toList(growable: false);
+    final modulos = _modulosDe(usuario);
 
     return Scaffold(
       appBar: AppBar(
@@ -102,11 +129,13 @@ class HomePage extends StatelessWidget {
                         context,
                         usuario: usuario,
                         permiso: m.permiso,
-                        constructor: (_) => ModuloScreen(
-                          nombre: m.nombre,
-                          icono: m.icono,
-                          permiso: m.permiso,
-                        ),
+                        constructor: (ctx) =>
+                            m.constructor?.call(ctx, usuario) ??
+                            ModuloScreen(
+                              nombre: m.nombre,
+                              icono: m.icono,
+                              permiso: m.permiso,
+                            ),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -260,9 +289,12 @@ class _TarjetaRoles extends StatelessWidget {
 }
 
 class _Modulo {
-  const _Modulo(this.nombre, this.icono, this.permiso);
+  const _Modulo(this.nombre, this.icono, this.permiso, {this.constructor});
 
   final String nombre;
   final IconData icono;
   final Permiso permiso;
+
+  /// Pantalla real del módulo. Si es `null`, se muestra [ModuloScreen].
+  final Widget Function(BuildContext, Usuario)? constructor;
 }

@@ -7,16 +7,26 @@
 ///   configurados (`diasAvisoVencimiento`, por defecto 5).
 library;
 
-/// Estado de una empresa.
+/// Estado de una empresa (spec 001 y spec 002).
+///
+/// `eliminada` y `creacionIncompleta` llegan con la gestion de empresas
+/// (spec 002): la eliminacion es logica (RN-08) y `creacion_incompleta` marca
+/// una empresa cuyo alta no termino (por ejemplo, sin administrador).
 enum EstadoEmpresa {
   activa('activa', 'Activa'),
   suspendida('suspendida', 'Suspendida'),
-  prueba('prueba', 'En prueba');
+  prueba('prueba', 'En prueba'),
+  eliminada('eliminada', 'Eliminada'),
+  creacionIncompleta('creacion_incompleta', 'Creación incompleta');
 
   const EstadoEmpresa(this.id, this.nombre);
 
   final String id;
   final String nombre;
+
+  /// Si la empresa no debe permitir el ingreso de sus usuarios (RN-05).
+  bool get bloqueaElIngreso =>
+      this == EstadoEmpresa.suspendida || this == EstadoEmpresa.eliminada;
 
   /// Interpreta el `estado` guardado en Firestore (por defecto `activa`).
   static EstadoEmpresa desdeId(String? id) {
@@ -67,6 +77,9 @@ class EstadoLicencia {
     if (estado == EstadoEmpresa.suspendida) {
       return 'La empresa está suspendida.';
     }
+    if (estado == EstadoEmpresa.eliminada) {
+      return 'La empresa ya no está disponible.';
+    }
     if (diasRestantes != null && diasRestantes! < 0) {
       return 'La licencia está vencida.';
     }
@@ -96,7 +109,7 @@ class EstadoLicencia {
     final diasRestantes = fechaFin == null ? null : _diasEntre(hoy, fechaFin);
 
     var vigente = true;
-    if (estado == EstadoEmpresa.suspendida) vigente = false;
+    if (estado.bloqueaElIngreso) vigente = false;
     if (diasRestantes != null && diasRestantes < 0) vigente = false;
 
     return EstadoLicencia(

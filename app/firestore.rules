@@ -2,9 +2,6 @@ rules_version = '2';
 
 // Reglas de Firestore - Aplicativo de Ventas (multitenant).
 // Ver specs 001 (autenticacion y roles) y 002 (empresas).
-//
-// NOTA: el flujo completo de administracion de usuarios y empresas llega con
-// la spec 002. Aqui ya se aplica control por rol y por `empresaId`.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -36,6 +33,11 @@ service cloud.firestore {
       return esDeEmpresa(empresaId) && roles().hasAny(['administrador', 'developer']);
     }
 
+    // Permite solo modificar los campos indicados (update parcial controlado).
+    function soloCambiaCampos(permitidos) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(permitidos);
+    }
+
     // Perfil de usuario.
     match /usuarios/{uid} {
       // Cada quien lee su perfil; el Super Admin y los administradores de la
@@ -47,10 +49,17 @@ service cloud.firestore {
             && roles().hasAny(['administrador']))
       );
 
-      // Al registrarse, el usuario crea SU documento y no puede suplantar a otro.
-      allow create: if autenticado()
-        && request.auth.uid == uid
-        && request.resource.data.uid == uid;
+      // Al registrarse, el usuario crea SU documento y no puede suplantar a
+      // otro. El Super Admin puede crear el perfil de un administrador de
+      // empresa (spec 002, RF-03).
+      allow create: if autenticado() && (
+        (request.auth.uid == uid && request.resource.data.uid == uid)
+        || (esSuperAdmin()
+            && request.resource.data.uid == uid
+            && request.resource.data.roles is list
+            && request.resource.data.empresaId is string
+            && request.resource.data.activo is bool)
+      );
 
       allow update: if
         // 1) El propio usuario edita sus datos, pero NO sus privilegios.
@@ -71,10 +80,35 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Empresas: por ahora solo lectura para usuarios autenticados.
+    // Empresas (tenants). Ver spec 002.
+    // - Lectura: el Super Admin (todas) o cualquier usuario de la empresa.
+    // - Alta/baja: solo el Super Admin (la baja es logica: estado=eliminada).
+    // - Edicion: el Super Admin, o el Administrador de la empresa pero solo
+    //   sobre logo, parametros y correo de notificacion (RF-06, RF-04).
     match /empresas/{empresaId} {
+      allow read: if autenticado() && (esSuperAdmin() || esDeEmpresa(empresaId));
+
+      allow create, delete: if esSuperAdmin();
+
+      allow update: if esSuperAdmin()
+        || (esDeEmpresa(empresaId)
+            && roles().hasAny(['administrador'])
+            && soloCambiaCampos(['logo', 'logoAncho', 'logoAlto', 'parametros', 'correoNotificacion']));
+    }
+
+    // Planes comerciales y sus limites (RF-11).
+    match /planes/{planId} {
       allow read: if autenticado();
-      allow write: if false;
+      allow write: if esSuperAdmin();
+    }
+
+    // Notificaciones in-app de licencia (RF-13).
+    match /notificaciones/{notificacionId} {
+      allow read: if esSuperAdmin() || esDeEmpresa(resource.data.empresaId);
+      allow create: if esSuperAdmin();
+      allow update: if esDeEmpresa(resource.data.empresaId)
+        && soloCambiaCampos(['leida']);
+      allow delete: if false;
     }
 
     // Auditoria: solo se puede AGREGAR (nunca editar ni borrar). Ver spec 001,
@@ -94,7 +128,8 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Todo lo demas queda denegado por defecto.
+    // Todo lo demas queda denegado por defecto (incluye `mail`: solo lo escribe
+    // la Cloud Function con privilegios de administrador).
     match /{document=**} {
       allow read, write: if false;
     }

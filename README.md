@@ -19,6 +19,7 @@ se deriva de ella.
 - [Arquitectura](#arquitectura)
 - [Seguridad: roles, permisos y multi-tenant](#seguridad-roles-permisos-y-multi-tenant)
 - [Licencias](#licencias)
+- [Gestión de empresas (multi-tenant)](#gestión-de-empresas-multi-tenant)
 - [Auditoría](#auditoría)
 - [Funcionamiento sin conexión](#funcionamiento-sin-conexión)
 - [Base de datos](#base-de-datos)
@@ -31,6 +32,8 @@ se deriva de ella.
 ## Estado del proyecto
 
 **Spec 001 — Autenticación y Roles:** implementada y verificada.
+**Spec 002 — Gestión de Empresas:** implementada (Cloud Functions y Storage
+pendientes de desplegar con el plan Blaze).
 
 | Funcionalidad | Estado |
 |---|---|
@@ -43,10 +46,14 @@ se deriva de ella.
 | Auditoría de cambios de usuarios y roles | ✅ |
 | Caché de sesión para uso sin conexión | ✅ |
 | Reglas de Firestore por rol y `empresaId` | ✅ |
-| Interfaz de administración de usuarios | ⏳ spec 002 |
+| Listado, creación y detalle de empresas (Super Admin) | ✅ |
+| Licencia, plan, renovación y suspensión | ✅ |
+| Tablero de vencimientos | ✅ |
+| Logo de la empresa y "Mi empresa" (Administrador) | ✅ código · ⏳ Storage |
+| Interfaz de administración de usuarios | ⏳ spec 001 (CA-06) |
 | Cloud Functions desplegadas | ⏳ requiere plan Blaze |
 
-Las demás especificaciones (002 a 015) están definidas y pendientes de
+Las demás especificaciones (003 a 015) están definidas y pendientes de
 implementación. Ver [`specs/`](./specs).
 
 ---
@@ -127,12 +134,14 @@ firebase deploy --only functions
     │   ├── features/         Módulos por funcionalidad
     │   │   ├── auth/         Sesión, roles, permisos, caché
     │   │   ├── auditoria/    Registro de cambios
+    │   │   ├── empresas/     Empresas, licencias, planes, logo
     │   │   ├── home/         Pantalla de inicio
     │   │   └── licencia/     Validación y bloqueo por licencia
     │   ├── firebase_options.dart
     │   └── main.dart
     ├── test/                 Pruebas
-    └── firestore.rules       Reglas de seguridad
+    ├── firestore.rules       Reglas de seguridad
+    └── storage.rules         Reglas del logo en Storage
 ```
 
 Cada `feature` sigue la estructura `data/` (acceso a datos), `domain/`
@@ -246,6 +255,32 @@ Si nada responde, se bloquea el ingreso (*fail-closed*).
 
 ---
 
+## Gestión de empresas (multi-tenant)
+
+Solo el **Super Admin** administra las empresas. Desde su panel puede:
+
+- **Crear** una empresa definiendo su licencia (mensual/anual), su plan y su logo;
+  se crean automáticamente su **Administrador** y sus **parámetros por defecto**.
+- **Editar**, **renovar**, **suspender** y **reactivar** empresas.
+- Ver el **tablero de vencimientos**: activas, por vencer, vencidas, suspendidas,
+  en prueba y eliminadas.
+
+El **Administrador** de cada empresa dispone del módulo **"Mi empresa"**, donde
+actualiza su logo y sus parámetros (márgenes, costo de envío, tema), pero no
+gestiona otras empresas.
+
+Al crear una empresa se ejecuta la Cloud Function `crearEmpresa` (Admin SDK),
+que en una sola operación crea el documento de la empresa, el usuario
+Administrador y sus *custom claims*.
+
+> **Respaldo local (ADR-005).** Mientras el proyecto no esté en el plan Blaze, la
+> creación se hace desde el cliente con una **instancia secundaria de Firebase**
+> (para no cerrar la sesión del Super Admin): la empresa nace en
+> `creacion_incompleta` y pasa a `activa`/`prueba` al terminar. Al desplegar la
+> Cloud Function, esta pasa a mandar; el respaldo queda solo como contingencia.
+
+---
+
 ## Auditoría
 
 Toda escritura relevante (INSERT/UPDATE/DELETE) se registra en la colección
@@ -284,14 +319,18 @@ Firestore (NoSQL, con soporte offline).
 
 | Colección | Descripción |
 |---|---|
-| `empresas/{empresaId}` | Datos de la empresa, estado, licencia y parámetros. |
+| `empresas/{empresaId}` | Datos de la empresa, estado, licencia, parámetros y límites. |
 | `usuarios/{uid}` | Perfil, `empresaId`, `roles[]`. |
+| `planes/{planId}` | Límites y valor por plan (gratis, básico, premium). |
+| `notificaciones/{id}` | Avisos de vencimiento dentro de la app. |
+| `mail/{id}` | Correos pendientes (extensión *Trigger Email*). |
 | `_auditoria/{id}` | Registro de cambios (solo inserción). |
 | `roles/{rolId}` | Reservada para roles personalizados por empresa. |
 
-Las reglas de seguridad están en `app/firestore.rules` y se despliegan con
-Firebase CLI. El detalle de campos está en
-`specs/001-autenticacion-roles/data-model.md`.
+Las reglas de seguridad están en `app/firestore.rules` (y `app/storage.rules`
+para el logo) y se despliegan con Firebase CLI. El detalle de campos está en
+`specs/001-autenticacion-roles/data-model.md` y
+`specs/002-gestion-empresas/data-model.md`.
 
 ---
 
@@ -324,12 +363,14 @@ Cada carpeta contiene `spec.md`, `plan.md` y `tasks.md`.
 ```bash
 cd app
 flutter analyze   # sin errores
-flutter test      # 68 pruebas
+flutter test      # 103 pruebas
 ```
 
-Las pruebas cubren: permisos y unión de roles, cálculo de la licencia, pantallas
-de licencia y acceso denegado, guardas de navegación, caché de sesión,
-clasificación de errores de red y el registro de auditoría.
+Las pruebas cubren: permisos y unión de roles, cálculo de la licencia (incluido
+el de las empresas), pantallas de licencia y acceso denegado, guardas de
+navegación, caché de sesión, clasificación de errores de red, el registro de
+auditoría, y el dominio e interfaz de la gestión de empresas (validaciones del
+formulario, resumen de vencimientos y validación del logo).
 
 Además, las **reglas de Firestore se verifican con ID tokens reales** (no con el
 token de administrador, que las ignora). Se comprueba, entre otras cosas, que un

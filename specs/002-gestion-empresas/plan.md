@@ -2,7 +2,7 @@
 
 - **ID:** 002 | **Spec:** [`spec.md`](./spec.md)
 - **Fecha:** 2026-10-14
-- **Estado:** Borrador
+- **Estado:** Implementado (Cloud Functions y Storage pendientes de desplegar con Blaze)
 
 ---
 
@@ -107,3 +107,14 @@ match /empresas/{empresaId}/logo.png {
 - **ADR-002:** Avisos de vencimiento con **Cloud Scheduler** diario (una sola ejecución).
 - **ADR-003:** Eliminación **lógica** (`estado = eliminada`) para conservar datos y auditoría.
 - **ADR-004:** Guardar `logoAncho`/`logoAlto` para renderizar sin deformar.
+- **ADR-005:** **Respaldo local temporal** de `crearEmpresa`. Mientras el proyecto no esté en
+  Blaze, el cliente crea la empresa y su Administrador usando una **instancia secundaria** de
+  Firebase (`Firebase.initializeApp(name: ...)`), de modo que no se cierra la sesión del Super
+  Admin. La empresa nace en `creacion_incompleta` y pasa a `activa`/`prueba` al terminar; así un
+  fallo deja un estado recuperable. Al desplegar la Cloud Function, esta pasa a mandar y el
+  respaldo queda solo como contingencia sin conexión.
+
+## 11. Estado de la Implementación
+
+Ver [`spec.md`](./spec.md) §12 y §13 (código, verificación y criterios de aceptación).
+

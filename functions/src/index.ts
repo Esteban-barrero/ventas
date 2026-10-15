@@ -4,6 +4,9 @@ import {HttpsError, onCall} from 'firebase-functions/v2/https';
 
 admin.initializeApp();
 
+export {crearEmpresa, actualizarLicencia, cambiarEstadoEmpresa} from './empresas.js';
+export {notificarVencimientos} from './notificaciones.js';
+
 export const onUsuarioEscrito = onDocumentWritten(
   'usuarios/{uid}',
   async (event) => {

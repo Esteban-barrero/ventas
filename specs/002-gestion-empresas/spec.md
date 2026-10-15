@@ -2,7 +2,7 @@
 
 - **ID:** 002 | **Carpeta:** `specs/002-gestion-empresas/`
 - **Fecha:** 2026-10-14
-- **Estado:** Borrador
+- **Estado:** Aprobado · implementado (Cloud Functions y Storage pendientes de desplegar con Blaze)
 - **Responsable:** Esteban Barrero
 
 ---
@@ -105,3 +105,55 @@ múltiples empresas con datos totalmente separados.
 ## 11. Dependencias
 
 - Funcionalidad 001 (Autenticación y Roles) para crear el Administrador y sus claims.
+
+---
+
+## 12. Estado de Implementación (2026-10-14)
+
+### Código
+
+| Pieza | Archivo |
+|---|---|
+| Entidades | `app/lib/features/empresas/domain/` (`empresa.dart`, `licencia.dart`, `plan.dart`, `parametros_empresa.dart`, `resumen_empresas.dart`) |
+| Datos | `app/lib/features/empresas/data/` (`empresas_repository.dart`, `planes_repository.dart`, `almacenamiento_repository.dart`, `crear_empresa_local.dart`) |
+| Interfaz | `app/lib/features/empresas/presentation/` (listado, formulario, detalle, tablero, "Mi empresa") |
+| Cloud Functions | `functions/src/empresas.ts`, `functions/src/notificaciones.ts`, `functions/src/comun.ts` |
+| Reglas | `app/firestore.rules` (desplegadas), `app/storage.rules` (escritas) |
+
+### Decisiones aplicadas
+
+- **ADR-001** (Admin SDK): la vía principal es la Cloud Function `crearEmpresa`.
+- **ADR-002** (Cloud Scheduler): `notificarVencimientos` corre a diario (8:00, America/Bogota).
+- **ADR-003** (borrado lógico): `estado = eliminada`; nunca se borra el documento.
+- **ADR-004** (`logoAncho`/`logoAlto`): se leen con `ui.instantiateImageCodec` y se guardan.
+- **ADR-005** (respaldo local): mientras Blaze no esté activo, el cliente crea la empresa y
+  su administrador con una instancia secundaria de Firebase; la Cloud Function queda como
+  vía autoritativa al desplegarse.
+
+### Verificación
+
+- `flutter analyze`: **sin errores**.
+- `flutter test`: **103 pruebas pasando** (35 nuevas de esta spec: licencia, empresa,
+  resumen, validaciones y formulario).
+- `firebase deploy --only firestore:rules`: **desplegado** correctamente.
+- Compilación de Cloud Functions (`npm run build`): **sin errores**.
+
+### Pendiente (bloqueado por el plan Blaze)
+
+- Desplegar `functions` y crear el bucket + desplegar `app/storage.rules`.
+- Prueba de integración T042 contra las Functions reales.
+
+## 13. Verificación de Criterios de Aceptación
+
+| CA | Descripción | Estado |
+|---|---|---|
+| CA-01 | El Super Admin puede crear una empresa con licencia y logo | ✅ Implementado (UI + repositorio). La subida real del logo requiere Storage (Blaze). |
+| CA-02 | Al crear la empresa se crea su Administrador automáticamente | ✅ Implementado (Cloud Function + respaldo local). |
+| CA-03 | La empresa nueva queda con parámetros por defecto | ✅ `ParametrosEmpresa.porDefecto` (márgenes, envío, tema). |
+| CA-04 | El Administrador puede subir su logo y verlo | ⏳ Pantalla "Mi empresa" lista; falta Storage (Blaze) para la subida real. |
+| CA-05 | El Super Admin puede renovar/suspender/reactivar | ✅ `renovar` / `cambiarEstado` + UI en el detalle. |
+| CA-06 | El tablero muestra activas, por vencer y vencidas | ✅ `TableroVencimientosScreen` + `ResumenEmpresas`. |
+| CA-07 | Los avisos llegan por correo y en la app | ⏳ `notificarVencimientos` escrito (in-app + colección `mail`); requiere Blaze + extensión de correo. |
+| CA-08 | Una empresa con licencia vencida bloquea el ingreso | ✅ Cubierto por la spec 001 (`EstadoLicencia`); se añadieron los estados `eliminada` y `creacion_incompleta`. |
+| CA-09 | Ninguna empresa puede ver datos de otra | ✅ Reglas de Firestore por `empresaId` (desplegadas). Verificado con tokens reales en la spec 001. |
+
