@@ -16,7 +16,10 @@ Future<void> _montar(WidgetTester tester, Widget child) async {
 }
 
 void main() {
-  testWidgets('LicenciaBloqueadaScreen muestra motivo, días y contacto',
+  const String mensajeAmable =
+      'Comunícate con tu proveedor para renovarla y recuperar el acceso.';
+
+  testWidgets('LicenciaBloqueadaScreen muestra mensaje amable, días y contacto',
       (WidgetTester tester) async {
     const estado = EstadoLicencia(
       vigente: false,
@@ -31,14 +34,15 @@ void main() {
       LicenciaBloqueadaScreen(estado: estado, onCerrarSesion: _dummy),
     );
 
-    expect(find.text('Licencia vencida'), findsOneWidget);
-    expect(find.text('La licencia está vencida.'), findsOneWidget);
+    expect(find.text('Tu licencia se ha agotado'), findsOneWidget);
+    expect(find.text(mensajeAmable), findsOneWidget);
     expect(find.text('soporte@ventasapp.com / +57 300 000 0000'), findsOneWidget);
-    expect(find.text('vencida hace 4 día(s)'), findsOneWidget);
+    expect(find.text('Vencida hace'), findsOneWidget);
+    expect(find.text('4 día(s)'), findsOneWidget);
     expect(find.text('Cerrar sesión'), findsOneWidget);
   });
 
-  testWidgets('LicenciaBloqueadaScreen con empresa suspendida',
+  testWidgets('LicenciaBloqueadaScreen no menciona "suspendida" al usuario',
       (WidgetTester tester) async {
     const estado = EstadoLicencia(
       vigente: false,
@@ -52,8 +56,9 @@ void main() {
       LicenciaBloqueadaScreen(estado: estado, onCerrarSesion: _dummy),
     );
 
-    expect(find.text('Empresa suspendida'), findsOneWidget);
-    expect(find.text('La empresa está suspendida.'), findsOneWidget);
+    expect(find.text('Tu licencia se ha agotado'), findsOneWidget);
+    expect(find.text(mensajeAmable), findsOneWidget);
+    expect(find.textContaining('suspendida'), findsNothing);
     expect(find.text('No hay un contacto configurado.'), findsOneWidget);
   });
 
@@ -67,7 +72,7 @@ void main() {
       ),
     );
 
-    expect(find.text('No se pudo verificar la licencia'), findsOneWidget);
+    expect(find.text('No pudimos verificar tu licencia'), findsOneWidget);
     expect(
       find.text('No se pudo verificar la licencia.'),
       findsOneWidget,
