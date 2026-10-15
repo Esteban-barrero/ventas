@@ -24,14 +24,14 @@
 - [x] T020 Pantalla de login (correo/contraseña + Google)
 - [x] T021 Pantalla de recuperación de contraseña
 - [x] T022 Pantalla de "Licencia vencida" con datos de contacto del proveedor
-- [ ] T023 Guardas de navegación según permisos
+- [x] T023 Guardas de navegación según permisos
 
 ## Fase 4 — Seguridad y Auditoría
 
-- [ ] T030 Definir reglas de Firestore por rol y `empresaId`
+- [x] T030 Definir reglas de Firestore por rol y `empresaId`
 - [ ] T031 Cloud Function `validarLicencia`
 - [ ] T032 Cloud Function (trigger) para claims `empresaId` y `roles`
-- [ ] T033 Registrar auditoría en cambios de usuario y roles
+- [x] T033 Registrar auditoría en cambios de usuario y roles
 
 ## Fase 5 — Pruebas y Cierre
 

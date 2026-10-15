@@ -3,9 +3,8 @@ rules_version = '2';
 // Reglas de Firestore - Aplicativo de Ventas (multitenant).
 // Ver specs 001 (autenticacion y roles) y 002 (empresas).
 //
-// NOTA: en esta etapa inicial se permite que cada usuario cree/lea su propio
-// perfil. Se endureceran cuando exista el flujo de administracion de usuarios
-// y empresas (spec 002) y los custom claims (spec 001).
+// NOTA: el flujo completo de administracion de usuarios y empresas llega con
+// la spec 002. Aqui ya se aplica control por rol y por `empresaId`.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -13,17 +12,61 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Perfil de usuario: cada quien lee su propio documento.
+    // Perfil del usuario que hace la peticion.
+    function perfil() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function roles() {
+      return autenticado() && perfil().roles is list ? perfil().roles : [];
+    }
+
+    function esSuperAdmin() {
+      return autenticado() && roles().hasAny(['superadmin']);
+    }
+
+    function esDeEmpresa(empresaId) {
+      return autenticado()
+        && empresaId != null
+        && perfil().empresaId == empresaId;
+    }
+
+    // Gestiona (Administrador) o audita (Developer) una empresa.
+    function gestionaEmpresa(empresaId) {
+      return esDeEmpresa(empresaId) && roles().hasAny(['administrador', 'developer']);
+    }
+
+    // Perfil de usuario.
     match /usuarios/{uid} {
-      allow read: if autenticado() && request.auth.uid == uid;
+      // Cada quien lee su perfil; el Super Admin y los administradores de la
+      // empresa pueden leer los usuarios de SU empresa (CA-05, CA-08).
+      allow read: if autenticado() && (
+        request.auth.uid == uid
+        || esSuperAdmin()
+        || (esDeEmpresa(resource.data.empresaId)
+            && roles().hasAny(['administrador']))
+      );
 
       // Al registrarse, el usuario crea SU documento y no puede suplantar a otro.
       allow create: if autenticado()
         && request.auth.uid == uid
         && request.resource.data.uid == uid;
 
-      // Permite editar el propio perfil (temporal, hasta el flujo de usuarios).
-      allow update: if autenticado() && request.auth.uid == uid;
+      allow update: if
+        // 1) El propio usuario edita sus datos, pero NO sus privilegios.
+        (autenticado()
+          && request.auth.uid == uid
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.roles == resource.data.roles
+          && request.resource.data.empresaId == resource.data.empresaId
+          && request.resource.data.activo == resource.data.activo)
+        // 2) El Super Admin, o el Administrador con los usuarios de su propia
+        //    empresa (no puede moverlos a otra empresa).
+        || (esSuperAdmin())
+        || (esDeEmpresa(resource.data.empresaId)
+            && roles().hasAny(['administrador'])
+            && request.resource.data.uid == resource.data.uid
+            && request.resource.data.empresaId == resource.data.empresaId);
 
       allow delete: if false;
     }
@@ -32,6 +75,23 @@ service cloud.firestore {
     match /empresas/{empresaId} {
       allow read: if autenticado();
       allow write: if false;
+    }
+
+    // Auditoria: solo se puede AGREGAR (nunca editar ni borrar). Ver spec 001,
+    // RF-11. La lectura queda para el Super Admin y para quien gestiona la
+    // empresa (Administrador / Developer) de la misma empresa.
+    match /_auditoria/{registroId} {
+      allow create: if autenticado()
+        && request.resource.data.usuario == request.auth.uid
+        && request.resource.data.empresaId is string
+        && request.resource.data.tabla is string
+        && request.resource.data.documentoId is string
+        && request.resource.data.operacion in ['INSERT', 'UPDATE', 'DELETE']
+        && request.resource.data.fecha == request.time;
+
+      allow read: if esSuperAdmin() || gestionaEmpresa(resource.data.empresaId);
+
+      allow update, delete: if false;
     }
 
     // Todo lo demas queda denegado por defecto.
