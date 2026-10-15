@@ -518,21 +518,46 @@ git push -f origin main                             # 3) reemplazar el snapshot
 > de `/tmp`. El `git push -f` es intencional: el repo core tiene un historial
 > independiente y se reemplaza por la nueva foto.
 
-### Respaldo de datos (Firestore)
+### Respaldo de datos
 
-El código vive en GitHub; los **datos** de Firestore se respaldan con una
-exportación administrada a un bucket:
+El código vive en GitHub; los **datos** se respaldan en **tres capas**. El bucket
+de respaldo (`aplicativo-de-ventas-backups`) debe estar en **`southamerica-east1`**,
+la misma región de la base de datos.
+
+**Firestore** (documentos de `empresas`, `usuarios`, `planes`, `_auditoria`, …):
 
 ```bash
 gcloud firestore export gs://aplicativo-de-ventas-backups/firestore/<fecha>
-```
-
-El bucket de respaldo (`aplicativo-de-ventas-backups`) debe estar en
-**`southamerica-east1`**, la misma región de la base de datos. Para restaurar:
-
-```bash
+# restaurar
 gcloud firestore import gs://aplicativo-de-ventas-backups/firestore/<fecha>
 ```
 
-> Los usuarios de **Authentication** y los archivos de **Storage** se respaldan
-> aparte (no van en la exportación de Firestore).
+**Authentication** (usuarios, proveedores y *custom claims*):
+
+```bash
+# Requiere Firebase CLI
+firebase auth:export auth_usuarios_<fecha>.json --format=json
+# restaurar
+firebase auth:import auth_usuarios_<fecha>.json
+```
+
+> El archivo contiene datos sensibles (UIDs, correos, *claims*); por eso
+> `auth_usuarios*.json` está en `.gitignore` y **nunca** se sube al repositorio.
+> Sin Firebase CLI también se pueden listar con el Admin SDK
+> (`admin.auth().listUsers()`).
+
+**Storage** (archivos, p. ej. `empresas/{id}/logo.png`):
+
+```bash
+gcloud storage rsync -r \
+  gs://aplicativo-de-ventas-d8bcd.firebasestorage.app \
+  gs://aplicativo-de-ventas-backups/storage
+# restaurar (se invierten origen y destino)
+gcloud storage rsync -r \
+  gs://aplicativo-de-ventas-backups/storage \
+  gs://aplicativo-de-ventas-d8bcd.firebasestorage.app
+```
+
+> `gcloud` y `firebase` vienen del **Google Cloud SDK** y la **Firebase CLI**.
+> La exportación de Firestore respalda los **documentos**; los archivos y los
+> usuarios van aparte, como se muestra arriba.

@@ -23,6 +23,10 @@ node_modules/
 *.keystore
 key.properties
 
+# Respaldos y exportaciones de datos (NO subir: datos sensibles)
+auth_usuarios*.json
+backups/
+
 # Nota: google-services.json / GoogleService-Info.plist SI se versionan.
 # Son identificadores publicos del cliente (la seguridad va en las reglas
 # de Firestore/Storage y en Authentication), y el plugin de Gradle de
