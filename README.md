@@ -489,6 +489,50 @@ empresa.
   función se documentan con comentarios claros en **español** (docstrings `///`
   en Dart, JSDoc en TypeScript). Forma parte del Definition of Done.
 
-## Repositorio
+## Repositorios y respaldos
 
-- GitHub: <https://github.com/Esteban-barrero/ventas>
+- **Principal:** <https://github.com/Esteban-barrero/ventas> — historial completo.
+- **Core (snapshot):** <https://github.com/Esteban-barrero/proyecto_core> — foto
+  única del estado actual, sin historial (ver abajo).
+
+### Repositorio `core` (snapshot)
+
+`proyecto_core` es un espejo con **un solo commit**: solo los archivos
+**versionados** (código, specs, documentación y configuración). No incluye el
+historial de commits, ni artefactos locales (`build/`, `.dart_tool/`), ni
+archivos sin trackear.
+
+Se regenera desde la raíz del repositorio principal:
+
+```bash
+git archive --format=tar -o /tmp/core.tar HEAD      # 1) exportar lo versionado
+mkdir /tmp/core && tar -xf /tmp/core.tar -C /tmp/core
+cd /tmp/core
+git init && git branch -M main && git add -A        # 2) repo nuevo, un commit
+git commit -m "Snapshot del core (<fecha>)"
+git remote add origin https://github.com/Esteban-barrero/proyecto_core.git
+git push -f origin main                             # 3) reemplazar el snapshot
+```
+
+> En Windows: usa `tar -xf` (incluido en Win10+) y una carpeta temporal en lugar
+> de `/tmp`. El `git push -f` es intencional: el repo core tiene un historial
+> independiente y se reemplaza por la nueva foto.
+
+### Respaldo de datos (Firestore)
+
+El código vive en GitHub; los **datos** de Firestore se respaldan con una
+exportación administrada a un bucket:
+
+```bash
+gcloud firestore export gs://aplicativo-de-ventas-backups/firestore/<fecha>
+```
+
+El bucket de respaldo (`aplicativo-de-ventas-backups`) debe estar en
+**`southamerica-east1`**, la misma región de la base de datos. Para restaurar:
+
+```bash
+gcloud firestore import gs://aplicativo-de-ventas-backups/firestore/<fecha>
+```
+
+> Los usuarios de **Authentication** y los archivos de **Storage** se respaldan
+> aparte (no van en la exportación de Firestore).
