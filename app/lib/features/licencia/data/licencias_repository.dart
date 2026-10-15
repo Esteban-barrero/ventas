@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/firebase/errores.dart';
 import '../../auth/data/cache_sesion.dart';
@@ -40,6 +41,16 @@ class LicenciasRepository {
 
   /// Valida la licencia de la empresa y decide si se permite el ingreso.
   Future<ResultadoLicencia> validar(String empresaId) async {
+    // Refresca el ID token antes de llamar a la funcion: esta autoriza segun
+    // los custom claims `empresaId`/`roles` del token, y un token viejo (por
+    // ejemplo si los claims se fijaron despues del ultimo ingreso) haria que la
+    // funcion respondiera 403. Mismo criterio que al subir el logo (spec 002).
+    try {
+      await FirebaseAuth.instance.currentUser?.getIdTokenResult(true);
+    } catch (_) {
+      // Si no se puede refrescar, se intenta validar de todos modos.
+    }
+
     try {
       final callable = _functions.httpsCallable('validarLicencia');
       final respuesta = await callable.call(<String, dynamic>{
