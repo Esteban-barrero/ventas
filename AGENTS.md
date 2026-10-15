@@ -52,6 +52,13 @@ La documentación de requerimientos está en:
     compilar. La seguridad real está en las reglas de Firestore/Storage y en
     Authentication. Ver la nota en `.gitignore` y en el `README.md`.
 - **No romper el funcionamiento offline** (Firestore sincroniza al recuperar conexión).
+- **Documentación del código (constitución, Principio 11):** todo método
+  (público o privado), clase, función y campo relevante debe quedar
+  **comentado** con claridad y en **español**, indicando qué hace, sus
+  parámetros, su valor de retorno y la spec/RF/RN/ADR que lo respalda. En Dart
+  se usan docstrings `///` en las APIs públicas y comentarios inline `//` en los
+  métodos privados; en TypeScript, JSDoc `/** ... */`. Ninguna tarea se considera
+  terminada sin la documentación del código.
 
 ---
 
@@ -62,6 +69,8 @@ La documentación de requerimientos está en:
 - **Idioma:** identificadores en inglés, comentarios y documentación en **español**.
 - **Estructura Flutter:** `lib/features/<feature>/{data,domain,presentation}`.
 - **Tests:** cada funcionalidad debe incluir pruebas.
+- **Documentación del código:** cada método y clase se comenta en español
+  (Principio 11); es parte del Definition of Done.
 
 ---
 
@@ -82,6 +91,7 @@ flutter build apk
 1. Leer `spec.md` y `plan.md` de la funcionalidad.
 2. Implementar **tarea por tarea** de `tasks.md`.
 3. Marcar cada tarea como completada.
-4. Ejecutar `flutter analyze` y `flutter test`.
-5. Hacer commit y push.
-6. Actualizar la documentación si aplica.
+4. **Documentar** cada método y clase en español (Principio 11).
+5. Ejecutar `flutter analyze` y `flutter test`.
+6. Hacer commit y push.
+7. Actualizar la documentación si aplica.

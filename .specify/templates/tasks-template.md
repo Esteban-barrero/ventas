@@ -33,7 +33,8 @@
 - [ ] T040 Escribir pruebas unitarias
 - [ ] T041 Escribir pruebas de widget
 - [ ] T042 Ejecutar `flutter analyze` y `flutter test`
-- [ ] T043 Actualizar documentación
+- [ ] T043 Documentar los métodos y clases (Principio 11)
+- [ ] T044 Actualizar la documentación
 
 ---
 
@@ -43,4 +44,5 @@
 - [ ] `flutter analyze` sin errores
 - [ ] Pruebas pasando
 - [ ] Auditoría y RBAC verificados
+- [ ] Código documentado: cada método y clase comentado en español (Principio 11)
 - [ ] Commit y push realizados

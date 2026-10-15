@@ -448,6 +448,17 @@ empresa.
 - **Sin pasarela de pago**: por ahora la renovación de licencias es manual.
 - **Jerarquía de la fuente de verdad**: `constitución` → `spec.md` → `plan.md` →
   `tasks.md` → documento de requerimientos.
+- **Custom claims y licencia (2026-10-15):** la Cloud Function `validarLicencia`
+  autoriza comparando el `empresaId` solicitado con el **custom claim**
+  `empresaId` del ID token. Si el token no trae los claims —por ejemplo, en
+  cuentas o empresas creadas con el **respaldo local** antes de desplegar las
+  Functions— la función responde `403` y la app muestra «No pudimos verificar tu
+  licencia». Solución: los claims deben existir (los asigna el trigger
+  `onUsuarioEscrito` al escribir `usuarios/{uid}`) y la app **refresca el ID
+  token** antes de validar la licencia.
+- **Documentación del código (constitución, Principio 11):** todo método, clase y
+  función se documentan con comentarios claros en **español** (docstrings `///`
+  en Dart, JSDoc en TypeScript). Forma parte del Definition of Done.
 
 ## Repositorio
 

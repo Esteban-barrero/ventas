@@ -1,7 +1,7 @@
 # Constitución del Proyecto — Aplicativo de Ventas
 
 > Principios no negociables. Todo agente o desarrollador debe respetarlos.
-> Versión: 1.0.0 | Fecha: Octubre 2026
+> Versión: 1.1.0 | Fecha: Octubre 2026
 
 ---
 
@@ -59,8 +59,35 @@ Nunca se suben secretos ni credenciales al repositorio.
 - Pruebas para cada funcionalidad.
 - Commits frecuentes y descriptivos.
 
+## Principio 11 — Código documentado para soporte futuro
+
+Todo el código debe quedar **documentado y comentado** para facilitar el
+mantenimiento y el soporte futuro. Ninguna unidad de código se considera
+terminada si no está documentada.
+
+- **Todo método** (público o privado), clase, función y campo relevante lleva un
+  comentario claro en **español** que explique **qué hace**, sus **parámetros**,
+  su **valor de retorno** y, cuando aplique, la **spec / RF / RN / ADR** que lo
+  respalda.
+- En **Dart** se usa **docstring** (`///`) en las APIs públicas (repositorios,
+  dominio, widgets) y comentarios inline (`//`) en los métodos privados y en los
+  bloques no obvios, explicando el **por qué** y no solo el qué.
+- En **TypeScript** cada función exportada lleva **JSDoc** (`/** ... */`).
+- Los comentarios describen la intención y las reglas de negocio; no repiten lo
+  que el código ya dice de forma evidente.
+- Se documentan especialmente los **casos borde** y las **razones** de las
+  decisiones (por ejemplo, por qué se refresca un token o por qué un fallo se
+  trata como *fail-closed*).
+- Esta regla forma parte del **Definition of Done** de cada `tasks.md`.
+
 ---
 
 ## Enmiendas
 
 Cualquier cambio a esta constitución debe documentarse aquí con fecha y motivo.
+
+- **2026-10-15 — v1.1.0:** se agrega el **Principio 11 — Código documentado
+  para soporte futuro**: todo método, clase y función deben quedar comentados de
+  forma clara y en español para facilitar el mantenimiento. Motivo: garantizar
+  que el equipo (presente o futuro) pueda dar soporte sin depender de
+  conocimiento tácito.
