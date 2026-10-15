@@ -23,6 +23,7 @@ void main() {
       uid: 'u1',
       nombre: 'Esteban Barrero',
       email: 'esteban@ejemplo.com',
+      empresaId: 'empresa-1',
       roles: <String>['administrador'],
     );
 
@@ -61,12 +62,39 @@ void main() {
     expect(find.text('Ventas'), findsNothing);
   });
 
+  testWidgets('Un Super Admin sin empresa no ve los módulos operativos',
+      (WidgetTester tester) async {
+    const usuario = Usuario(
+      uid: 'u8',
+      nombre: 'Super Admin',
+      email: 'super@ejemplo.com',
+      roles: <String>['superadmin'],
+    );
+
+    await _montar(
+      tester,
+      HomePage(usuario: usuario, onCerrarSesion: _dummy),
+    );
+
+    // Módulos globales visibles.
+    expect(find.text('Empresas'), findsOneWidget);
+    expect(find.text('Usuarios'), findsOneWidget);
+    expect(find.text('Logs de errores'), findsOneWidget);
+
+    // Módulos operativos ocultos: el Super Admin no pertenece a una empresa.
+    expect(find.text('Ventas'), findsNothing);
+    expect(find.text('Caja'), findsNothing);
+    expect(find.text('Catálogo'), findsNothing);
+    expect(find.text('Mi empresa'), findsNothing);
+  });
+
   testWidgets('HomePage muestra el aviso de licencia por vencer',
       (WidgetTester tester) async {
     const usuario = Usuario(
       uid: 'u3',
       nombre: 'Admin',
       email: 'admin@ejemplo.com',
+      empresaId: 'empresa-1',
       roles: <String>['administrador'],
     );
     const aviso = EstadoLicencia(
@@ -89,6 +117,7 @@ void main() {
       uid: 'u4',
       nombre: 'Admin',
       email: 'admin@ejemplo.com',
+      empresaId: 'empresa-1',
       roles: <String>['administrador'],
     );
 
@@ -106,6 +135,7 @@ void main() {
       uid: 'u5',
       nombre: 'Admin',
       email: 'admin@ejemplo.com',
+      empresaId: 'empresa-1',
       roles: <String>['administrador'],
     );
 
@@ -127,6 +157,7 @@ void main() {
       uid: 'u6',
       nombre: 'Admin',
       email: 'admin@ejemplo.com',
+      empresaId: 'empresa-1',
       roles: <String>['administrador'],
     );
 
@@ -145,6 +176,7 @@ void main() {
       uid: 'u7',
       nombre: 'Admin',
       email: 'admin@ejemplo.com',
+      empresaId: 'empresa-1',
       roles: <String>['administrador'],
     );
 

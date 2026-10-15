@@ -257,6 +257,12 @@ sus roles (`permisosDeRoles`). Un usuario puede tener varios roles, por ejemplo
 > La tabla se deriva de `app/lib/features/auth/domain/roles.dart`. Si cambia
 > ese archivo, actualice también esta tabla.
 
+> **Super Admin en el inicio:** aunque tiene todos los permisos, los módulos
+> *operativos* (Catálogo, Clientes, Ventas, Inventario, Caja, Reportes) solo se
+> muestran a usuarios que **pertenecen a una empresa**. Un Super Admin sin
+> empresa ve únicamente los módulos globales: **Empresas**, **Usuarios** y
+> **Logs de errores**.
+
 ### Guardas de navegación
 
 `app/lib/core/navegacion/guardia_permiso.dart` aplica doble barrera:

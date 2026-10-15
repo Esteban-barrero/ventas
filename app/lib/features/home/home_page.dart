@@ -37,21 +37,32 @@ class HomePage extends StatelessWidget {
   /// Módulos disponibles según el usuario (permisos y empresa).
   static List<_Modulo> _modulosDe(Usuario usuario) {
     final empresaId = usuario.empresaId;
+    final tieneEmpresa = empresaId != null && empresaId.isNotEmpty;
 
+    // Los módulos marcados con `requiereEmpresa` son **operativos de una
+    // empresa** (catálogo, ventas, caja, inventario...). El Super Admin no
+    // pertenece a ninguna empresa, por eso no se le muestran: solo ve los
+    // módulos globales (Empresas, Usuarios y Logs de errores).
     final modulos = <_Modulo>[
-      _Modulo('Catálogo', Icons.inventory_2_outlined, Permiso.catalogoVer),
-      _Modulo('Clientes', Icons.people_outline, Permiso.clientesVer),
-      _Modulo('Ventas', Icons.point_of_sale_outlined, Permiso.ventasVer),
-      _Modulo('Inventario', Icons.warehouse_outlined, Permiso.inventarioVer),
-      _Modulo('Caja', Icons.account_balance_wallet_outlined, Permiso.cajaVer),
-      _Modulo('Reportes', Icons.bar_chart_outlined, Permiso.reportesVer),
+      _Modulo('Catálogo', Icons.inventory_2_outlined, Permiso.catalogoVer,
+          requiereEmpresa: true),
+      _Modulo('Clientes', Icons.people_outline, Permiso.clientesVer,
+          requiereEmpresa: true),
+      _Modulo('Ventas', Icons.point_of_sale_outlined, Permiso.ventasVer,
+          requiereEmpresa: true),
+      _Modulo('Inventario', Icons.warehouse_outlined, Permiso.inventarioVer,
+          requiereEmpresa: true),
+      _Modulo('Caja', Icons.account_balance_wallet_outlined, Permiso.cajaVer,
+          requiereEmpresa: true),
+      _Modulo('Reportes', Icons.bar_chart_outlined, Permiso.reportesVer,
+          requiereEmpresa: true),
       _Modulo(
         'Usuarios',
         Icons.manage_accounts_outlined,
         Permiso.usuariosGestionar,
         constructor: (_, u) => UsuariosListScreen(usuario: u),
       ),
-      if (empresaId != null && empresaId.isNotEmpty)
+      if (tieneEmpresa)
         _Modulo(
           'Mi empresa',
           Icons.store_outlined,
@@ -68,7 +79,8 @@ class HomePage extends StatelessWidget {
     ];
 
     return modulos
-        .where((m) => usuario.puede(m.permiso))
+        .where((m) =>
+            usuario.puede(m.permiso) && (!m.requiereEmpresa || tieneEmpresa))
         .toList(growable: false);
   }
 
@@ -291,11 +303,16 @@ class _TarjetaRoles extends StatelessWidget {
 }
 
 class _Modulo {
-  const _Modulo(this.nombre, this.icono, this.permiso, {this.constructor});
+  const _Modulo(this.nombre, this.icono, this.permiso,
+      {this.constructor, this.requiereEmpresa = false});
 
   final String nombre;
   final IconData icono;
   final Permiso permiso;
+
+  /// `true` si el módulo es **operativo de una empresa** (ventas, caja,
+  /// inventario...). No se muestra a usuarios sin empresa, como el Super Admin.
+  final bool requiereEmpresa;
 
   /// Pantalla real del módulo. Si es `null`, se muestra [ModuloScreen].
   final Widget Function(BuildContext, Usuario)? constructor;
