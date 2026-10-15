@@ -18,9 +18,7 @@
 | fotoPrincipal | string | URL en Storage |
 | galeria | array&lt;string&gt; | URLs adicionales |
 | costo | number | Costo de compra al proveedor |
-| precioDetal | number | Precio al por menor |
-| precioMayor | number | Precio al por mayor |
-| margenes | map | `{ contado: number?, credito: number? }` (opcional, hereda) |
+| margenes | map | `{ contado: number?, credito: number? }` (opcional; si falta, hereda de la empresa) |
 | costoEnvio | number | Costo de envío individual (opcional, hereda) |
 | stock | number | Unidades disponibles |
 | stockMinimo | number | Umbral de alerta |
@@ -41,8 +39,6 @@
   "fotoPrincipal": "empresas/empresa_001/productos/PROD-001/foto.png",
   "galeria": [],
   "costo": 20000,
-  "precioDetal": 30000,
-  "precioMayor": 26000,
   "margenes": { "contado": 50, "credito": 65 },
   "costoEnvio": null,
   "stock": 40,
@@ -50,6 +46,12 @@
   "activo": true
 }
 ```
+
+---
+
+> **Nota (2026-10-15):** el **precio no se guarda**; se calcula con `costo` y el
+> margen efectivo (contado/crédito). Se descartaron `precioDetal`/`precioMayor`
+> como campos persistidos (ver [`tasks.md`](./tasks.md), decisiones).
 
 ---
 

@@ -38,6 +38,11 @@ gestión de usuarios, CA-06).
 proyecto está en el plan **Blaze** con las Cloud Functions y las reglas de
 Firestore y Storage ya desplegadas.
 
+**Spec 003 — Catálogo de Productos:** implementada (núcleo). Precios por **margen
+dual contado/crédito** (general y por producto), categorías, fotos, costo de
+envío, stock con alerta de mínimo y auditoría. Las reglas de
+`productos`/`categorias` están escritas y **pendientes de desplegar**.
+
 | Funcionalidad | Estado |
 |---|---|
 | Login con correo/contraseña y Google Sign-In | ✅ |
@@ -57,7 +62,7 @@ Firestore y Storage ya desplegadas.
 | Cloud Functions desplegadas | ✅ |
 | Reglas de Firestore y Storage desplegadas | ✅ |
 
-Las demás especificaciones (003 a 015) están definidas y pendientes de
+Las demás especificaciones (004 a 015) están definidas y pendientes de
 implementación. Ver [`specs/`](./specs).
 
 ---
@@ -175,6 +180,7 @@ gsutil cors get gs://aplicativo-de-ventas-d8bcd.firebasestorage.app
     │   ├── features/         Módulos por funcionalidad
     │   │   ├── auth/         Sesión, roles, permisos, caché
     │   │   ├── auditoria/    Registro de cambios
+    │   │   ├── catalogo/     Productos, categorías, precios, stock
     │   │   ├── empresas/     Empresas, licencias, planes, logo
     │   │   ├── home/         Pantalla de inicio
     │   │   └── licencia/     Validación y bloqueo por licencia
@@ -408,6 +414,8 @@ Firestore (NoSQL, con soporte offline).
 |---|---|
 | `empresas/{empresaId}` | Datos de la empresa, estado, licencia, parámetros y límites. |
 | `usuarios/{uid}` | Perfil, `empresaId`, `roles[]`. |
+| `productos/{productoId}` | Catálogo: datos, medidas, costos, márgenes, stock. |
+| `categorias/{categoriaId}` | Categorías del catálogo por empresa. |
 | `planes/{planId}` | Límites y valor por plan (gratis, básico, premium). Ya sembrados. |
 | `notificaciones/{id}` | Avisos de vencimiento dentro de la app. |
 | `mail/{id}` | Correos pendientes (extensión *Trigger Email*). |
@@ -415,9 +423,10 @@ Firestore (NoSQL, con soporte offline).
 | `roles/{rolId}` | Reservada para roles personalizados por empresa. |
 
 Las reglas de seguridad están en `app/firestore.rules` (y `app/storage.rules`
-para el logo) y se despliegan con Firebase CLI. El detalle de campos está en
-`specs/001-autenticacion-roles/data-model.md` y
-`specs/002-gestion-empresas/data-model.md`.
+para los archivos) y se despliegan con Firebase CLI. El detalle de campos está en
+`specs/001-autenticacion-roles/data-model.md`,
+`specs/002-gestion-empresas/data-model.md` y
+`specs/003-catalogo-productos/data-model.md`.
 
 ---
 
@@ -450,15 +459,17 @@ Cada carpeta contiene `spec.md`, `plan.md` y `tasks.md`.
 ```bash
 cd app
 flutter analyze   # sin errores
-flutter test      # 120 pruebas
+flutter test      # 133 pruebas
 ```
 
 Las pruebas cubren: permisos y unión de roles, cálculo de la licencia (incluido
 el de las empresas), pantallas de licencia y acceso denegado, guardas de
 navegación, caché de sesión, clasificación de errores de red, el registro de
 auditoría, el dominio e interfaz de la gestión de empresas (validaciones del
-formulario, resumen de vencimientos y validación del logo) y la gestión de
-usuarios (validación de datos, roles asignables, lista, búsqueda y formulario).
+formulario, resumen de vencimientos y validación del logo), la gestión de
+usuarios (validación de datos, roles asignables, lista, búsqueda y formulario) y
+el catálogo (cálculo de precios contado/crédito, herencia de márgenes y de costo
+de envío, stock, filtros y tarjetas).
 
 Además, las **reglas de Firestore se verifican con ID tokens reales** (no con el
 token de administrador, que las ignora). Se comprueba, entre otras cosas, que un

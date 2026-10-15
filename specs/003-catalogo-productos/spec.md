@@ -2,7 +2,7 @@
 
 - **ID:** 003 | **Carpeta:** `specs/003-catalogo-productos/`
 - **Fecha:** 2026-10-14
-- **Estado:** Borrador
+- **Estado:** Implementado (núcleo)
 - **Responsable:** Esteban Barrero
 
 ---
@@ -72,15 +72,15 @@ Es el insumo principal de Ventas, Carrito, Pedidos e Inventario.
 
 ## 7. Criterios de Aceptación
 
-- [ ] CA-01 Crear un producto con foto, medidas y precios.
-- [ ] CA-02 El precio se calcula correctamente según costo y margen.
-- [ ] CA-03 Contado y crédito pueden tener márgenes distintos.
-- [ ] CA-04 Si no hay margen propio, se aplica el general de la empresa.
-- [ ] CA-05 El costo de envío individual tiene prioridad sobre el general.
-- [ ] CA-06 El catálogo muestra foto, nombre, descripción, medidas y precio.
-- [ ] CA-07 El stock se actualiza y alerta al llegar al mínimo.
-- [ ] CA-08 La búsqueda y el filtro por categoría funcionan.
-- [ ] CA-09 Un cliente solo ve productos de su empresa.
+- [x] CA-01 Crear un producto con foto, medidas y precios.
+- [x] CA-02 El precio se calcula correctamente según costo y margen.
+- [x] CA-03 Contado y crédito pueden tener márgenes distintos.
+- [x] CA-04 Si no hay margen propio, se aplica el general de la empresa.
+- [x] CA-05 El costo de envío individual tiene prioridad sobre el general.
+- [x] CA-06 El catálogo muestra foto, nombre, descripción, medidas y precio.
+- [x] CA-07 El stock se actualiza y alerta al llegar al mínimo.
+- [x] CA-08 La búsqueda y el filtro por categoría funcionan.
+- [x] CA-09 Un cliente solo ve productos de su empresa.
 
 ## 8. Datos Involucrados
 
