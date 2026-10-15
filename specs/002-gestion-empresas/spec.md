@@ -165,7 +165,7 @@ CLI no pudo fijar por sí solo (Pub/Sub, Cloud Run, Eventarc). Ver `quickstart.m
 | CA-04 | El Administrador puede subir su logo y verlo | ✅ Storage operativo (reglas probadas) |
 | CA-05 | El Super Admin puede renovar/suspender/reactivar | ✅ `actualizarLicencia` / `cambiarEstadoEmpresa` |
 | CA-06 | El tablero muestra activas, por vencer y vencidas | ✅ `TableroVencimientosScreen` + `ResumenEmpresas` |
-| CA-07 | Los avisos llegan por correo y en la app | ✅ `notificarVencimientos` (in-app + colección `mail`) |
+| CA-07 | Los avisos llegan por correo y en la app | 🟡 In-app ✅ (colección `notificaciones`); el correo se encola en `mail` y requiere instalar la extensión *Trigger Email from Firestore* |
 | CA-08 | Una empresa con licencia vencida bloquea el ingreso | ✅ Cubierto por la spec 001 |
 | CA-09 | Ninguna empresa puede ver datos de otra | ✅ Reglas por `empresaId`; Storage 403 entre empresas |
 

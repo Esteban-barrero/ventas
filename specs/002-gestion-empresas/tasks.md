@@ -52,7 +52,8 @@
 
 ## Criterio de Terminado (Definition of Done)
 
-- [x] Todos los criterios de aceptación de `spec.md` cumplidos (CA-01..CA-09; ver `spec.md` §13)
+- [x] Todos los criterios de aceptación de `spec.md` cumplidos (CA-01..CA-09; ver `spec.md` §13).
+      *(CA-07 tiene la parte de correo pendiente de instalar la extensión *Trigger Email from Firestore*.)*
 - [x] `flutter analyze` sin errores
 - [x] Pruebas pasando (103 unitarias/widget + pruebas de reglas con tokens reales)
 - [x] Aislamiento multi-tenant y auditoría verificados
@@ -67,4 +68,11 @@
   `app/storage.rules` desplegadas. Probado: subida propia OK; tipo de contenido
   inválido, más de 500 KB y logo de otra empresa → **403**.
 - **Colección `planes`** sembrada (gratis/básico/premium).
+
+## Pendiente (no bloqueante)
+
+- **Correo de avisos (CA-07):** instalar la extensión oficial *Trigger Email from
+  Firestore* en la consola de Firebase para que los documentos de la colección
+  `mail` se envíen de verdad. El aviso in-app ya funciona.
+
 
