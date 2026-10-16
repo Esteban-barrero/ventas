@@ -63,6 +63,10 @@
 - **Categorías estándar:** al abrir el catálogo, si la empresa no tiene
   categorías se siembra una **lista estándar** (`categorias_estandar.dart`),
   editable por cada empresa.
+- **IVA por producto:** el producto tiene `iva` (opcional, hereda el de la
+  empresa). La venta calcula los impuestos **por línea**.
+- **Código de barras / QR:** el producto tiene `codigoBarras` y se puede
+  **escanear** al registrar una venta (`mobile_scanner`).
 
 ## Pendiente (no bloqueante)
 

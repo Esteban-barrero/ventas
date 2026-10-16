@@ -16,6 +16,8 @@
 | medidas | map | `{ material, dimensiones, peso }` |
 | categoriaId | string | Referencia a `categorias` |
 | color | string | Color del producto (se muestra y se filtra) |
+| codigoBarras | string | Código de barras o contenido del QR (para escanear) |
+| iva | number | IVA del producto (%) (opcional; si falta, hereda el de la empresa) |
 | fotoPrincipal | string | URL en Storage |
 | galeria | array&lt;string&gt; | URLs adicionales |
 | costo | number | Costo de compra al proveedor |

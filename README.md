@@ -39,9 +39,10 @@ proyecto está en el plan **Blaze** con las Cloud Functions y las reglas de
 Firestore y Storage ya desplegadas.
 
 **Spec 003 — Catálogo de Productos:** implementada (núcleo). Precios por **margen
-dual contado/crédito** (general y por producto), categorías (con una **lista
-estándar** sembrada y editable por empresa), fotos, costo de envío, stock con
-alerta de mínimo y auditoría. Las reglas de `productos`/`categorias` están
+dual contado/crédito** (general y por producto), **IVA por producto** (hereda del
+general), **código de barras/QR** (con escaneo en la venta), categorías (con una
+**lista estándar** sembrada y editable por empresa), fotos, costo de envío, stock
+con alerta de mínimo y auditoría. Las reglas de `productos`/`categorias` están
 **desplegadas**.
 
 **Spec 004 — Clientes:** implementada (núcleo). Registro con **dirección completa**

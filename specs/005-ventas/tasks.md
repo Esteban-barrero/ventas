@@ -63,9 +63,9 @@
 - **Reglas:** por **perfil** (como 001–004), no por *custom claims*.
 - **Efectos secundarios:** se implementan stock y consecutivo; los movimientos de
   **inventario** (008), **caja** (009) y **crédito** (006) van con sus specs.
-- **Impuestos:** el IVA de la venta se toma de los **parámetros de la empresa**
-  (`parametros.iva`) y se aplica sobre el subtotal de los productos (no es un
-  campo editable).
+- **Impuestos:** se calculan **por línea** según el **IVA de cada producto**
+  (`producto.iva`, que hereda de los parámetros de la empresa si es nulo). Los
+  productos con IVA 0% no generan impuesto.
 
 ## Pendiente (no bloqueante)
 
