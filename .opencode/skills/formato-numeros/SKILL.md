@@ -1,14 +1,16 @@
 ---
 name: Formato de números
-description: Convención del proyecto para mostrar cifras y dinero (miles con punto, decimales con coma, estilo Colombia) usando formatearValor de lib/core/formato/fechas.dart. Úsalo al mostrar precios, costos, totales, saldos o cualquier cifra.
+description: Convención del proyecto para mostrar cifras y dinero (miles con punto, decimales con coma, estilo Colombia) usando formatearValor de lib/core/formato/fechas.dart. Aplica a precios, descuentos, costos, subtotales, impuestos, totales, saldos y cualquier cálculo.
 ---
 
 # Formato de números (dinero y cifras)
 
 ## Regla
 
-Usa **`formatearValor`** de `lib/core/formato/fechas.dart` para toda cifra que
-vea el usuario (precios, costos, totales, saldos, valorización, etc.).
+Usa **`formatearValor`** de `lib/core/formato/fechas.dart` para **toda cifra**
+que vea el usuario: **precios, descuentos, costos, subtotales, impuestos, envío,
+totales, saldos, valorización** y cualquier resultado de cálculo (no solo un
+campo: es el formato global de la app).
 
 - **Miles:** punto `.`
 - **Decimales:** coma `,` con 2 dígitos, y **solo si el valor los tiene** (si son
