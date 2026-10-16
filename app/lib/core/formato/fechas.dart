@@ -26,9 +26,32 @@ String formatearValor(num valor) {
   return '$signo$enteroTexto,${centavos.toString().padLeft(2, '0')}';
 }
 
+/// Devuelve un número listo para un campo de texto **sin perder decimales**:
+/// sin decimales si es entero y con 2 decimales (punto) si no.
+///
+/// Ej: `50000` → `50000`; `20677.5` → `20677.50`. Evita que un `.round()`
+/// altere el valor real (por ejemplo, al proponer el monto de una rendición).
+String numeroParaEditar(num valor) {
+  if (valor == valor.roundToDouble()) return valor.round().toString();
+  return valor.toStringAsFixed(2);
+}
+
+/// Interpreta un número escrito por el usuario aceptando **coma** o **punto**
+/// como separador decimal (y quitando los puntos de miles si hay coma).
+///
+/// Ej: `20677.50` → `20677.5`; `20.677,50` → `20677.5`; `20677,5` → `20677.5`.
+/// Devuelve `null` si el texto no es un número válido.
+double? parsearNumero(String texto) {
+  final t = texto.trim();
+  if (t.isEmpty) return null;
+  if (t.contains(',')) {
+    return double.tryParse(t.replaceAll('.', '').replaceAll(',', '.'));
+  }
+  return double.tryParse(t);
+}
+
 /// Inserta el separador de miles (`.`) cada tres dígitos.
-String _separarMiles(int numero) {
-  final texto = numero.toString();
+String _separarMiles(int numero) {  final texto = numero.toString();
   final buffer = StringBuffer();
   for (var i = 0; i < texto.length; i++) {
     if (i > 0 && (texto.length - i) % 3 == 0) buffer.write('.');

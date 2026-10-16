@@ -107,7 +107,7 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
         empresaId: _empresaId,
         usuarioUid: _uid,
         usuarioNombre: _nombre,
-        montoInicial: double.tryParse(monto.text.trim()) ?? 0,
+        montoInicial: parsearNumero(monto.text) ?? 0,
         medioPredominante: medio,
       );
       if (mounted) _avisar('Caja abierta.');
@@ -197,7 +197,7 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
       ),
     );
     if (ok != true) return;
-    final valor = double.tryParse(monto.text.trim()) ?? 0;
+    final valor = parsearNumero(monto.text) ?? 0;
     if (valor <= 0) return _avisar('El monto debe ser mayor que cero.', error: true);
     try {
       await _repo.registrarMovimiento(
@@ -218,14 +218,14 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
   }
 
   Future<void> _cerrar(Caja caja) async {
-    final contado = TextEditingController(text: caja.saldo.round().toString());
+    final contado = TextEditingController(text: numeroParaEditar(caja.saldo));
     final justificacion = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          final valor = double.tryParse(contado.text.trim()) ?? caja.saldo;
+          final valor = parsearNumero(contado.text) ?? caja.saldo;
           final diferencia = valor - caja.saldo;
           return AlertDialog(
             title: const Text('Cerrar caja (arqueo)'),
@@ -289,7 +289,7 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
       await _repo.cerrarCaja(
         empresaId: _empresaId,
         cajaId: caja.id,
-        totalContado: double.tryParse(contado.text.trim()) ?? 0,
+        totalContado: parsearNumero(contado.text) ?? 0,
         usuarioUid: _uid,
         justificacion: justificacion.text.trim(),
       );

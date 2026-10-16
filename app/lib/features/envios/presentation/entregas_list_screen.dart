@@ -110,7 +110,7 @@ class _EntregasListScreenState extends State<EntregasListScreen> {
       _avisar('No tienes efectivo por declarar.');
       return;
     }
-    final monto = TextEditingController(text: saldo.round().toString());
+    final monto = TextEditingController(text: numeroParaEditar(saldo));
     final observaciones = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
@@ -159,7 +159,7 @@ class _EntregasListScreenState extends State<EntregasListScreen> {
       ),
     );
     if (ok != true) return;
-    final valor = double.tryParse(monto.text.trim()) ?? 0;
+    final valor = parsearNumero(monto.text) ?? 0;
     if (valor <= 0) {
       _avisar('El monto debe ser mayor que cero.', error: true);
       return;

@@ -20,4 +20,26 @@ void main() {
       expect(formatearValor(10.999), '11');
     });
   });
+
+  group('numeroParaEditar y parsearNumero', () {
+    test('numeroParaEditar no pierde decimales', () {
+      expect(numeroParaEditar(50000), '50000');
+      expect(numeroParaEditar(20677.5), '20677.50');
+      expect(numeroParaEditar(1500.25), '1500.25');
+    });
+
+    test('parsearNumero acepta punto o coma', () {
+      expect(parsearNumero('20677.50'), 20677.5);
+      expect(parsearNumero('20677,5'), 20677.5);
+      expect(parsearNumero('20.677,50'), 20677.5);
+      expect(parsearNumero('50000'), 50000);
+      expect(parsearNumero('abc'), isNull);
+      expect(parsearNumero(''), isNull);
+    });
+
+    test('ida y vuelta: numeroParaEditar -> parsearNumero', () {
+      expect(parsearNumero(numeroParaEditar(20677.5)), 20677.5);
+      expect(parsearNumero(numeroParaEditar(1234)), 1234);
+    });
+  });
 }

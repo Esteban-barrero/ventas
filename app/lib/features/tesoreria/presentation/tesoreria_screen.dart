@@ -121,7 +121,7 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
       ),
     );
     if (ok != true) return;
-    final valor = double.tryParse(monto.text.trim()) ?? 0;
+    final valor = parsearNumero(monto.text) ?? 0;
     if (valor <= 0) return _avisar('El monto debe ser mayor que cero.', error: true);
     try {
       await _repo.registrarMovimiento(
@@ -208,7 +208,7 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
       ),
     );
     if (ok != true) return;
-    final valor = double.tryParse(monto.text.trim()) ?? 0;
+    final valor = parsearNumero(monto.text) ?? 0;
     if (valor <= 0) return _avisar('El monto debe ser mayor que cero.', error: true);
     try {
       await _repo.trasladar(
@@ -381,14 +381,14 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
 
   /// Confirma una rendición contando el efectivo (RF-05).
   Future<void> _confirmarRendicion(Rendicion r) async {
-    final contado = TextEditingController(text: r.montoDeclarado.round().toString());
+    final contado = TextEditingController(text: numeroParaEditar(r.montoDeclarado));
     final justificacion = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          final valor = double.tryParse(contado.text.trim()) ?? r.montoDeclarado;
+          final valor = parsearNumero(contado.text) ?? r.montoDeclarado;
           final diferencia = r.montoDeclarado - valor;
           return AlertDialog(
             title: const Text('Confirmar rendición'),
@@ -455,7 +455,7 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
         empresaId: _empresaId,
         recibidoPorUid: _uid,
         recibidoPorNombre: _nombre,
-        montoContado: double.tryParse(contado.text.trim()) ?? 0,
+        montoContado: parsearNumero(contado.text) ?? 0,
         justificacion: justificacion.text.trim(),
       );
       if (mounted) _avisar('Rendición confirmada.');
