@@ -2,7 +2,7 @@
 
 - **ID:** 005 | **Carpeta:** `specs/005-ventas/`
 - **Fecha:** 2026-10-14
-- **Estado:** Borrador
+- **Estado:** Implementado (núcleo)
 - **Responsable:** Esteban Barrero
 
 ---
@@ -75,15 +75,15 @@ el plan de cobros.
 
 ## 7. Criterios de Aceptación
 
-- [ ] CA-01 Registrar una venta completa en menos de 2 minutos.
-- [ ] CA-02 El total se calcula correctamente (subtotal + envío − descuentos).
-- [ ] CA-03 El precio cambia según contado/crédito y detal/mayorista.
-- [ ] CA-04 Presencial y recoger en local no cobran envío.
-- [ ] CA-05 La factura toma un número consecutivo único por empresa.
-- [ ] CA-06 El stock se descuenta correctamente y no queda negativo.
-- [ ] CA-07 La anulación revierte stock y caja, y queda auditada.
-- [ ] CA-08 La venta alimenta la caja/trazabilidad del dinero.
-- [ ] CA-09 La venta a crédito genera su plan de cobros.
+- [x] CA-01 Registrar una venta completa en menos de 2 minutos.
+- [x] CA-02 El total se calcula correctamente (subtotal + envío − descuentos).
+- [x] CA-03 El precio cambia según contado/crédito. *(el matiz detal/mayorista no está modelado)*
+- [x] CA-04 Presencial y recoger en local no cobran envío.
+- [x] CA-05 La factura toma un número consecutivo único por empresa.
+- [x] CA-06 El stock se descuenta correctamente y no queda negativo.
+- [x] CA-07 La anulación revierte stock y queda auditada. *(el ajuste de caja llega con la spec 009)*
+- [ ] CA-08 La venta alimenta la caja/trazabilidad del dinero. *(spec 009)*
+- [ ] CA-09 La venta a crédito genera su plan de cobros. *(spec 006)*
 
 ## 8. Datos Involucrados
 

@@ -50,6 +50,12 @@ de crédito y auditoría. Funciona en Web; la geocodificación inversa (direcci�
 aproximada) solo en móvil. El **historial** de compras/pedidos llega con las
 specs 005 y 010.
 
+**Spec 005 — Ventas:** implementada (núcleo). Registro con productos y cantidades,
+tipo de pago (contado/crédito), tipo de entrega, medio de pago, **factura
+consecutiva por empresa** y descuento de **stock transaccional**; la anulación
+revierte el stock. La **caja** (009), los **créditos** (006) y la factura en PDF
+quedan pendientes.
+
 | Funcionalidad | Estado |
 |---|---|
 | Login con correo/contraseña y Google Sign-In | ✅ |
@@ -69,7 +75,7 @@ specs 005 y 010.
 | Cloud Functions desplegadas | ✅ |
 | Reglas de Firestore y Storage desplegadas | ✅ |
 
-Las demás especificaciones (005 a 015) están definidas y pendientes de
+Las demás especificaciones (006 a 015) están definidas y pendientes de
 implementación. Ver [`specs/`](./specs).
 
 ---
@@ -191,7 +197,8 @@ gsutil cors get gs://aplicativo-de-ventas-d8bcd.firebasestorage.app
     │   │   ├── clientes/     Clientes, dirección, GPS, crédito
     │   │   ├── empresas/     Empresas, licencias, planes, logo
     │   │   ├── home/         Pantalla de inicio
-    │   │   └── licencia/     Validación y bloqueo por licencia
+    │   │   ├── licencia/     Validación y bloqueo por licencia
+    │   │   └── ventas/       Ventas: factura, entrega y pago
     │   ├── firebase_options.dart
     │   └── main.dart
     ├── test/                 Pruebas
@@ -425,6 +432,8 @@ Firestore (NoSQL, con soporte offline).
 | `productos/{productoId}` | Catálogo: datos, medidas, costos, márgenes, stock. |
 | `categorias/{categoriaId}` | Categorías del catálogo por empresa. |
 | `clientes/{clienteId}` | Clientes: datos, dirección, GPS, clasificación, estado y crédito. |
+| `ventas/{ventaId}` | Ventas: ítems, tipo (contado/crédito), entrega, pago y totales. |
+| `consecutivos/{empresaId}` | Último número de factura asignado por empresa. |
 | `planes/{planId}` | Límites y valor por plan (gratis, básico, premium). Ya sembrados. |
 | `notificaciones/{id}` | Avisos de vencimiento dentro de la app. |
 | `mail/{id}` | Correos pendientes (extensión *Trigger Email*). |
@@ -468,7 +477,7 @@ Cada carpeta contiene `spec.md`, `plan.md` y `tasks.md`.
 ```bash
 cd app
 flutter analyze   # sin errores
-flutter test      # 151 pruebas
+flutter test      # 161 pruebas
 ```
 
 Las pruebas cubren: permisos y unión de roles, cálculo de la licencia (incluido
@@ -480,7 +489,8 @@ usuarios (validación de datos, roles asignables, lista, búsqueda y formulario)
 el catálogo (cálculo de precios contado/crédito, herencia de márgenes y de costo
 de envío, stock, filtros y tarjetas) y los clientes (validaciones de
 obligatorios y cédula única, filtro de departamento/ciudad, serialización,
-filtros y listado).
+filtros y listado) y las ventas (cálculo de totales, regla de envío,
+serialización, filtros y listado).
 
 Además, las **reglas de Firestore se verifican con ID tokens reales** (no con el
 token de administrador, que las ignora). Se comprueba, entre otras cosas, que un
