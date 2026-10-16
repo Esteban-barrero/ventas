@@ -7,6 +7,8 @@ import '../../catalogo/domain/precio.dart';
 import '../../catalogo/domain/producto.dart';
 import '../../clientes/data/clientes_repository.dart';
 import '../../clientes/domain/cliente.dart';
+import '../../creditos/data/creditos_repository.dart';
+import '../../creditos/domain/credito.dart';
 import '../../empresas/data/empresas_repository.dart';
 import '../../empresas/domain/parametros_empresa.dart';
 import '../data/ventas_repository.dart';
@@ -32,6 +34,7 @@ class VentaNuevaScreen extends StatefulWidget {
     this.productosRepository,
     this.clientesRepository,
     this.empresasRepository,
+    this.creditosRepository,
   });
 
   final Usuario usuario;
@@ -39,6 +42,7 @@ class VentaNuevaScreen extends StatefulWidget {
   final ProductosRepository? productosRepository;
   final ClientesRepository? clientesRepository;
   final EmpresasRepository? empresasRepository;
+  final CreditosRepository? creditosRepository;
 
   @override
   State<VentaNuevaScreen> createState() => _VentaNuevaScreenState();
@@ -53,11 +57,17 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
       widget.clientesRepository ?? ClientesRepository();
   late final EmpresasRepository _empresasRepo =
       widget.empresasRepository ?? EmpresasRepository();
+  late final CreditosRepository _creditos =
+      widget.creditosRepository ?? CreditosRepository();
 
   final List<_Linea> _lineas = <_Linea>[];
   final _costoEnvio = TextEditingController(text: '0');
   final _descuento = TextEditingController(text: '0');
   final _impuestos = TextEditingController(text: '0');
+  final _numeroCuotas = TextEditingController(text: '3');
+  final _tasaInteres = TextEditingController(text: '0');
+  Periodicidad _periodicidad = Periodicidad.mensual;
+  DateTime? _fechaPrimerPago;
 
   ParametrosEmpresa _parametros = const ParametrosEmpresa();
   List<Producto> _productos = const <Producto>[];
@@ -82,6 +92,8 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
     _costoEnvio.dispose();
     _descuento.dispose();
     _impuestos.dispose();
+    _numeroCuotas.dispose();
+    _tasaInteres.dispose();
     super.dispose();
   }
 
@@ -161,6 +173,10 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
     if (t.descuento > t.subtotal + t.envio) {
       return _avisar('El descuento no puede superar el subtotal + envío.');
     }
+    if (_tipoVenta == TipoPrecio.credito &&
+        (int.tryParse(_numeroCuotas.text.trim()) ?? 0) < 1) {
+      return _avisar('Indica el número de cuotas del crédito.');
+    }
 
     Cliente? cliente;
     if (_clienteId != null) {
@@ -192,10 +208,29 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
     );
 
     setState(() => _guardando = true);
+    final messenger = ScaffoldMessenger.of(context);
+    String? avisoCredito;
     try {
-      await _ventas.registrar(venta);
+      final ventaId = await _ventas.registrar(venta);
+      if (_tipoVenta == TipoPrecio.credito) {
+        try {
+          await _creditos.crearDesdeVenta(
+            ventaId,
+            numeroCuotas: int.tryParse(_numeroCuotas.text.trim()) ?? 1,
+            periodicidad: _periodicidad,
+            tasaInteres: double.tryParse(_tasaInteres.text.trim()) ?? 0,
+            fechaPrimerPago: _fechaPrimerPago,
+          );
+        } catch (e) {
+          avisoCredito =
+              'La venta quedó registrada, pero no se pudo crear el crédito: $e';
+        }
+      }
       if (!mounted) return;
       Navigator.of(context).pop(true);
+      if (avisoCredito != null) {
+        messenger.showSnackBar(SnackBar(content: Text(avisoCredito)));
+      }
     } on StockInsuficienteVentaException catch (e) {
       if (mounted) _avisar(e.toString(), error: true);
     } catch (e) {
@@ -274,6 +309,62 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
             onSelectionChanged: (Set<TipoPrecio> s) =>
                 setState(() => _tipoVenta = s.first),
           ),
+          if (_tipoVenta == TipoPrecio.credito) ...<Widget>[
+            const SizedBox(height: 16),
+            _seccion(theme, 'Plan de crédito'),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: _numeroCuotas,
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      labelText: 'Número de cuotas',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _tasaInteres,
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      labelText: 'Interés %',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<Periodicidad>(
+              initialValue: _periodicidad,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'Periodicidad',
+                border: OutlineInputBorder(),
+              ),
+              items: <DropdownMenuItem<Periodicidad>>[
+                for (final p in Periodicidad.values)
+                  DropdownMenuItem<Periodicidad>(value: p, child: Text(p.nombre)),
+              ],
+              onChanged: (Periodicidad? v) =>
+                  setState(() => _periodicidad = v ?? Periodicidad.mensual),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Primer pago'),
+              subtitle: Text(_fechaPrimerPago == null
+                  ? 'Por defecto: dentro de un periodo'
+                  : formatearFecha(_fechaPrimerPago)),
+              trailing: const Icon(Icons.calendar_today_outlined),
+              onTap: _elegirFechaPrimerPago,
+            ),
+            _resumenPlanCredito(theme),
+          ],
           const SizedBox(height: 16),
           _seccion(theme, 'Entrega y pago'),
           DropdownButtonFormField<TipoEntrega>(
@@ -428,6 +519,37 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Abre el selector de fecha para el primer pago del crédito.
+  Future<void> _elegirFechaPrimerPago() async {
+    final hoy = DateTime.now();
+    final elegida = await showDatePicker(
+      context: context,
+      initialDate:
+          _fechaPrimerPago ?? DateTime(hoy.year, hoy.month + 1, hoy.day),
+      firstDate: hoy,
+      lastDate: DateTime(2100),
+    );
+    if (elegida != null) setState(() => _fechaPrimerPago = elegida);
+  }
+
+  /// Resumen del plan de crédito (total con interés y cuota aproximada).
+  Widget _resumenPlanCredito(ThemeData theme) {
+    final t = _totales;
+    final n = int.tryParse(_numeroCuotas.text.trim()) ?? 0;
+    final tasa = double.tryParse(_tasaInteres.text.trim()) ?? 0;
+    final conInteres = t.total * (1 + (tasa < 0 ? 0 : tasa) / 100);
+    final cuota = n > 0 ? conInteres / n : 0;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        n > 0
+            ? 'Total con interés ${formatearValor(conInteres)} · $n cuota(s) de ~${formatearValor(cuota)}'
+            : 'Define el número de cuotas.',
+        style: theme.textTheme.bodySmall,
       ),
     );
   }

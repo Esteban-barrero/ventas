@@ -144,12 +144,13 @@ void main() {
       HomePage(usuario: usuario, onCerrarSesion: _dummy),
     );
 
-    await tester.ensureVisible(find.text('Inventario'));
-    await tester.tap(find.text('Inventario'));
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -400));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Caja'));
     await tester.pumpAndSettle();
 
     expect(find.text('Módulo en construcción.'), findsOneWidget);
-    expect(find.text('Requiere: Ver inventario'), findsOneWidget);
+    expect(find.text('Requiere: Ver caja'), findsOneWidget);
   });
 
   testWidgets('HomePage avisa cuando se muestran datos guardados sin conexión',

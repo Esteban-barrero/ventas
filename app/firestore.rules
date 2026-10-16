@@ -222,6 +222,43 @@ service cloud.firestore {
         && roles().hasAny(['administrador', 'vendedor']);
     }
 
+    // Créditos y cobros (spec 006).
+    match /creditos/{creditoId} {
+      allow read: if autenticado() && (
+        esSuperAdmin()
+        || (esDeEmpresa(resource.data.empresaId) && esInternoVentas())
+        || resource.data.clienteUid == request.auth.uid
+      );
+      allow create: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador', 'vendedor', 'cajero']);
+      allow update: if autenticado()
+        && esDeEmpresa(resource.data.empresaId)
+        && roles().hasAny(['administrador', 'cajero', 'gerente']);
+      allow delete: if false;
+
+      // Cuotas (subcolección). La empresa se obtiene del crédito padre.
+      match /cuotas/{cuotaId} {
+        allow read: if autenticado() && (
+          esSuperAdmin()
+          || esDeEmpresa(get(/databases/$(database)/documents/creditos/$(creditoId)).data.empresaId)
+        );
+        allow write: if autenticado()
+          && esDeEmpresa(get(/databases/$(database)/documents/creditos/$(creditoId)).data.empresaId)
+          && roles().hasAny(['administrador', 'vendedor', 'cajero']);
+      }
+    }
+
+    // Pagos de crédito (spec 006). Solo inserción.
+    match /pagos_credito/{pagoId} {
+      allow read: if autenticado()
+        && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
+      allow create: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador', 'vendedor', 'cajero']);
+      allow update, delete: if false;
+    }
+
     // Todo lo demas queda denegado por defecto (incluye `mail`: solo lo escribe
     // la Cloud Function con privilegios de administrador).
     match /{document=**} {
