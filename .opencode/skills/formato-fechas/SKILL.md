@@ -13,7 +13,7 @@ Usa siempre los helpers de **`lib/core/formato/fechas.dart`**. **No** agregues
 | Helper | Resultado |
 |---|---|
 | `formatearFecha(DateTime?)` | `dd/MM/yyyy` (o `—` si es nulo) |
-| `formatearValor(num)` | Separador de miles: `1.234.567` |
+| `formatearValor(num)` | Miles con punto y decimales con coma: `1.234.567,89` (oculta `,00`) |
 | `describirDiasRestantes(int?)` | «Vence en 3 días», «Vence hoy», «Vencida hace 2 días», «Sin vencimiento» |
 
 ```dart
@@ -27,7 +27,9 @@ Text(describirDiasRestantes(licencia.diasRestantes(DateTime.now())));
 ## Convenciones
 
 - Formato de fecha: **español/CO**, `dd/MM/yyyy`.
-- Los **valores** usan punto como separador de miles (sin decimales; redondea).
+- Los **valores** usan **punto** para miles y **coma** para decimales (estilo
+  Colombia); los decimales se muestran solo si existen. Ver la skill
+  **formato-numeros**.
 - En **Firestore**, las fechas se guardan como **ISO-8601 UTC**
   (`DateTime.toUtc().toIso8601String()`) y se leen con un parser que tolera
   `String`, `DateTime` y `Timestamp` (ver `fromMap` de cada modelo).

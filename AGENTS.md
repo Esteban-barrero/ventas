@@ -112,3 +112,4 @@ falta (no ocupan contexto todo el tiempo):
 | `publicar` | `analyze` + `test` + commit + push + reiniciar la app |
 | `validar-correo` | Usar `esCorreoValido` (`core/validacion/correo.dart`) |
 | `formato-fechas` | Usar `core/formato/fechas.dart` (no `intl`) |
+| `formato-numeros` | Cifras: miles con punto y decimales con coma (`formatearValor`) |
