@@ -41,7 +41,14 @@ Firestore y Storage ya desplegadas.
 **Spec 003 — Catálogo de Productos:** implementada (núcleo). Precios por **margen
 dual contado/crédito** (general y por producto), categorías, fotos, costo de
 envío, stock con alerta de mínimo y auditoría. Las reglas de
-`productos`/`categorias` están escritas y **pendientes de desplegar**.
+`productos`/`categorias` están **desplegadas**.
+
+**Spec 004 — Clientes:** implementada (núcleo). Registro con **dirección completa**
+(departamento/ciudad/dirección/barrio), **ubicación GPS** (abre en Google Maps o
+Waze), clasificación (detal/mayorista), estados (activo/inactivo/moroso), límite
+de crédito y auditoría. Funciona en Web; la geocodificación inversa (dirección
+aproximada) solo en móvil. El **historial** de compras/pedidos llega con las
+specs 005 y 010.
 
 | Funcionalidad | Estado |
 |---|---|
@@ -62,7 +69,7 @@ envío, stock con alerta de mínimo y auditoría. Las reglas de
 | Cloud Functions desplegadas | ✅ |
 | Reglas de Firestore y Storage desplegadas | ✅ |
 
-Las demás especificaciones (004 a 015) están definidas y pendientes de
+Las demás especificaciones (005 a 015) están definidas y pendientes de
 implementación. Ver [`specs/`](./specs).
 
 ---
@@ -181,6 +188,7 @@ gsutil cors get gs://aplicativo-de-ventas-d8bcd.firebasestorage.app
     │   │   ├── auth/         Sesión, roles, permisos, caché
     │   │   ├── auditoria/    Registro de cambios
     │   │   ├── catalogo/     Productos, categorías, precios, stock
+    │   │   ├── clientes/     Clientes, dirección, GPS, crédito
     │   │   ├── empresas/     Empresas, licencias, planes, logo
     │   │   ├── home/         Pantalla de inicio
     │   │   └── licencia/     Validación y bloqueo por licencia
@@ -416,6 +424,7 @@ Firestore (NoSQL, con soporte offline).
 | `usuarios/{uid}` | Perfil, `empresaId`, `roles[]`. |
 | `productos/{productoId}` | Catálogo: datos, medidas, costos, márgenes, stock. |
 | `categorias/{categoriaId}` | Categorías del catálogo por empresa. |
+| `clientes/{clienteId}` | Clientes: datos, dirección, GPS, clasificación, estado y crédito. |
 | `planes/{planId}` | Límites y valor por plan (gratis, básico, premium). Ya sembrados. |
 | `notificaciones/{id}` | Avisos de vencimiento dentro de la app. |
 | `mail/{id}` | Correos pendientes (extensión *Trigger Email*). |
@@ -459,7 +468,7 @@ Cada carpeta contiene `spec.md`, `plan.md` y `tasks.md`.
 ```bash
 cd app
 flutter analyze   # sin errores
-flutter test      # 133 pruebas
+flutter test      # 151 pruebas
 ```
 
 Las pruebas cubren: permisos y unión de roles, cálculo de la licencia (incluido
@@ -469,7 +478,9 @@ auditoría, el dominio e interfaz de la gestión de empresas (validaciones del
 formulario, resumen de vencimientos y validación del logo), la gestión de
 usuarios (validación de datos, roles asignables, lista, búsqueda y formulario) y
 el catálogo (cálculo de precios contado/crédito, herencia de márgenes y de costo
-de envío, stock, filtros y tarjetas).
+de envío, stock, filtros y tarjetas) y los clientes (validaciones de
+obligatorios y cédula única, filtro de departamento/ciudad, serialización,
+filtros y listado).
 
 Además, las **reglas de Firestore se verifican con ID tokens reales** (no con el
 token de administrador, que las ignora). Se comprueba, entre otras cosas, que un

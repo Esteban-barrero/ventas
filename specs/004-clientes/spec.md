@@ -2,7 +2,7 @@
 
 - **ID:** 004 | **Carpeta:** `specs/004-clientes/`
 - **Fecha:** 2026-10-14
-- **Estado:** Borrador
+- **Estado:** Implementado (núcleo)
 - **Responsable:** Esteban Barrero
 
 ---
@@ -69,15 +69,15 @@ sus compras y el estado de sus pedidos.
 
 ## 7. Criterios de Aceptación
 
-- [ ] CA-01 Se puede crear un cliente con los campos obligatorios.
-- [ ] CA-02 No se permite una cédula duplicada en la misma empresa.
-- [ ] CA-03 El selector de ciudad se filtra por departamento.
-- [ ] CA-04 Se puede capturar y guardar la ubicación GPS.
-- [ ] CA-05 Al hacer clic en la ubicación se abre en Google Maps o Waze.
-- [ ] CA-06 El cliente puede ver su historial de compras y pedidos.
-- [ ] CA-07 El cliente puede actualizar su dirección y ubicación.
-- [ ] CA-08 Un cliente no ve datos de otros clientes ni de otra empresa.
-- [ ] CA-09 El historial y los cambios quedan auditados.
+- [x] CA-01 Se puede crear un cliente con los campos obligatorios.
+- [x] CA-02 No se permite una cédula duplicada en la misma empresa.
+- [x] CA-03 El selector de ciudad se filtra por departamento.
+- [x] CA-04 Se puede capturar y guardar la ubicación GPS.
+- [x] CA-05 Al hacer clic en la ubicación se abre en Google Maps o Waze.
+- [ ] CA-06 El cliente puede ver su historial de compras y pedidos. *(depende de las specs 005 y 010)*
+- [x] CA-07 El cliente puede actualizar su dirección y ubicación.
+- [x] CA-08 Un cliente no ve datos de otros clientes ni de otra empresa.
+- [x] CA-09 El historial y los cambios quedan auditados.
 
 ## 8. Datos Involucrados
 
