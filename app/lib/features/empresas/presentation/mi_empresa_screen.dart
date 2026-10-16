@@ -133,6 +133,7 @@ class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
         TextEditingController(text: p.reteFuente.toStringAsFixed(0));
     final reteIva = TextEditingController(text: p.reteIva.toStringAsFixed(0));
     final reteIca = TextEditingController(text: p.reteIca.toStringAsFixed(0));
+    final ciudades = TextEditingController(text: p.ciudades.join(', '));
 
     final guardar = await showDialog<bool>(
       context: context,
@@ -186,6 +187,13 @@ class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'ReteICA (%)'),
               ),
+              TextField(
+                controller: ciudades,
+                decoration: const InputDecoration(
+                  labelText: 'Ciudades (separadas por coma)',
+                  helperText: 'Ej: Bogotá, Medellín. Una entrega aquí es local.',
+                ),
+              ),
             ],
           ),
         ),
@@ -217,6 +225,11 @@ class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
           reteFuente: double.tryParse(reteFuente.text.trim()) ?? p.reteFuente,
           reteIva: double.tryParse(reteIva.text.trim()) ?? p.reteIva,
           reteIca: double.tryParse(reteIca.text.trim()) ?? p.reteIca,
+          ciudades: ciudades.text
+              .split(',')
+              .map((String e) => e.trim())
+              .where((String e) => e.isNotEmpty)
+              .toList(growable: false),
         ),
       );
       await _cargar();

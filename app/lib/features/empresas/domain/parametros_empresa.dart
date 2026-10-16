@@ -22,6 +22,7 @@ class ParametrosEmpresa {
     this.moneda = 'COP',
     this.colorPrimario = '#1A73E8',
     this.colorSecundario = '#FF6B35',
+    this.ciudades = const <String>[],
   });
 
   /// Márgenes de ganancia por tipo de venta (porcentaje).
@@ -54,6 +55,18 @@ class ParametrosEmpresa {
   final String colorPrimario;
   final String colorSecundario;
 
+  /// Ciudades donde opera la empresa (spec 011). Una entrega en una de estas
+  /// ciudades es **local**; en otra, es **envío**.
+  final List<String> ciudades;
+
+  /// `true` si la ciudad indicada es una ciudad de la empresa (local).
+  bool esCiudadLocal(String? ciudad) {
+    final c = (ciudad ?? '').trim().toLowerCase();
+    if (c.isEmpty) return false;
+    return ciudades
+        .any((String x) => x.trim().toLowerCase() == c);
+  }
+
   /// Parámetros por defecto que recibe toda empresa nueva (RF-04).
   static const ParametrosEmpresa porDefecto = ParametrosEmpresa();
 
@@ -69,6 +82,7 @@ class ParametrosEmpresa {
         'reteIva': reteIva,
         'reteIca': reteIca,
         'moneda': moneda,
+        'ciudades': ciudades,
         'tema': <String, dynamic>{
           'colorPrimario': colorPrimario,
           'colorSecundario': colorSecundario,
@@ -91,6 +105,10 @@ class ParametrosEmpresa {
       reteIva: (data['reteIva'] as num?)?.toDouble() ?? 0,
       reteIca: (data['reteIca'] as num?)?.toDouble() ?? 0,
       moneda: (data['moneda'] as String?) ?? 'COP',
+      ciudades: (data['ciudades'] as List<dynamic>?)
+              ?.map((dynamic e) => e.toString())
+              .toList(growable: false) ??
+          const <String>[],
       colorPrimario: (tema['colorPrimario'] as String?) ?? '#1A73E8',
       colorSecundario: (tema['colorSecundario'] as String?) ?? '#FF6B35',
     );
@@ -110,6 +128,7 @@ class ParametrosEmpresa {
     String? moneda,
     String? colorPrimario,
     String? colorSecundario,
+    List<String>? ciudades,
   }) {
     return ParametrosEmpresa(
       margenDetal: margenDetal ?? this.margenDetal,
@@ -123,6 +142,7 @@ class ParametrosEmpresa {
       reteIva: reteIva ?? this.reteIva,
       reteIca: reteIca ?? this.reteIca,
       moneda: moneda ?? this.moneda,
+      ciudades: ciudades ?? this.ciudades,
       colorPrimario: colorPrimario ?? this.colorPrimario,
       colorSecundario: colorSecundario ?? this.colorSecundario,
     );

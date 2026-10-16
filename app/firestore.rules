@@ -42,12 +42,12 @@ service cloud.firestore {
 
     // Personal interno que puede ver clientes (spec 004).
     function esInternoClientes() {
-      return roles().hasAny(['administrador', 'gerente', 'vendedor', 'cajero']);
+      return roles().hasAny(['administrador', 'gerente', 'vendedor', 'cajero', 'domiciliario']);
     }
 
-    // Personal interno que trabaja con ventas (spec 005).
+    // Personal interno que trabaja con ventas (spec 005, spec 011).
     function esInternoVentas() {
-      return roles().hasAny(['administrador', 'gerente', 'vendedor', 'cajero']);
+      return roles().hasAny(['administrador', 'gerente', 'vendedor', 'cajero', 'domiciliario']);
     }
 
     // Permite solo modificar los campos indicados (update parcial controlado).
@@ -211,7 +211,9 @@ service cloud.firestore {
         && roles().hasAny(['administrador', 'vendedor']);
       allow update: if autenticado()
         && esDeEmpresa(resource.data.empresaId)
-        && roles().hasAny(['administrador']);
+        && (roles().hasAny(['administrador'])
+          || (roles().hasAny(['domiciliario'])
+            && soloCambiaCampos(['estadoEnvio', 'repartidorUid', 'repartidorNombre'])));
       allow delete: if false;
     }
 

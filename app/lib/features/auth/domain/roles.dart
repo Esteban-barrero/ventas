@@ -11,6 +11,7 @@ enum Rol {
   vendedor('vendedor', 'Vendedor'),
   marketing('marketing', 'Marketing'),
   cajero('cajero', 'Cajero'),
+  domiciliario('domiciliario', 'Domiciliario'),
   cliente('cliente', 'Cliente'),
   invitado('invitado', 'Invitado'),
   developer('developer', 'Developer');
@@ -78,6 +79,17 @@ enum Rol {
             Permiso.cajaOperar,
             Permiso.creditosVer,
             Permiso.creditosEditar,
+          },
+
+        // Entregas y cobros en la calle (spec 011, MVP "pendientes por
+        // entregar"): ve clientes, gestiona envíos y opera su caja para rendir.
+        Rol.domiciliario => <Permiso>{
+            Permiso.clientesVer,
+            Permiso.enviosVer,
+            Permiso.enviosEditar,
+            Permiso.cajaVer,
+            Permiso.cajaOperar,
+            Permiso.creditosVer,
           },
 
         // Compra y consulta de sus propios pedidos.

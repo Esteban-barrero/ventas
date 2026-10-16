@@ -50,8 +50,7 @@ enum MedioPago {
 }
 
 /// Estado de la venta (RN-06, anulación lógica).
-enum EstadoVenta {
-  registrada('registrada', 'Registrada'),
+enum EstadoVenta {  registrada('registrada', 'Registrada'),
   anulada('anulada', 'Anulada');
 
   const EstadoVenta(this.id, this.nombre);
@@ -64,6 +63,26 @@ enum EstadoVenta {
       if (e.id == id) return e;
     }
     return EstadoVenta.registrada;
+  }
+}
+
+/// Estado de la entrega de una venta (spec 011, RF-04).
+enum EstadoEnvio {
+  pendiente('pendiente', 'Pendiente'),
+  enReparto('en_reparto', 'En reparto'),
+  entregado('entregado', 'Entregado'),
+  novedad('novedad', 'Novedad');
+
+  const EstadoEnvio(this.id, this.nombre);
+
+  final String id;
+  final String nombre;
+
+  static EstadoEnvio desdeId(String? id) {
+    for (final e in values) {
+      if (e.id == id) return e;
+    }
+    return EstadoEnvio.pendiente;
   }
 }
 
@@ -153,6 +172,8 @@ class Venta {
     this.empresaEnvio = '',
     this.fechaEnvio,
     this.estadoEnvio = '',
+    this.repartidorUid = '',
+    this.repartidorNombre = '',
     this.estado = EstadoVenta.registrada,
     this.motivoAnulacion = '',
     this.creditoId,
@@ -196,12 +217,28 @@ class Venta {
   final DateTime? fechaEnvio;
   final String estadoEnvio;
 
+  /// Repartidor / domiciliario asignado (spec 011).
+  final String repartidorUid;
+  final String repartidorNombre;
+
   final EstadoVenta estado;
   final String motivoAnulacion;
   final String? creditoId;
 
   bool get anulada => estado == EstadoVenta.anulada;
   bool get esCredito => tipoVenta == TipoPrecio.credito;
+
+  /// `true` si la venta requiere entrega a domicilio (spec 011, RN-01).
+  bool get requiereEntrega => tipoEntrega.cobraEnvio && estado != EstadoVenta.anulada;
+
+  /// Estado de la entrega (`pendiente` si aún no se define, spec 011).
+  EstadoEnvio get estadoEnvioActual => estadoEnvio.trim().isEmpty
+      ? EstadoEnvio.pendiente
+      : EstadoEnvio.desdeId(estadoEnvio);
+
+  /// `true` si está pendiente de entregar (aún no entregada).
+  bool get entregaPendiente =>
+      requiereEntrega && estadoEnvioActual != EstadoEnvio.entregado;
 
   Map<String, dynamic> toMap({DateTime? ahora}) => <String, dynamic>{
         'id': id,
@@ -228,6 +265,8 @@ class Venta {
         'empresaEnvio': empresaEnvio,
         'fechaEnvio': fechaEnvio?.toUtc().toIso8601String(),
         'estadoEnvio': estadoEnvio,
+        'repartidorUid': repartidorUid,
+        'repartidorNombre': repartidorNombre,
         'estado': estado.id,
         'motivoAnulacion': motivoAnulacion,
         'creditoId': creditoId,
@@ -263,6 +302,8 @@ class Venta {
       empresaEnvio: (data['empresaEnvio'] as String?) ?? '',
       fechaEnvio: _aFecha(data['fechaEnvio']),
       estadoEnvio: (data['estadoEnvio'] as String?) ?? '',
+      repartidorUid: (data['repartidorUid'] as String?) ?? '',
+      repartidorNombre: (data['repartidorNombre'] as String?) ?? '',
       estado: EstadoVenta.desdeId(data['estado'] as String?),
       motivoAnulacion: (data['motivoAnulacion'] as String?) ?? '',
       creditoId: data['creditoId'] as String?,

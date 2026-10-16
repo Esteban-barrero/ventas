@@ -85,6 +85,16 @@ que recalculan el **saldo** en transacción y **cierre con arqueo**
 en el **libro único del dinero** (spec 016) con ubicación *caja física*. El
 **comprobante de cierre en PDF** queda pendiente.
 
+**Spec 011 — Envíos y Entregas (MVP):** implementado el módulo **"Pendientes por
+entregar"** con el rol **`domiciliario`**: lista de ventas con entrega pendiente
+(entrega local o envío), **filtro por estado y ciudad**, detalle del pedido con
+**datos del cliente** (nombre, cédula, teléfono, dirección y apertura en
+Google Maps/Waze) y acciones **en reparto / entregado / novedad**. Al entregar un
+pago de contado, el dinero pasa a **manos del domiciliario** y él lo **rinde** a
+caja (spec 016). La empresa tiene un parámetro de **ciudades** (1..n): una entrega
+en una de ellas es **local** y en otra es **envío**. Transportadoras, guías,
+evidencia (foto/firma) y notificaciones al cliente quedan pendientes.
+
 **Spec 016 — Tesorería y flujo del dinero:** implementada (núcleo). Un **libro
 único** de movimientos (`movimientos_dinero`) con **ingresos**, **egresos** y
 **traslados**, cada uno con **ubicación** (caja física, efectivo con el vendedor,
@@ -116,8 +126,9 @@ de contado** y los **cobros** ingresan automáticamente; la venta guarda su
 | Reglas de Firestore y Storage desplegadas | ✅ |
 | Caja por turno: apertura, movimientos y arqueo (009) | ✅ |
 | Tesorería: libro único del dinero y trazabilidad (016) | ✅ |
+| Entregas: pendientes por entregar y rol domiciliario (011) | ✅ |
 
-Las demás especificaciones (010 a 015) están definidas y pendientes de
+Las demás especificaciones (010, 012 a 015) están definidas y pendientes de
 implementación. Ver [`specs/`](./specs).
 
 ---
@@ -284,6 +295,7 @@ sus roles (`permisosDeRoles`). Un usuario puede tener varios roles, por ejemplo
 | **Vendedor** | Ventas y sus clientes. |
 | **Marketing** | Catálogo y promociones. |
 | **Cajero** | Caja y cobros. |
+| **Domiciliario** | Entregas en la calle y cobro del contra entrega. |
 | **Cliente** | Catálogo, pedidos e historial propios. |
 | **Invitado** | Solo catálogo. |
 | **Developer** | Solo logs de errores (no accede a datos del negocio). |
@@ -292,33 +304,33 @@ sus roles (`permisosDeRoles`). Un usuario puede tener varios roles, por ejemplo
 
 `●` incluido · `—` no incluido
 
-| Permiso | Super Admin | Admin. | Gerente | Vendedor | Marketing | Cajero | Cliente | Invitado | Developer |
-|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| Ver catálogo | ● | ● | ● | ● | ● | — | ● | ● | — |
-| Editar catálogo | ● | ● | — | — | ● | — | — | — | — |
-| Ver clientes | ● | ● | ● | ● | ● | ● | — | — | — |
-| Gestionar clientes | ● | ● | — | ● | — | — | — | — | — |
-| Ver ventas | ● | ● | ● | ● | — | ● | — | — | — |
-| Registrar ventas | ● | ● | — | ● | — | — | — | — | — |
-| Anular ventas | ● | ● | — | — | — | — | — | — | — |
-| Ver inventario | ● | ● | ● | — | — | — | — | — | — |
-| Gestionar inventario | ● | ● | — | — | — | — | — | — | — |
-| Ver caja | ● | ● | ● | — | — | ● | — | — | — |
-| Operar caja | ● | ● | — | — | — | ● | — | — | — |
-| Ver créditos | ● | ● | ● | ● | — | ● | — | — | — |
-| Gestionar créditos | ● | ● | — | — | — | ● | — | — | — |
-| Ver compras | ● | ● | ● | — | — | — | — | — | — |
-| Gestionar compras | ● | ● | — | — | — | — | — | — | — |
-| Ver envíos | ● | ● | ● | ● | — | — | — | — | — |
-| Gestionar envíos | ● | ● | — | — | — | — | — | — | — |
-| Ver pedidos | ● | ● | ● | ● | ● | — | ● | — | — |
-| Crear pedidos | ● | ● | — | — | — | — | ● | — | — |
-| Ver reportes | ● | ● | ● | — | — | — | — | — | — |
-| Gestionar usuarios | ● | ● | — | — | — | — | — | — | — |
-| Gestionar empresas | ● | — | — | — | — | — | — | — | — |
-| Editar parámetros | ● | ● | — | — | — | — | — | — | — |
-| Ver auditoría | ● | ● | ● | — | — | — | — | — | — |
-| Ver logs de errores | ● | — | — | — | — | — | — | — | ● |
+| Permiso | Super Admin | Admin. | Gerente | Vendedor | Marketing | Cajero | Domic. | Cliente | Invitado | Developer |
+|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Ver catálogo | ● | ● | ● | ● | ● | — | — | ● | ● | — |
+| Editar catálogo | ● | ● | — | — | ● | — | — | — | — | — |
+| Ver clientes | ● | ● | ● | ● | ● | ● | ● | — | — | — |
+| Gestionar clientes | ● | ● | — | ● | — | — | — | — | — | — |
+| Ver ventas | ● | ● | ● | ● | — | ● | — | — | — | — |
+| Registrar ventas | ● | ● | — | ● | — | — | — | — | — | — |
+| Anular ventas | ● | ● | — | — | — | — | — | — | — | — |
+| Ver inventario | ● | ● | ● | — | — | — | — | — | — | — |
+| Gestionar inventario | ● | ● | — | — | — | — | — | — | — | — |
+| Ver caja | ● | ● | ● | — | — | ● | ● | — | — | — |
+| Operar caja | ● | ● | — | — | — | ● | ● | — | — | — |
+| Ver créditos | ● | ● | ● | ● | — | ● | ● | — | — | — |
+| Gestionar créditos | ● | ● | — | — | — | ● | — | — | — | — |
+| Ver compras | ● | ● | ● | — | — | — | — | — | — | — |
+| Gestionar compras | ● | ● | — | — | — | — | — | — | — | — |
+| Ver envíos | ● | ● | ● | ● | — | — | ● | — | — | — |
+| Gestionar envíos | ● | ● | — | — | — | — | ● | — | — | — |
+| Ver pedidos | ● | ● | ● | ● | ● | — | — | ● | — | — |
+| Crear pedidos | ● | ● | — | — | — | — | — | ● | — | — |
+| Ver reportes | ● | ● | ● | — | — | — | — | — | — | — |
+| Gestionar usuarios | ● | ● | — | — | — | — | — | — | — | — |
+| Gestionar empresas | ● | — | — | — | — | — | — | — | — | — |
+| Editar parámetros | ● | ● | — | — | — | — | — | — | — | — |
+| Ver auditoría | ● | ● | ● | — | — | — | — | — | — | — |
+| Ver logs de errores | ● | — | — | — | — | — | — | — | — | ● |
 
 > La tabla se deriva de `app/lib/features/auth/domain/roles.dart`. Si cambia
 > ese archivo, actualice también esta tabla.

@@ -14,6 +14,7 @@ import '../compras/presentation/compras_list_screen.dart';
 import '../creditos/presentation/creditos_list_screen.dart';
 import '../empresas/presentation/empresas_list_screen.dart';
 import '../empresas/presentation/mi_empresa_screen.dart';
+import '../envios/presentation/entregas_list_screen.dart';
 import '../inventario/presentation/inventario_list_screen.dart';
 import '../licencia/domain/licencia.dart';
 import '../licencia/presentation/aviso_licencia.dart';
@@ -76,6 +77,9 @@ class HomePage extends StatelessWidget {
       _Modulo('Tesorería', Icons.account_balance_outlined, Permiso.cajaVer,
           requiereEmpresa: true,
           constructor: (_, u) => TesoreriaScreen(usuario: u)),
+      _Modulo('Entregas', Icons.local_shipping_outlined, Permiso.enviosVer,
+          requiereEmpresa: true,
+          constructor: (_, u) => EntregasListScreen(usuario: u)),
       _Modulo('Reportes', Icons.bar_chart_outlined, Permiso.reportesVer,
           requiereEmpresa: true),
       _Modulo(
