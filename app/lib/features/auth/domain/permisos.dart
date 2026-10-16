@@ -23,6 +23,7 @@ enum Permiso {
   // Caja
   cajaVer('caja.ver', 'Ver caja'),
   cajaOperar('caja.operar', 'Operar caja'),
+  cajaConfirmar('caja.confirmar', 'Confirmar rendiciones'),
 
   // Creditos y cobros
   creditosVer('creditos.ver', 'Ver créditos'),

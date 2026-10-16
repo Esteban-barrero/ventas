@@ -50,8 +50,32 @@ totalEmpresa = Σ saldo(ubicacion)
 
 ---
 
-## `cajas/{cajaId}` (spec 009, sin cambios)
+## `rendiciones/{rendicionId}` (spec 016, RF-05)
 
+Entrega de efectivo de un domiciliario a la caja, con **doble control**: uno
+**declara** y otro **confirma**.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| id | string | Identificador |
+| empresaId | string | Empresa |
+| fecha | timestamp | Cuándo se declaró |
+| domiciliarioUid / domiciliarioNombre | string | Quién **entrega** |
+| montoDeclarado | number | Lo que dice tener |
+| estado | string | `pendiente` \| `confirmada` \| `rechazada` |
+| recibidoPorUid / recibidoPorNombre | string | Quién **recibe** (responsable) |
+| montoContado | number | Lo que contó el responsable |
+| diferencia | number | `montoDeclarado − montoContado` |
+| justificacion | string | Motivo de la diferencia o del rechazo |
+| fechaConfirmacion | timestamp | Cuándo se confirmó o rechazó |
+| observaciones | string | Notas del domiciliario |
+
+Al **confirmar** se crea un movimiento `traslado` de `vendedor_efectivo` a
+`caja_fisica` por el monto contado (RF-05).
+
+---
+
+## `cajas/{cajaId}` (spec 009, sin cambios)
 Turno de caja. La **caja física** es la ubicación `caja_fisica`. El efectivo
 esperado de un turno es la suma de los movimientos de dinero con ese `cajaId`.
 

@@ -20,6 +20,8 @@
 - [x] T014 Integrar **cobros** de crédito
 - [x] T015 Unificar la **caja por turno** (009) en el mismo libro
 - [x] T016 Snapshot de **costo, utilidad y margen** en ventas
+- [x] T017 **Rendiciones con doble control** (declara el domiciliario, confirma
+  el responsable con conteo y diferencia)
 
 ## Fase 3 — Interfaz de Usuario
 

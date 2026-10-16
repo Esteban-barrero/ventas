@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/formato/fechas.dart';
+import '../../auth/domain/permisos.dart';
 import '../../auth/domain/usuario.dart';
 import '../data/tesoreria_repository.dart';
 import '../domain/movimiento_dinero.dart';
 import '../domain/posiciones.dart';
+import '../domain/rendicion.dart';
 
 /// Pantalla de **Tesorería** (spec 016): total del dinero, desglose por
 /// ubicación y responsable, movimientos y traslados.
@@ -303,6 +305,10 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
             children: <Widget>[
               _totalCard(total),
               const SizedBox(height: 16),
+              if (widget.usuario.puede(Permiso.cajaConfirmar)) ...<Widget>[
+                _rendicionesPendientes(),
+                const SizedBox(height: 16),
+              ],
               Text('Dónde está el dinero',
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
@@ -320,6 +326,182 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
         },
       ),
     );
+  }
+
+  /// Rendiciones pendientes de confirmar (spec 016, doble control).
+  Widget _rendicionesPendientes() {
+    final tema = Theme.of(context);
+    return StreamBuilder<List<Rendicion>>(
+      stream: _repo.escucharRendiciones(
+        _empresaId,
+        estado: EstadoRendicion.pendiente,
+      ),
+      builder: (context, snap) {
+        final pend = snap.data ?? const <Rendicion>[];
+        if (pend.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Rendiciones por confirmar', style: tema.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            for (final Rendicion r in pend)
+              Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: const Icon(Icons.receipt_long_outlined),
+                  title: Text(
+                      '${r.domiciliarioNombre} · ${formatearValor(r.montoDeclarado)}'),
+                  subtitle: Text(
+                    'Declarada ${formatearFecha(r.fecha)}'
+                    '${r.observaciones.isEmpty ? '' : ' · ${r.observaciones}'}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      IconButton(
+                        tooltip: 'Rechazar',
+                        icon: const Icon(Icons.close),
+                        onPressed: () => _rechazarRendicion(r),
+                      ),
+                      FilledButton(
+                        onPressed: () => _confirmarRendicion(r),
+                        child: const Text('Confirmar'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Confirma una rendición contando el efectivo (RF-05).
+  Future<void> _confirmarRendicion(Rendicion r) async {
+    final contado = TextEditingController(text: r.montoDeclarado.round().toString());
+    final justificacion = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final valor = double.tryParse(contado.text.trim()) ?? r.montoDeclarado;
+          final diferencia = r.montoDeclarado - valor;
+          return AlertDialog(
+            title: const Text('Confirmar rendición'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text('${r.domiciliarioNombre} declara '
+                      '${formatearValor(r.montoDeclarado)}.'),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: contado,
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setDialogState(() {}),
+                    decoration: const InputDecoration(
+                      labelText: 'Efectivo contado',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    diferencia == 0
+                        ? 'Cuadre perfecto'
+                        : (diferencia > 0
+                            ? 'Faltante: ${formatearValor(diferencia)}'
+                            : 'Sobrante: ${formatearValor(diferencia.abs())}'),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: diferencia == 0 ? Colors.green : Colors.orange,
+                    ),
+                  ),
+                  if (diferencia != 0) ...<Widget>[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: justificacion,
+                      decoration: const InputDecoration(
+                        labelText: 'Justificación *',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Confirmar recepción'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _repo.confirmarRendicion(
+        rendicionId: r.id,
+        empresaId: _empresaId,
+        recibidoPorUid: _uid,
+        recibidoPorNombre: _nombre,
+        montoContado: double.tryParse(contado.text.trim()) ?? 0,
+        justificacion: justificacion.text.trim(),
+      );
+      if (mounted) _avisar('Rendición confirmada.');
+    } catch (e) {
+      if (mounted) _avisar('No se pudo confirmar: $e', error: true);
+    }
+  }
+
+  /// Rechaza una rendición (no se recibe el dinero).
+  Future<void> _rechazarRendicion(Rendicion r) async {
+    final motivo = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rechazar rendición'),
+        content: TextField(
+          controller: motivo,
+          decoration: const InputDecoration(
+            labelText: 'Motivo',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Rechazar'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _repo.rechazarRendicion(
+        rendicionId: r.id,
+        empresaId: _empresaId,
+        usuarioUid: _uid,
+        motivo: motivo.text.trim(),
+      );
+      if (mounted) _avisar('Rendición rechazada.');
+    } catch (e) {
+      if (mounted) _avisar('No se pudo rechazar: $e', error: true);
+    }
   }
 
   Widget _totalCard(double total) {

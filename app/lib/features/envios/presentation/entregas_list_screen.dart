@@ -6,6 +6,7 @@ import '../../clientes/data/clientes_repository.dart';
 import '../../clientes/domain/cliente.dart';
 import '../../tesoreria/data/tesoreria_repository.dart';
 import '../../tesoreria/domain/movimiento_dinero.dart';
+import '../../tesoreria/domain/rendicion.dart';
 import '../../ventas/domain/venta.dart';
 import '../data/entregas_repository.dart';
 import 'entrega_detalle_screen.dart';
@@ -100,29 +101,81 @@ class _EntregasListScreenState extends State<EntregasListScreen> {
     return saldo;
   }
 
-  /// Rinde el efectivo del domiciliario a la caja física (spec 016, RF-05).
-  Future<void> _rendir() async {
+  /// **Declara** una rendición de efectivo (spec 016, RF-05). El dinero no se
+  /// mueve hasta que un responsable la confirme contando el efectivo.
+  Future<void> _declararRendicion() async {
+    final saldo = await _miEfectivo();
+    if (!mounted) return;
+    if (saldo <= 0.5) {
+      _avisar('No tienes efectivo por declarar.');
+      return;
+    }
+    final monto = TextEditingController(text: saldo.round().toString());
+    final observaciones = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Declarar rendición'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                'Tienes ${formatearValor(saldo)} por entregar. '
+                'Un responsable en tesorería debe confirmarlo.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: monto,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Monto a entregar',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: observaciones,
+                decoration: const InputDecoration(
+                  labelText: 'Observaciones (opcional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Declarar'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final valor = double.tryParse(monto.text.trim()) ?? 0;
+    if (valor <= 0) {
+      _avisar('El monto debe ser mayor que cero.', error: true);
+      return;
+    }
     setState(() => _rindiendo = true);
     try {
-      final saldo = await _miEfectivo();
-      if (saldo <= 0.5) {
-        if (mounted) _avisar('No tienes efectivo por rendir.');
-        return;
-      }
-      await _tesoreria.trasladar(
+      await _tesoreria.declararRendicion(
         empresaId: _empresaId,
-        monto: saldo,
-        origen: UbicacionDinero.vendedorEfectivo,
-        destino: UbicacionDinero.cajaFisica,
-        usuarioUid: widget.usuario.uid,
-        usuarioNombre: widget.usuario.nombre,
-        responsableUid: widget.usuario.uid,
-        responsableNombre: widget.usuario.nombre,
-        descripcion: 'Rendición de efectivo',
+        domiciliarioUid: widget.usuario.uid,
+        domiciliarioNombre: widget.usuario.nombre,
+        montoDeclarado: valor,
+        observaciones: observaciones.text.trim(),
       );
-      if (mounted) _avisar('Rendiste ${formatearValor(saldo)} a caja.');
+      if (mounted) _avisar('Rendición declarada. Espera la confirmación.');
     } catch (e) {
-      if (mounted) _avisar('No se pudo rendir: $e', error: true);
+      if (mounted) _avisar('No se pudo declarar: $e', error: true);
     } finally {
       if (mounted) setState(() => _rindiendo = false);
     }
@@ -141,7 +194,7 @@ class _EntregasListScreenState extends State<EntregasListScreen> {
         title: const Text('Pendientes por entregar'),
         actions: <Widget>[
           IconButton(
-            tooltip: 'Rendir efectivo',
+            tooltip: 'Declarar rendición',
             icon: _rindiendo
                 ? const SizedBox(
                     width: 18,
@@ -149,7 +202,7 @@ class _EntregasListScreenState extends State<EntregasListScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.price_check_outlined),
-            onPressed: _rindiendo ? null : _rendir,
+            onPressed: _rindiendo ? null : _declararRendicion,
           ),
         ],
       ),
@@ -175,6 +228,7 @@ class _EntregasListScreenState extends State<EntregasListScreen> {
 
           return Column(
             children: <Widget>[
+              _avisoRendicion(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                 child: Column(
@@ -252,8 +306,44 @@ class _EntregasListScreenState extends State<EntregasListScreen> {
     );
   }
 
-  Widget _tile(Venta v) {
-    final tema = Theme.of(context);
+  /// Aviso de rendición pendiente de confirmar por tesorería (spec 016).
+  Widget _avisoRendicion() {
+    return StreamBuilder<List<Rendicion>>(
+      stream: _tesoreria.escucharRendiciones(
+        _empresaId,
+        estado: EstadoRendicion.pendiente,
+        domiciliarioUid: widget.usuario.uid,
+      ),
+      builder: (context, snap) {
+        final pendientes = snap.data ?? const <Rendicion>[];
+        if (pendientes.isEmpty) return const SizedBox.shrink();
+        final total = pendientes.fold<double>(
+            0, (double a, Rendicion r) => a + r.montoDeclarado);
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: <Widget>[
+              const Icon(Icons.hourglass_top_outlined, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Rendición pendiente por confirmar: ${formatearValor(total)}',
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _tile(Venta v) {    final tema = Theme.of(context);
     final ciudad = _ciudadDe(v);
     final cliente = v.clienteId == null ? null : _clientes[v.clienteId];
     return ListTile(

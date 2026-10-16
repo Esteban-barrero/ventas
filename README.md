@@ -102,9 +102,12 @@ pago contra entrega, Nequi, banco, tarjeta por consignar) y **responsable**. La
 pantalla de **Tesorería** muestra el **total** de la empresa y el desglose **por
 ubicación y responsable** ("dónde está la plata y quién la tiene"). Las **ventas
 de contado** y los **cobros** ingresan automáticamente; la venta guarda su
-**snapshot de costo, utilidad y margen %**. La caja por turno (009) es la ubicación
-*caja física* dentro del mismo libro. El **pago a proveedor** (egreso) y la
-**conciliación bancaria** quedan pendientes.
+**snapshot de costo, utilidad y margen %**. Incluye **rendiciones de efectivo con
+doble control**: el domiciliario **declara** lo que entrega y un responsable
+(Cajero/Gerente/Admin) **confirma la recepción** contando el efectivo (con
+diferencia y justificación). La caja por turno (009) es la ubicación *caja física*
+dentro del mismo libro. El **pago a proveedor** (egreso) y la **conciliación
+bancaria** quedan pendientes.
 
 | Funcionalidad | Estado |
 |---|---|
@@ -317,6 +320,7 @@ sus roles (`permisosDeRoles`). Un usuario puede tener varios roles, por ejemplo
 | Gestionar inventario | ● | ● | — | — | — | — | — | — | — | — |
 | Ver caja | ● | ● | ● | — | — | ● | ● | — | — | — |
 | Operar caja | ● | ● | — | — | — | ● | ● | — | — | — |
+| Confirmar rendiciones | ● | ● | ● | — | — | ● | — | — | — | — |
 | Ver créditos | ● | ● | ● | ● | — | ● | ● | — | — | — |
 | Gestionar créditos | ● | ● | — | — | — | ● | — | — | — | — |
 | Ver compras | ● | ● | ● | — | — | — | — | — | — | — |

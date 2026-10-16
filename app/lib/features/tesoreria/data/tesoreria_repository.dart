@@ -4,6 +4,7 @@ import '../../auditoria/data/auditoria_repository.dart';
 import '../../auditoria/domain/auditoria.dart';
 import '../domain/movimiento_dinero.dart';
 import '../domain/posiciones.dart';
+import '../domain/rendicion.dart';
 
 /// El saldo de la ubicación de origen no alcanza para el traslado (RN-03).
 class SaldoInsuficienteException implements Exception {
@@ -37,6 +38,9 @@ class TesoreriaRepository {
 
   CollectionReference<Map<String, dynamic>> get _cajas => _db.collection('cajas');
 
+  CollectionReference<Map<String, dynamic>> get _rendiciones =>
+      _db.collection('rendiciones');
+
   /// Escucha el libro de movimientos de la empresa (más recientes primero).
   Stream<List<MovimientoDinero>> escucharMovimientos(String empresaId) {
     return _movs
@@ -67,6 +71,157 @@ class TesoreriaRepository {
   /// Total del dinero de la empresa (RF-03).
   Future<double> total(String empresaId) async =>
       totalDePosiciones(await posiciones(empresaId));
+
+  /// **Declara** una rendición de efectivo (el domiciliario dice cuánto tiene).
+  /// El dinero **no** se mueve hasta que se confirme.
+  Future<String> declararRendicion({
+    required String empresaId,
+    required String domiciliarioUid,
+    required String domiciliarioNombre,
+    required double montoDeclarado,
+    String recibidoPorUid = '',
+    String recibidoPorNombre = '',
+    String observaciones = '',
+  }) async {
+    if (montoDeclarado <= 0) {
+      throw ArgumentError('El monto debe ser mayor que cero.');
+    }
+    final ref = _rendiciones.doc();
+    final r = Rendicion(
+      id: ref.id,
+      empresaId: empresaId,
+      fecha: DateTime.now(),
+      domiciliarioUid: domiciliarioUid,
+      domiciliarioNombre: domiciliarioNombre,
+      montoDeclarado: montoDeclarado,
+      estado: EstadoRendicion.pendiente,
+      recibidoPorUid: recibidoPorUid,
+      recibidoPorNombre: recibidoPorNombre,
+      observaciones: observaciones,
+    );
+    await ref.set(r.toMap());
+    await _auditoria.registrarEvento(
+      empresaId: empresaId,
+      operacion: OperacionAuditoria.insert,
+      tabla: 'rendiciones',
+      documentoId: ref.id,
+      datos: <String, dynamic>{
+        'domiciliarioUid': domiciliarioUid,
+        'montoDeclarado': montoDeclarado,
+      },
+    );
+    return ref.id;
+  }
+
+  /// Escucha las rendiciones de la empresa (opcionalmente por estado).
+  Stream<List<Rendicion>> escucharRendiciones(
+    String empresaId, {
+    EstadoRendicion? estado,
+    String? domiciliarioUid,
+  }) {
+    return _rendiciones
+        .where('empresaId', isEqualTo: empresaId)
+        .snapshots()
+        .map((QuerySnapshot<Map<String, dynamic>> snap) {
+      final lista = snap.docs
+          .map((DocumentSnapshot<Map<String, dynamic>> d) =>
+              Rendicion.fromMap(d.id, d.data()!))
+          .where((Rendicion r) {
+        if (estado != null && r.estado != estado) return false;
+        if (domiciliarioUid != null && r.domiciliarioUid != domiciliarioUid) {
+          return false;
+        }
+        return true;
+      }).toList();
+      lista.sort((Rendicion a, Rendicion b) =>
+          (b.fecha ?? DateTime(0)).compareTo(a.fecha ?? DateTime(0)));
+      return lista;
+    });
+  }
+
+  /// **Confirma** una rendición (el responsable cuenta el efectivo). Mueve el
+  /// dinero `vendedorEfectivo` → `cajaFisica` por el monto **contado** y deja
+  /// constancia de quién recibió (RF-05). Exige justificar la diferencia.
+  Future<void> confirmarRendicion({
+    required String rendicionId,
+    required String empresaId,
+    required String recibidoPorUid,
+    required String recibidoPorNombre,
+    required double montoContado,
+    String justificacion = '',
+  }) async {
+    final ref = _rendiciones.doc(rendicionId);
+    final snap = await ref.get();
+    final data = snap.data();
+    if (data == null) throw StateError('La rendición no existe.');
+    final r = Rendicion.fromMap(rendicionId, data);
+    if (!r.pendiente) {
+      throw StateError('La rendición ya fue procesada.');
+    }
+    final diferencia = r.montoDeclarado - montoContado;
+    if (diferencia.abs() > 0.001 && justificacion.trim().isEmpty) {
+      throw ArgumentError('Debes justificar la diferencia de la rendición.');
+    }
+    if (montoContado > 0) {
+      await trasladar(
+        empresaId: empresaId,
+        monto: montoContado,
+        origen: UbicacionDinero.vendedorEfectivo,
+        destino: UbicacionDinero.cajaFisica,
+        usuarioUid: recibidoPorUid,
+        usuarioNombre: recibidoPorNombre,
+        responsableUid: r.domiciliarioUid,
+        responsableNombre: r.domiciliarioNombre,
+        descripcion: 'Rendición de ${r.domiciliarioNombre}',
+        referenciaId: rendicionId,
+      );
+    }
+    await ref.update(<String, dynamic>{
+      'estado': EstadoRendicion.confirmada.id,
+      'recibidoPorUid': recibidoPorUid,
+      'recibidoPorNombre': recibidoPorNombre,
+      'montoContado': montoContado,
+      'diferencia': diferencia,
+      'justificacion': justificacion,
+      'fechaConfirmacion': DateTime.now().toUtc().toIso8601String(),
+    });
+    await _auditoria.registrarEvento(
+      empresaId: empresaId,
+      operacion: OperacionAuditoria.update,
+      tabla: 'rendiciones',
+      documentoId: rendicionId,
+      datos: <String, dynamic>{
+        'estado': EstadoRendicion.confirmada.id,
+        'recibidoPorUid': recibidoPorUid,
+        'montoContado': montoContado,
+        'diferencia': diferencia,
+      },
+    );
+  }
+
+  /// **Rechaza** una rendición (el responsable no la acepta).
+  Future<void> rechazarRendicion({
+    required String rendicionId,
+    required String empresaId,
+    required String usuarioUid,
+    String motivo = '',
+  }) async {
+    await _rendiciones.doc(rendicionId).update(<String, dynamic>{
+      'estado': EstadoRendicion.rechazada.id,
+      'justificacion': motivo,
+      'fechaConfirmacion': DateTime.now().toUtc().toIso8601String(),
+    });
+    await _auditoria.registrarEvento(
+      empresaId: empresaId,
+      operacion: OperacionAuditoria.update,
+      tabla: 'rendiciones',
+      documentoId: rendicionId,
+      datos: <String, dynamic>{
+        'estado': EstadoRendicion.rechazada.id,
+        'porUid': usuarioUid,
+      },
+    );
+  }
 
   /// Registra un movimiento de dinero (RF-01). El movimiento es inmutable.
   ///

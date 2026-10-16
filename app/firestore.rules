@@ -348,6 +348,20 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Rendiciones de efectivo (spec 016). El domiciliario declara; un
+    // responsable (Cajero/Gerente/Admin) confirma la recepción.
+    match /rendiciones/{rendicionId} {
+      allow read: if autenticado()
+        && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
+      allow create: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador', 'gerente', 'cajero', 'domiciliario']);
+      allow update: if autenticado()
+        && esDeEmpresa(resource.data.empresaId)
+        && roles().hasAny(['administrador', 'gerente', 'cajero']);
+      allow delete: if false;
+    }
+
     // Arqueos de cierre (spec 009).
     match /arqueos/{arqueoId} {
       allow read: if autenticado()

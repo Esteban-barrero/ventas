@@ -83,6 +83,11 @@ void main() {
       expect(permisos.contains(Permiso.clientesVer), isTrue);
       expect(permisos.contains(Permiso.cajaOperar), isTrue);
       expect(permisos.contains(Permiso.usuariosGestionar), isFalse);
+      expect(permisos.contains(Permiso.cajaConfirmar), isFalse);
+    });
+
+    test('el cajero sí puede confirmar rendiciones', () {
+      expect(Rol.cajero.permisos.contains(Permiso.cajaConfirmar), isTrue);
     });
 
     test('es asignable desde la gestión de usuarios', () {

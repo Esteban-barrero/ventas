@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ventas_app/features/caja/domain/caja.dart';
 import 'package:ventas_app/features/tesoreria/domain/movimiento_dinero.dart';
 import 'package:ventas_app/features/tesoreria/domain/posiciones.dart';
+import 'package:ventas_app/features/tesoreria/domain/rendicion.dart';
 import 'package:ventas_app/features/ventas/domain/venta.dart'
     show MedioPago, TipoEntrega;
 
@@ -161,6 +162,53 @@ void main() {
       expect(otra.abierta, isTrue);
       expect(otra.saldo, 70000);
       expect(otra.medioPredominante, MedioDinero.nequi);
+    });
+  });
+
+  group('Rendición de efectivo (spec 016, RF-05)', () {
+    test('EstadoRendicion.desdeId con valor desconocido vuelve a pendiente', () {
+      expect(EstadoRendicion.desdeId('confirmada'), EstadoRendicion.confirmada);
+      expect(EstadoRendicion.desdeId('rechazada'), EstadoRendicion.rechazada);
+      expect(EstadoRendicion.desdeId('x'), EstadoRendicion.pendiente);
+      expect(EstadoRendicion.desdeId(null), EstadoRendicion.pendiente);
+    });
+
+    test('serializa entrega, recepción y diferencia', () {
+      final r = Rendicion(
+        id: 'r1',
+        empresaId: 'e1',
+        fecha: DateTime.utc(2026, 10, 16, 9),
+        domiciliarioUid: 'u9',
+        domiciliarioNombre: 'Pepito',
+        montoDeclarado: 50000,
+        estado: EstadoRendicion.pendiente,
+      );
+      expect(r.pendiente, isTrue);
+      final copia = Rendicion.fromMap('r1', r.toMap());
+      expect(copia.domiciliarioNombre, 'Pepito');
+      expect(copia.montoDeclarado, 50000);
+      expect(copia.estado, EstadoRendicion.pendiente);
+    });
+
+    test('la diferencia es declarado − contado (faltante o sobrante)', () {
+      final faltante = Rendicion(
+        id: 'r2',
+        empresaId: 'e1',
+        montoDeclarado: 50000,
+        montoContado: 48000,
+        diferencia: 50000 - 48000,
+        estado: EstadoRendicion.confirmada,
+      );
+      expect(faltante.diferencia, 2000);
+      expect(faltante.pendiente, isFalse);
+      final sobrante = Rendicion(
+        id: 'r3',
+        empresaId: 'e1',
+        montoDeclarado: 50000,
+        montoContado: 52000,
+        diferencia: 50000 - 52000,
+      );
+      expect(sobrante.diferencia, -2000);
     });
   });
 }
