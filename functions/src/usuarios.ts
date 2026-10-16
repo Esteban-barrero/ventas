@@ -134,3 +134,59 @@ export const crearUsuario = onCall(async (request) => {
 
   return {uid, enlaceActivacion};
 });
+
+/**
+ * Genera un enlace de restablecimiento de contrasena para un usuario existente
+ * (spec 001). El enlace se devuelve para copiarlo, asi funciona aunque el
+ * correo del usuario no reciba mensajes.
+ *
+ * Lo invoca el Super Admin (cualquier empresa) o el Administrador de la empresa
+ * (solo usuarios de la suya).
+ */
+export const generarEnlaceActivacion = onCall(async (request) => {
+  const ctx = exigirGestionUsuarios(request);
+
+  const data = (request.data ?? {}) as Record<string, unknown>;
+  const uid = String(data.uid ?? '').trim();
+  let email = String(data.email ?? '').trim().toLowerCase();
+
+  // El Administrador solo puede con usuarios de SU empresa.
+  if (!ctx.esSuper) {
+    if (!uid) {
+      throw new HttpsError('invalid-argument', 'Falta el usuario');
+    }
+    const perfil = await admin
+      .firestore()
+      .collection('usuarios')
+      .doc(uid)
+      .get();
+    const empresaObjetivo = perfil.data()?.empresaId as string | undefined;
+    if (!ctx.empresaId || empresaObjetivo !== ctx.empresaId) {
+      throw new HttpsError(
+        'permission-denied',
+        'El usuario no es de tu empresa'
+      );
+    }
+  }
+
+  if (!email && uid) {
+    const usuario = await admin.auth().getUser(uid);
+    email = (usuario.email ?? '').toLowerCase();
+  }
+  if (!email) {
+    throw new HttpsError('invalid-argument', 'Falta el correo del usuario');
+  }
+
+  try {
+    const enlaceActivacion = await admin
+      .auth()
+      .generatePasswordResetLink(email);
+    return {enlaceActivacion};
+  } catch (e) {
+    console.error('No se pudo generar el enlace de restablecimiento', e);
+    throw new HttpsError(
+      'internal',
+      'No se pudo generar el enlace de restablecimiento'
+    );
+  }
+});

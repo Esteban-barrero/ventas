@@ -110,6 +110,7 @@ falta (no ocupan contexto todo el tiempo):
 | `contexto-proyecto` | Repos, Firebase, empresa demo, Super Admin y convenciones |
 | `respaldo-datos` | Export/import de Firestore (+ Auth y Storage) |
 | `publicar` | `analyze` + `test` + commit + push + reiniciar la app |
+| `restablecer-clave` | Generar el enlace de restablecimiento (o fijar la clave) de un usuario (Admin API) |
 | `validar-correo` | Usar `esCorreoValido` (`core/validacion/correo.dart`) |
 | `formato-fechas` | Usar `core/formato/fechas.dart` (no `intl`) |
 | `formato-numeros` | Cifras: miles con punto y decimales con coma (`formatearValor`) |

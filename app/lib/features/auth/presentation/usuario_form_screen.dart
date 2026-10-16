@@ -54,6 +54,7 @@ class _UsuarioFormScreenState extends State<UsuarioFormScreen> {
   List<Empresa> _empresas = const <Empresa>[];
   bool _cargandoEmpresas = false;
   bool _guardando = false;
+  bool _restableciendo = false;
   String? _error;
 
   bool get _esEdicion => widget.usuario != null;
@@ -266,8 +267,95 @@ class _UsuarioFormScreenState extends State<UsuarioFormScreen> {
     );
   }
 
-  String _mensajeDeError(Object e) {
-    final texto = e.toString();
+  /// Genera un enlace de restablecimiento de contraseña para el usuario
+  /// (spec 001). Sirve aunque el correo no exista: el enlace se copia.
+  Future<void> _restablecerContrasena() async {
+    final u = widget.usuario;
+    if (u == null) return;
+    final nombre = u.nombre.isEmpty ? u.email : u.nombre;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Restablecer contraseña'),
+        content: Text(
+          'Se generará un enlace para que "$nombre" defina una contraseña '
+          'nueva.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Generar enlace'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+
+    setState(() => _restableciendo = true);
+    try {
+      final enlace =
+          await _repo.restablecerContrasena(email: u.email, uid: u.uid);
+      if (!mounted) return;
+      await _mostrarEnlace(enlace, u.email);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = _mensajeDeError(e));
+    } finally {
+      if (mounted) setState(() => _restableciendo = false);
+    }
+  }
+
+  /// Muestra el enlace generado (copiable) o confirma que se envió por correo.
+  Future<void> _mostrarEnlace(String? enlace, String email) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Restablecer contraseña'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            if (enlace != null) ...<Widget>[
+              const Text(
+                'Comparte este enlace para que defina su contraseña:',
+              ),
+              const SizedBox(height: 8),
+              SelectableText(
+                enlace,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ] else
+              Text('Se envió un enlace de restablecimiento a $email.'),
+          ],
+        ),
+        actions: <Widget>[
+          if (enlace != null)
+            TextButton.icon(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: enlace));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Enlace copiado.')),
+                  );
+                }
+              },
+              icon: const Icon(Icons.copy, size: 18),
+              label: const Text('Copiar'),
+            ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _mensajeDeError(Object e) {    final texto = e.toString();
     if (texto.contains('already-exists')) {
       return 'Ese correo ya está registrado.';
     }
@@ -377,6 +465,20 @@ class _UsuarioFormScreenState extends State<UsuarioFormScreen> {
                       : (_esEdicion ? 'Guardar cambios' : 'Crear usuario'),
                 ),
               ),
+              if (_esEdicion) ...<Widget>[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _restableciendo ? null : _restablecerContrasena,
+                  icon: _restableciendo
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.lock_reset_outlined),
+                  label: const Text('Restablecer contraseña'),
+                ),
+              ],
               const SizedBox(height: 24),
             ],
           ),

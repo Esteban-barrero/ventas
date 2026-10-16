@@ -123,6 +123,7 @@ física* dentro del mismo libro. El **pago a proveedor** (egreso) y la
 | Caché de sesión para uso sin conexión | ✅ |
 | Foto de perfil del usuario ("Mi perfil") | ✅ |
 | Recordar datos en el login (correo) | ✅ |
+| Restablecer contraseña de usuario (enlace/Admin API) | ✅ |
 | Campos de dinero con separador de miles | ✅ |
 | Reglas de Firestore por rol y `empresaId` | ✅ |
 | Listado, creación y detalle de empresas (Super Admin) | ✅ |

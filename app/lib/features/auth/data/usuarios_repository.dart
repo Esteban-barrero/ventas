@@ -282,6 +282,32 @@ class UsuariosRepository {
     return _actualizarCampos(uid, cambios, autor: autor);
   }
 
+  /// Genera un **enlace de restablecimiento de contraseña** para un usuario
+  /// (spec 001).
+  ///
+  /// Intenta la Cloud Function `generarEnlaceActivacion` (Admin SDK), que
+  /// devuelve el enlace para copiarlo (sirve aunque el correo no exista). Si no
+  /// está desplegada, envía el correo de restablecimiento y devuelve `null`.
+  Future<String?> restablecerContrasena({
+    required String email,
+    String uid = '',
+  }) async {
+    try {
+      final callable = _functions.httpsCallable('generarEnlaceActivacion');
+      final respuesta = await callable.call(<String, dynamic>{
+        'email': email,
+        'uid': uid,
+      });
+      final mapa = Map<String, dynamic>.from(respuesta.data as Map);
+      final enlace = mapa['enlaceActivacion'] as String?;
+      if (enlace != null && enlace.isNotEmpty) return enlace;
+    } catch (_) {
+      // Función no desplegada u otro fallo: se usa el correo de restablecimiento.
+    }
+    await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+    return null;
+  }
+
   Future<void> _actualizarCampos(
     String uid,
     Map<String, dynamic> cambios, {
