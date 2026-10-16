@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../auditoria/data/auditoria_repository.dart';
 import '../../auditoria/domain/auditoria.dart';
 import '../domain/categoria.dart';
+import 'categorias_estandar.dart';
 
 /// Acceso a la colección `categorias` (spec 003, RF-10). Multi-tenant.
 class CategoriasRepository {
@@ -97,6 +98,24 @@ class CategoriasRepository {
       antes: <String, dynamic>{'activo': antes['activo']},
       despues: despues,
     );
+  }
+
+  /// Crea la lista **estándar** de categorías para una empresa si no tiene
+  /// ninguna (spec 003). Devuelve cuántas creó (0 si ya había).
+  ///
+  /// Así el formulario de producto tiene opciones desde el inicio y cada empresa
+  /// puede luego editarlas a su gusto.
+  Future<int> sembrarEstandar(String empresaId) async {
+    if (empresaId.isEmpty) return 0;
+    final existentes = await listar(empresaId);
+    if (existentes.isNotEmpty) return 0;
+
+    var creadas = 0;
+    for (final nombre in categoriasEstandar) {
+      await crear(Categoria(id: '', empresaId: empresaId, nombre: nombre));
+      creadas++;
+    }
+    return creadas;
   }
 
   List<Categoria> _aLista(QuerySnapshot<Map<String, dynamic>> snap) {

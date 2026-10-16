@@ -39,9 +39,10 @@ proyecto está en el plan **Blaze** con las Cloud Functions y las reglas de
 Firestore y Storage ya desplegadas.
 
 **Spec 003 — Catálogo de Productos:** implementada (núcleo). Precios por **margen
-dual contado/crédito** (general y por producto), categorías, fotos, costo de
-envío, stock con alerta de mínimo y auditoría. Las reglas de
-`productos`/`categorias` están **desplegadas**.
+dual contado/crédito** (general y por producto), categorías (con una **lista
+estándar** sembrada y editable por empresa), fotos, costo de envío, stock con
+alerta de mínimo y auditoría. Las reglas de `productos`/`categorias` están
+**desplegadas**.
 
 **Spec 004 — Clientes:** implementada (núcleo). Registro con **dirección completa**
 (departamento/ciudad/dirección/barrio), **ubicación GPS** (abre en Google Maps o
@@ -477,7 +478,7 @@ Cada carpeta contiene `spec.md`, `plan.md` y `tasks.md`.
 ```bash
 cd app
 flutter analyze   # sin errores
-flutter test      # 161 pruebas
+flutter test      # 162 pruebas
 ```
 
 Las pruebas cubren: permisos y unión de roles, cálculo de la licencia (incluido

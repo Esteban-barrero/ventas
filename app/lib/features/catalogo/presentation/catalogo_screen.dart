@@ -63,6 +63,18 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
     super.initState();
     _busqueda.addListener(() => setState(() {}));
     _cargarParametros();
+    _sembrarCategorias();
+  }
+
+  /// Si la empresa no tiene categorías y el usuario puede editar, crea la lista
+  /// estándar para que el formulario de producto tenga opciones.
+  Future<void> _sembrarCategorias() async {
+    if (_empresaId.isEmpty || !_puedeEditar) return;
+    try {
+      await _categorias.sembrarEstandar(_empresaId);
+    } catch (_) {
+      // Si falla (p. ej. sin conexión), se reintenta en la próxima apertura.
+    }
   }
 
   @override

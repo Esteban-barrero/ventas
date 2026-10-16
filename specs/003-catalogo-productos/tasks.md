@@ -60,6 +60,10 @@
 - **Búsqueda:** por subcadena en el cliente (nombre/código), sin índices
   compuestos.
 
+- **Categorías estándar:** al abrir el catálogo, si la empresa no tiene
+  categorías se siembra una **lista estándar** (`categorias_estandar.dart`),
+  editable por cada empresa.
+
 ## Pendiente (no bloqueante)
 
 - Desplegar las reglas de Firestore y Storage de `productos`/`categorias`.

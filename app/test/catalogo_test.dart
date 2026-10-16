@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ventas_app/features/auth/domain/usuario.dart';
+import 'package:ventas_app/features/catalogo/data/categorias_estandar.dart';
 import 'package:ventas_app/features/catalogo/data/categorias_repository.dart';
 import 'package:ventas_app/features/catalogo/data/productos_repository.dart';
 import 'package:ventas_app/features/catalogo/domain/categoria.dart';
@@ -25,6 +26,9 @@ class _FakeCategorias extends CategoriasRepository {
   @override
   Stream<List<Categoria>> escuchar(String empresaId) =>
       Stream.value(const <Categoria>[]);
+
+  @override
+  Future<int> sembrarEstandar(String empresaId) async => 0;
 }
 
 class _FakeEmpresas extends EmpresasRepository {
@@ -205,6 +209,13 @@ void main() {
       );
       final vuelta = Producto.fromMap('p', p.toMap());
       expect(vuelta.color, 'Verde');
+    });
+  });
+
+  group('categorías estándar', () {
+    test('la lista no está vacía y no tiene repetidos', () {
+      expect(categoriasEstandar, isNotEmpty);
+      expect(categoriasEstandar.toSet().length, categoriasEstandar.length);
     });
   });
 
