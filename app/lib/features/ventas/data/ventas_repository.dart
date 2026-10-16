@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../auditoria/data/auditoria_repository.dart';
 import '../../auditoria/domain/auditoria.dart';
+import '../../inventario/data/kardex.dart';
 import '../domain/venta.dart';
 
 /// Stock insuficiente al confirmar la venta (transacción, RN-05).
@@ -151,11 +152,26 @@ class VentasRepository {
       );
 
       for (final ItemVenta it in venta.items) {
+        final stockAnterior = stocks[it.productoId] ?? 0;
         tx.update(_db.collection('productos').doc(it.productoId),
             <String, dynamic>{
-              'stock': (stocks[it.productoId] ?? 0) - it.cantidad,
+              'stock': stockAnterior - it.cantidad,
               'fechaActualizacion': DateTime.now().toUtc().toIso8601String(),
             });
+        escribirMovimiento(
+          _db,
+          tx,
+          empresaId: venta.empresaId,
+          productoId: it.productoId,
+          codigo: it.codigo,
+          nombre: it.nombre,
+          tipo: 'salida',
+          delta: -it.cantidad,
+          stockAnterior: stockAnterior,
+          referenciaTipo: 'venta',
+          referenciaId: ventaRef.id,
+          usuarioUid: venta.vendedorUid,
+        );
       }
 
       tx.set(ventaRef, <String, dynamic>{
@@ -188,6 +204,7 @@ class VentasRepository {
     String ventaId,
     String motivo, {
     String? empresaId,
+    String usuarioUid = '',
   }) async {
     final ref = _ventas.doc(ventaId);
     var empresa = empresaId ?? '';
@@ -206,6 +223,8 @@ class VentasRepository {
           .whereType<Map<dynamic, dynamic>>();
       final stocks = <String, int>{};
       final devoluciones = <String, int>{};
+      final codigos = <String, String>{};
+      final nombres = <String, String>{};
       for (final Map<dynamic, dynamic> it in items) {
         final productoId = it['productoId'] as String? ?? '';
         final cantidad = (it['cantidad'] as num?)?.toInt() ?? 0;
@@ -214,14 +233,32 @@ class VentasRepository {
         if (!pSnap.exists) continue;
         stocks[productoId] = (pSnap.data()?['stock'] as num?)?.toInt() ?? 0;
         devoluciones[productoId] = (devoluciones[productoId] ?? 0) + cantidad;
+        codigos[productoId] = it['codigo'] as String? ?? '';
+        nombres[productoId] = it['nombre'] as String? ?? '';
       }
 
       // ESCRITURAS.
       for (final String productoId in stocks.keys) {
+        final stockAnterior = stocks[productoId] ?? 0;
+        final devolucion = devoluciones[productoId] ?? 0;
         tx.update(_db.collection('productos').doc(productoId), <String, dynamic>{
-          'stock': (stocks[productoId] ?? 0) + (devoluciones[productoId] ?? 0),
+          'stock': stockAnterior + devolucion,
           'fechaActualizacion': DateTime.now().toUtc().toIso8601String(),
         });
+        escribirMovimiento(
+          _db,
+          tx,
+          empresaId: empresa,
+          productoId: productoId,
+          codigo: codigos[productoId] ?? '',
+          nombre: nombres[productoId] ?? '',
+          tipo: 'reverso',
+          delta: devolucion,
+          stockAnterior: stockAnterior,
+          referenciaTipo: 'anulacion',
+          referenciaId: ventaId,
+          usuarioUid: usuarioUid,
+        );
       }
 
       tx.update(ref, <String, dynamic>{

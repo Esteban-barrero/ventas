@@ -182,7 +182,7 @@ class _CompraFormScreenState extends State<CompraFormScreen> {
 
     setState(() => _guardando = true);
     try {
-      await _compras.registrar(compra);
+      await _compras.registrar(compra, usuarioUid: widget.usuario.uid);
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e) {

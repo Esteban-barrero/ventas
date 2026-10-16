@@ -170,7 +170,8 @@ class _CompraDetalleScreenState extends State<CompraDetalleScreen> {
     );
     if (ok != true) return;
     try {
-      await _repo.anular(compra.id, motivo.text.trim());
+      await _repo.anular(compra.id, motivo.text.trim(),
+          usuarioUid: widget.usuario.uid);
       await _cargar();
       if (mounted) _avisar('Compra anulada.');
     } catch (e) {

@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../auditoria/data/auditoria_repository.dart';
 import '../../auditoria/domain/auditoria.dart';
+import '../../inventario/data/kardex.dart';
 import '../domain/anexo.dart';
 import '../domain/compra.dart';
 
@@ -83,7 +84,7 @@ class ComprasRepository {
   /// Registra una compra en una **transacción** (RN-02, RN-03):
   /// suma inventario, actualiza el costo (si aplica), crea la compra y —si es
   /// a crédito— la cuenta por pagar. Devuelve el id y el número de orden.
-  Future<Compra> registrar(Compra compra) async {
+  Future<Compra> registrar(Compra compra, {String usuarioUid = ''}) async {
     if (compra.items.isEmpty) {
       throw ArgumentError('La compra no tiene productos.');
     }
@@ -117,12 +118,27 @@ class ComprasRepository {
       );
 
       for (final ItemCompra it in compra.items) {
+        final stockAnterior = stocks[it.productoId] ?? 0;
         final datos = <String, dynamic>{
-          'stock': (stocks[it.productoId] ?? 0) + it.cantidad,
+          'stock': stockAnterior + it.cantidad,
           'fechaActualizacion': DateTime.now().toUtc().toIso8601String(),
         };
         if (compra.actualizaCosto) datos['costo'] = it.costoUnitario;
         tx.update(_db.collection('productos').doc(it.productoId), datos);
+        escribirMovimiento(
+          _db,
+          tx,
+          empresaId: compra.empresaId,
+          productoId: it.productoId,
+          codigo: it.codigo,
+          nombre: it.nombre,
+          tipo: 'entrada',
+          delta: it.cantidad,
+          stockAnterior: stockAnterior,
+          referenciaTipo: 'compra',
+          referenciaId: compraRef.id,
+          usuarioUid: usuarioUid,
+        );
       }
 
       tx.set(compraRef, <String, dynamic>{
@@ -167,7 +183,11 @@ class ComprasRepository {
   }
 
   /// Anula una compra y **revierte el inventario** (RN-04).
-  Future<void> anular(String compraId, String motivo) async {
+  Future<void> anular(
+    String compraId,
+    String motivo, {
+    String usuarioUid = '',
+  }) async {
     final ref = _compras.doc(compraId);
     var empresa = '';
 
@@ -185,6 +205,8 @@ class ComprasRepository {
           .whereType<Map<dynamic, dynamic>>();
       final stocks = <String, int>{};
       final devoluciones = <String, int>{};
+      final codigos = <String, String>{};
+      final nombres = <String, String>{};
       for (final Map<dynamic, dynamic> it in items) {
         final productoId = it['productoId'] as String? ?? '';
         final cantidad = (it['cantidad'] as num?)?.toInt() ?? 0;
@@ -193,15 +215,33 @@ class ComprasRepository {
         if (!pSnap.exists) continue;
         stocks[productoId] = (pSnap.data()?['stock'] as num?)?.toInt() ?? 0;
         devoluciones[productoId] = (devoluciones[productoId] ?? 0) + cantidad;
+        codigos[productoId] = it['codigo'] as String? ?? '';
+        nombres[productoId] = it['nombre'] as String? ?? '';
       }
 
       // ESCRITURAS.
       for (final String productoId in stocks.keys) {
-        final nuevo = (stocks[productoId] ?? 0) - (devoluciones[productoId] ?? 0);
+        final stockAnterior = stocks[productoId] ?? 0;
+        final devolucion = devoluciones[productoId] ?? 0;
+        final nuevo = stockAnterior - devolucion;
         tx.update(_db.collection('productos').doc(productoId), <String, dynamic>{
           'stock': nuevo < 0 ? 0 : nuevo,
           'fechaActualizacion': DateTime.now().toUtc().toIso8601String(),
         });
+        escribirMovimiento(
+          _db,
+          tx,
+          empresaId: empresa,
+          productoId: productoId,
+          codigo: codigos[productoId] ?? '',
+          nombre: nombres[productoId] ?? '',
+          tipo: 'reverso',
+          delta: -devolucion,
+          stockAnterior: stockAnterior,
+          referenciaTipo: 'anulacion',
+          referenciaId: compraId,
+          usuarioUid: usuarioUid,
+        );
       }
       tx.update(ref, <String, dynamic>{
         'estado': EstadoCompra.anulada.id,

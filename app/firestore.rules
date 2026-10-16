@@ -301,6 +301,26 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Movimientos de inventario (kardex). Solo inserción (inmutable, spec 008).
+    match /movimientos_inventario/{movId} {
+      allow read: if autenticado()
+        && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
+      allow create: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador', 'gerente', 'vendedor', 'cajero']);
+      allow update, delete: if false;
+    }
+
+    // Conteos físicos de inventario (spec 008).
+    match /conteos_inventario/{conteoId} {
+      allow read: if autenticado()
+        && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
+      allow create, update: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador', 'gerente']);
+      allow delete: if false;
+    }
+
     // Todo lo demas queda denegado por defecto (incluye `mail`: solo lo escribe
     // la Cloud Function con privilegios de administrador).
     match /{document=**} {

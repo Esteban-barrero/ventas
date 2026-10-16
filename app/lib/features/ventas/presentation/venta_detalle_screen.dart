@@ -117,7 +117,8 @@ class _VentaDetalleScreenState extends State<VentaDetalleScreen> {
     }
 
     try {
-      await _repo.anular(venta.id, motivo.text.trim(), empresaId: venta.empresaId);
+      await _repo.anular(venta.id, motivo.text.trim(),
+          empresaId: venta.empresaId, usuarioUid: widget.usuario.uid);
       await _cargar();
       if (mounted) _avisar('Venta anulada.');
     } catch (e) {
