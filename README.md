@@ -105,9 +105,11 @@ de contado** y los **cobros** ingresan automáticamente; la venta guarda su
 **snapshot de costo, utilidad y margen %**. Incluye **rendiciones de efectivo con
 doble control**: el domiciliario **declara** lo que entrega y un responsable
 (Cajero/Gerente/Admin) **confirma la recepción** contando el efectivo (con
-diferencia y justificación). La caja por turno (009) es la ubicación *caja física*
-dentro del mismo libro. El **pago a proveedor** (egreso) y la **conciliación
-bancaria** quedan pendientes.
+diferencia y justificación). Incluye el **saldo inicial de caja (apertura)**:
+se fija al crear la empresa o desde *Mi empresa*, y queda **bloqueado** al
+registrar la **primera venta**. La caja por turno (009) es la ubicación *caja
+física* dentro del mismo libro. El **pago a proveedor** (egreso) y la
+**conciliación bancaria** quedan pendientes.
 
 | Funcionalidad | Estado |
 |---|---|

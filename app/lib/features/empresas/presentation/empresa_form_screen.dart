@@ -1,11 +1,13 @@
 import 'dart:typed_data';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/formato/fechas.dart';
 import '../../../core/imagen/medir_imagen.dart';
 import '../../../core/validacion/correo.dart';
+import '../../tesoreria/data/tesoreria_repository.dart';
 import '../data/almacenamiento_repository.dart';
 import '../data/empresas_repository.dart';
 import '../data/planes_repository.dart';
@@ -37,6 +39,7 @@ class _EmpresaFormScreenState extends State<EmpresaFormScreen> {
       widget.repository ?? EmpresasRepository();
   late final PlanesRepository _planesRepo =
       widget.planesRepository ?? PlanesRepository();
+  final TesoreriaRepository _tesoreria = TesoreriaRepository();
 
   final _formKey = GlobalKey<FormState>();
   final _nombre = TextEditingController();
@@ -45,6 +48,7 @@ class _EmpresaFormScreenState extends State<EmpresaFormScreen> {
   final _telefono = TextEditingController();
   final _contactoProveedor = TextEditingController();
   final _valorPagado = TextEditingController(text: '0');
+  final _saldoInicial = TextEditingController(text: '0');
   final _diasAviso = TextEditingController(text: '5');
   final _adminNombre = TextEditingController();
   final _adminEmail = TextEditingController();
@@ -242,6 +246,22 @@ class _EmpresaFormScreenState extends State<EmpresaFormScreen> {
         logoAlto: _logoDims?.alto ?? 0,
       );
 
+      // Saldo inicial de caja (opcional). Si falla, la empresa ya quedó creada.
+      final valorInicial = parsearNumero(_saldoInicial.text) ?? 0;
+      final empresaIdCreada = resultado.empresa?.id ?? '';
+      if (valorInicial > 0 && empresaIdCreada.isNotEmpty) {
+        try {
+          await _tesoreria.fijarSaldoInicial(
+            empresaId: empresaIdCreada,
+            monto: valorInicial,
+            usuarioUid: FirebaseAuth.instance.currentUser?.uid ?? '',
+            usuarioNombre: _adminNombre.text.trim(),
+          );
+        } catch (_) {
+          // El saldo inicial se puede fijar luego desde "Mi empresa".
+        }
+      }
+
       if (!mounted) return;
       await _mostrarResultado(resultado);
       if (mounted) Navigator.of(context).pop(true);
@@ -427,6 +447,16 @@ class _EmpresaFormScreenState extends State<EmpresaFormScreen> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Valor pagado',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _saldoInicial,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Saldo inicial de caja (opcional)',
+                  helperText: 'Dinero con el que arranca la empresa',
                   border: OutlineInputBorder(),
                 ),
               ),

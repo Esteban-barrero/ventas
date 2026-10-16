@@ -344,6 +344,76 @@ class TesoreriaRepository {
     );
   }
 
+  /// Movimiento de **apertura** (saldo inicial de caja) de la empresa, o
+  /// `null` si aún no se definió (RF-05).
+  Future<MovimientoDinero?> apertura(String empresaId) async {
+    final snap = await _movs.where('empresaId', isEqualTo: empresaId).get();
+    for (final DocumentSnapshot<Map<String, dynamic>> d in snap.docs) {
+      final data = d.data();
+      if (data == null) continue;
+      if ((data['referenciaTipo'] as String?) == ReferenciaDinero.apertura.id) {
+        return MovimientoDinero.fromMap(d.id, data);
+      }
+    }
+    return null;
+  }
+
+  /// Fija (crea o actualiza) el **saldo inicial de caja** de la empresa.
+  ///
+  /// Es el primer ingreso del libro, en la ubicación indicada (por defecto caja
+  /// física). La app lo bloquea una vez exista la primera venta.
+  Future<void> fijarSaldoInicial({
+    required String empresaId,
+    required double monto,
+    required String usuarioUid,
+    String usuarioNombre = '',
+    UbicacionDinero ubicacion = UbicacionDinero.cajaFisica,
+    MedioDinero medioPago = MedioDinero.efectivo,
+  }) async {
+    if (monto < 0) {
+      throw ArgumentError('El saldo inicial no puede ser negativo.');
+    }
+    final existente = await apertura(empresaId);
+    if (existente != null) {
+      await _movs.doc(existente.id).update(<String, dynamic>{
+        'monto': monto,
+        'descripcion': 'Saldo inicial',
+      });
+      await _auditoria.registrarEvento(
+        empresaId: empresaId,
+        operacion: OperacionAuditoria.update,
+        tabla: 'movimientos_dinero',
+        documentoId: existente.id,
+        datos: <String, dynamic>{'monto': monto, 'tipo': 'apertura'},
+      );
+      return;
+    }
+    final ref = _movs.doc();
+    final mov = MovimientoDinero(
+      id: ref.id,
+      empresaId: empresaId,
+      fecha: DateTime.now(),
+      tipo: TipoMovimientoDinero.ingreso,
+      monto: monto,
+      medioPago: medioPago,
+      ubicacion: ubicacion,
+      referenciaTipo: ReferenciaDinero.apertura,
+      descripcion: 'Saldo inicial',
+      usuarioUid: usuarioUid,
+      usuarioNombre: usuarioNombre,
+      responsableUid: usuarioUid,
+      responsableNombre: usuarioNombre,
+    );
+    await ref.set(mov.toMap());
+    await _auditoria.registrarEvento(
+      empresaId: empresaId,
+      operacion: OperacionAuditoria.insert,
+      tabla: 'movimientos_dinero',
+      documentoId: ref.id,
+      datos: <String, dynamic>{'monto': monto, 'tipo': 'apertura'},
+    );
+  }
+
   /// Caja (turno) abierta del usuario, o cadena vacía si no tiene.
   Future<String> _cajaAbiertaDe(String empresaId, String usuarioUid) async {
     if (usuarioUid.isEmpty) return '';

@@ -22,6 +22,8 @@
 - [x] T016 Snapshot de **costo, utilidad y margen** en ventas
 - [x] T017 **Rendiciones con doble control** (declara el domiciliario, confirma
   el responsable con conteo y diferencia)
+- [x] T018 **Saldo inicial de caja (apertura)**: se fija al crear la empresa o
+  desde *Mi empresa* hasta la **primera venta**; luego se bloquea (en la app).
 
 ## Fase 3 — Interfaz de Usuario
 

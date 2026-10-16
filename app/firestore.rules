@@ -338,14 +338,24 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Tesorería: libro único del dinero. Solo inserción (inmutable, spec 016).
+    // Tesorería: libro único del dinero (spec 016). Inmutable, salvo el
+    // movimiento de "apertura" (saldo inicial), cuyo monto se puede corregir.
     match /movimientos_dinero/{movId} {
       allow read: if autenticado()
         && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
       allow create: if autenticado()
-        && esDeEmpresa(request.resource.data.empresaId)
-        && roles().hasAny(['administrador', 'gerente', 'cajero', 'vendedor']);
-      allow update, delete: if false;
+        && (esSuperAdmin()
+          || (esDeEmpresa(request.resource.data.empresaId)
+            && roles().hasAny(['administrador', 'gerente', 'cajero', 'vendedor'])));
+      allow update: if autenticado()
+        && (esSuperAdmin()
+          || (esDeEmpresa(resource.data.empresaId)
+            && roles().hasAny(['administrador', 'gerente'])))
+        && resource.data.referenciaTipo == 'apertura'
+        && request.resource.data.referenciaTipo == 'apertura'
+        && request.resource.data.diff(resource.data)
+             .affectedKeys().hasOnly(['monto', 'descripcion']);
+      allow delete: if false;
     }
 
     // Rendiciones de efectivo (spec 016). El domiciliario declara; un

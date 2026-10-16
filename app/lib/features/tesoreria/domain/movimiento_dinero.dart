@@ -94,7 +94,8 @@ enum ReferenciaDinero {
   retiro('retiro', 'Retiro'),
   traslado('traslado', 'Traslado'),
   ajuste('ajuste', 'Ajuste'),
-  manual('manual', 'Manual');
+  manual('manual', 'Manual'),
+  apertura('apertura', 'Saldo inicial');
 
   const ReferenciaDinero(this.id, this.nombre);
 

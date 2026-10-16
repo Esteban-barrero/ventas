@@ -89,9 +89,18 @@ class VentasRepository {
     }).toList(growable: false);
   }
 
+  /// `true` si la empresa ya tiene al menos una venta.
+  ///
+  /// Bloquea la edición del saldo inicial (spec 016): una vez hay ventas, el
+  /// saldo de apertura ya no se modifica.
+  Future<bool> tieneVentas(String empresaId) async {
+    final snap =
+        await _ventas.where('empresaId', isEqualTo: empresaId).limit(1).get();
+    return snap.docs.isNotEmpty;
+  }
+
   /// Obtiene una venta por su id.
-  Future<Venta?> obtener(String ventaId) async {
-    final doc = await _ventas.doc(ventaId).get();
+  Future<Venta?> obtener(String ventaId) async {    final doc = await _ventas.doc(ventaId).get();
     if (!doc.exists || doc.data() == null) return null;
     return Venta.fromMap(doc.id, doc.data()!);
   }

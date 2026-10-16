@@ -1,8 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/formato/fechas.dart';
 import '../../../core/imagen/medir_imagen.dart';
+import '../../tesoreria/data/tesoreria_repository.dart';
+import '../../ventas/data/ventas_repository.dart';
 import '../data/almacenamiento_repository.dart';
 import '../data/empresas_repository.dart';
 import '../domain/empresa.dart';
@@ -20,11 +23,15 @@ class MiEmpresaScreen extends StatefulWidget {
     required this.empresaId,
     this.repository,
     this.selectorImagen,
+    this.tesoreriaRepository,
+    this.ventasRepository,
   });
 
   final String empresaId;
   final EmpresasRepository? repository;
   final Future<XFile?> Function()? selectorImagen;
+  final TesoreriaRepository? tesoreriaRepository;
+  final VentasRepository? ventasRepository;
 
   @override
   State<MiEmpresaScreen> createState() => _MiEmpresaScreenState();
@@ -33,8 +40,14 @@ class MiEmpresaScreen extends StatefulWidget {
 class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
   late final EmpresasRepository _repo =
       widget.repository ?? EmpresasRepository();
+  late final TesoreriaRepository _tesoreria =
+      widget.tesoreriaRepository ?? TesoreriaRepository();
+  late final VentasRepository _ventasRepo =
+      widget.ventasRepository ?? VentasRepository();
 
   Empresa? _empresa;
+  double _saldoInicial = 0;
+  bool _tieneVentas = false;
   bool _cargando = true;
   String? _error;
 
@@ -51,9 +64,20 @@ class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
     });
     try {
       final empresa = await _repo.obtener(widget.empresaId);
+      double saldo = 0;
+      var hayVentas = false;
+      try {
+        final ap = await _tesoreria.apertura(widget.empresaId);
+        saldo = ap?.monto ?? 0;
+        hayVentas = await _ventasRepo.tieneVentas(widget.empresaId);
+      } catch (_) {
+        // Si falla, se muestra 0 y editable.
+      }
       if (!mounted) return;
       setState(() {
         _empresa = empresa;
+        _saldoInicial = saldo;
+        _tieneVentas = hayVentas;
         _cargando = false;
         if (empresa == null) _error = 'La empresa ya no existe.';
       });
@@ -115,6 +139,71 @@ class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
       if (mounted) _avisar('Logo actualizado.');
     } catch (e) {
       if (mounted) _avisar('No se pudo subir el logo: $e', error: true);
+    }
+  }
+
+  /// Fija el **saldo inicial de caja** (spec 016, apertura). Se bloquea cuando
+  /// la empresa ya tiene ventas.
+  Future<void> _editarSaldoInicial() async {
+    if (_tieneVentas) {
+      _avisar('El saldo inicial está bloqueado: ya hay ventas registradas.',
+          error: true);
+      return;
+    }
+    final monto = TextEditingController(text: numeroParaEditar(_saldoInicial));
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Saldo inicial de caja'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Text(
+                'Es el dinero con el que arranca la empresa (apertura). Queda '
+                'bloqueado al registrar la primera venta.',
+                style: TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: monto,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Monto',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final valor = parsearNumero(monto.text) ?? 0;
+    if (valor < 0) {
+      _avisar('El monto no puede ser negativo.', error: true);
+      return;
+    }
+    try {
+      await _tesoreria.fijarSaldoInicial(
+        empresaId: widget.empresaId,
+        monto: valor,
+        usuarioUid: FirebaseAuth.instance.currentUser?.uid ?? '',
+      );
+      await _cargar();
+      if (mounted) _avisar('Saldo inicial actualizado.');
+    } catch (e) {
+      if (mounted) _avisar('No se pudo guardar: $e', error: true);
     }
   }
 
@@ -324,6 +413,27 @@ class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
               onPressed: _editarParametros,
               icon: const Icon(Icons.edit_outlined, size: 18),
               label: const Text('Editar parámetros'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        TarjetaDatos(
+          titulo: 'Caja',
+          icono: Icons.account_balance_wallet_outlined,
+          filas: <FilaDato>[
+            FilaDato('Saldo inicial', formatearValor(_saldoInicial)),
+            FilaDato(
+              'Edición',
+              _tieneVentas
+                  ? 'Bloqueada (ya hay ventas)'
+                  : 'Permitida hasta la primera venta',
+            ),
+          ],
+          acciones: <Widget>[
+            TextButton.icon(
+              onPressed: _tieneVentas ? null : _editarSaldoInicial,
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Editar saldo inicial'),
             ),
           ],
         ),

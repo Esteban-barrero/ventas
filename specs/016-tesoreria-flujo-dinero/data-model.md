@@ -22,7 +22,7 @@ que pasa a ser un movimiento más con `ubicacion: caja_fisica`.
 | responsableUid | string | UID de quien tiene el dinero |
 | responsableNombre | string | Nombre de quien tiene el dinero |
 | descripcion | string | Concepto libre |
-| referenciaTipo | string | `venta` \| `cobro` \| `compra` \| `gasto` \| `retiro` \| `traslado` \| `ajuste` \| `manual` |
+| referenciaTipo | string | `venta` \| `cobro` \| `compra` \| `gasto` \| `retiro` \| `traslado` \| `ajuste` \| `manual` \| `apertura` |
 | referenciaId | string | Documento de origen |
 | cajaId | string | Turno asociado (opcional, caja física) |
 | usuarioUid | string | Quién registró el movimiento |

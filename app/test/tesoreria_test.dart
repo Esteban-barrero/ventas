@@ -211,4 +211,27 @@ void main() {
       expect(sobrante.diferencia, -2000);
     });
   });
+
+  group('Saldo inicial de caja (apertura)', () {
+    test('ReferenciaDinero.desdeId reconoce la apertura', () {
+      expect(ReferenciaDinero.desdeId('apertura'), ReferenciaDinero.apertura);
+      expect(ReferenciaDinero.desdeId('venta'), ReferenciaDinero.venta);
+      expect(ReferenciaDinero.desdeId('x'), ReferenciaDinero.manual);
+    });
+
+    test('el saldo inicial suma en caja física', () {
+      final pos = calcularPosiciones(<MovimientoDinero>[
+        MovimientoDinero(
+          id: 'a',
+          empresaId: 'e1',
+          tipo: TipoMovimientoDinero.ingreso,
+          monto: 2000000,
+          ubicacion: UbicacionDinero.cajaFisica,
+          referenciaTipo: ReferenciaDinero.apertura,
+        ),
+      ]);
+      expect(pos[UbicacionDinero.cajaFisica], 2000000);
+      expect(totalDePosiciones(pos), 2000000);
+    });
+  });
 }
