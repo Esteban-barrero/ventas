@@ -129,6 +129,10 @@ class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
         TextEditingController(text: p.margenDistribuidor.toStringAsFixed(0));
     final envio = TextEditingController(text: p.costoEnvio.toStringAsFixed(0));
     final iva = TextEditingController(text: p.iva.toStringAsFixed(0));
+    final reteFuente =
+        TextEditingController(text: p.reteFuente.toStringAsFixed(0));
+    final reteIva = TextEditingController(text: p.reteIva.toStringAsFixed(0));
+    final reteIca = TextEditingController(text: p.reteIca.toStringAsFixed(0));
 
     final guardar = await showDialog<bool>(
       context: context,
@@ -166,6 +170,22 @@ class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'IVA (%)'),
               ),
+              TextField(
+                controller: reteFuente,
+                keyboardType: TextInputType.number,
+                decoration:
+                    const InputDecoration(labelText: 'Retención fuente (%)'),
+              ),
+              TextField(
+                controller: reteIva,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'ReteIVA (%)'),
+              ),
+              TextField(
+                controller: reteIca,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'ReteICA (%)'),
+              ),
             ],
           ),
         ),
@@ -194,6 +214,9 @@ class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
               double.tryParse(distribuidor.text.trim()) ?? p.margenDistribuidor,
           costoEnvio: double.tryParse(envio.text.trim()) ?? p.costoEnvio,
           iva: double.tryParse(iva.text.trim()) ?? p.iva,
+          reteFuente: double.tryParse(reteFuente.text.trim()) ?? p.reteFuente,
+          reteIva: double.tryParse(reteIva.text.trim()) ?? p.reteIva,
+          reteIca: double.tryParse(reteIca.text.trim()) ?? p.reteIca,
         ),
       );
       await _cargar();

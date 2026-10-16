@@ -9,6 +9,7 @@ import '../auth/domain/usuario.dart';
 import '../auth/presentation/usuarios_list_screen.dart';
 import '../catalogo/presentation/catalogo_screen.dart';
 import '../clientes/presentation/clientes_list_screen.dart';
+import '../compras/presentation/compras_list_screen.dart';
 import '../creditos/presentation/creditos_list_screen.dart';
 import '../empresas/presentation/empresas_list_screen.dart';
 import '../empresas/presentation/mi_empresa_screen.dart';
@@ -60,6 +61,9 @@ class HomePage extends StatelessWidget {
       _Modulo('Créditos', Icons.request_quote_outlined, Permiso.creditosVer,
           requiereEmpresa: true,
           constructor: (_, u) => CreditosListScreen(usuario: u)),
+      _Modulo('Compras', Icons.shopping_cart_outlined, Permiso.comprasVer,
+          requiereEmpresa: true,
+          constructor: (_, u) => ComprasListScreen(usuario: u)),
       _Modulo('Inventario', Icons.warehouse_outlined, Permiso.inventarioVer,
           requiereEmpresa: true),
       _Modulo('Caja', Icons.account_balance_wallet_outlined, Permiso.cajaVer,

@@ -259,6 +259,48 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Proveedores (spec 007).
+    match /proveedores/{proveedorId} {
+      allow read: if autenticado()
+        && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
+      allow create, update: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador']);
+      allow delete: if false;
+    }
+
+    // Compras (spec 007).
+    match /compras/{compraId} {
+      allow read: if autenticado()
+        && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
+      allow create, update: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador']);
+      allow delete: if false;
+
+      // Anexos legales (subcolección). La empresa se toma de la compra padre.
+      match /anexos/{anexoId} {
+        allow read: if autenticado() && (
+          esSuperAdmin()
+          || esDeEmpresa(get(/databases/$(database)/documents/compras/$(compraId)).data.empresaId)
+        );
+        allow create: if autenticado()
+          && esDeEmpresa(request.resource.data.empresaId)
+          && roles().hasAny(['administrador']);
+        allow delete: if esSuperAdmin();
+      }
+    }
+
+    // Cuentas por pagar a proveedores (spec 007).
+    match /cuentas_por_pagar/{cuentaId} {
+      allow read: if autenticado()
+        && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
+      allow create, update: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador', 'cajero']);
+      allow delete: if false;
+    }
+
     // Todo lo demas queda denegado por defecto (incluye `mail`: solo lo escribe
     // la Cloud Function con privilegios de administrador).
     match /{document=**} {

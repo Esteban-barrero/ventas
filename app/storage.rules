@@ -48,6 +48,19 @@ service firebase.storage {
         && request.resource.contentType.matches('image/(png|jpeg|webp)');
     }
 
+    // Anexos de compras (spec 007): imágenes o PDF, máximo 10 MB.
+    match /empresas/{empresaId}/compras/{compraId}/{archivo} {
+      allow read: if request.auth != null;
+      allow delete: if request.auth != null
+        && request.auth.token.superAdmin == true;
+      allow create, update: if request.auth != null
+        && request.auth.token.empresaId == empresaId
+        && request.auth.token.roles.hasAny(['administrador'])
+        && request.resource.size <= 10 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*')
+            || request.resource.contentType == 'application/pdf');
+    }
+
     // Todo lo demás queda denegado.
     match /{allPaths=**} {
       allow read, write: if false;

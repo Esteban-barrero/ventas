@@ -16,6 +16,9 @@ class ParametrosEmpresa {
     this.margenCredito = 40,
     this.costoEnvio = 0,
     this.iva = 19,
+    this.reteFuente = 0,
+    this.reteIva = 0,
+    this.reteIca = 0,
     this.moneda = 'COP',
     this.colorPrimario = '#1A73E8',
     this.colorSecundario = '#FF6B35',
@@ -39,6 +42,11 @@ class ParametrosEmpresa {
   /// IVA aplicado (porcentaje).
   final double iva;
 
+  /// Tasas de **retención** para compras (%), 0 = no aplica.
+  final double reteFuente;
+  final double reteIva;
+  final double reteIca;
+
   /// Moneda (ISO 4217).
   final String moneda;
 
@@ -57,6 +65,9 @@ class ParametrosEmpresa {
         'margenCredito': margenCredito,
         'costoEnvio': costoEnvio,
         'iva': iva,
+        'reteFuente': reteFuente,
+        'reteIva': reteIva,
+        'reteIca': reteIca,
         'moneda': moneda,
         'tema': <String, dynamic>{
           'colorPrimario': colorPrimario,
@@ -76,6 +87,9 @@ class ParametrosEmpresa {
       margenCredito: (data['margenCredito'] as num?)?.toDouble() ?? 40,
       costoEnvio: (data['costoEnvio'] as num?)?.toDouble() ?? 0,
       iva: (data['iva'] as num?)?.toDouble() ?? 19,
+      reteFuente: (data['reteFuente'] as num?)?.toDouble() ?? 0,
+      reteIva: (data['reteIva'] as num?)?.toDouble() ?? 0,
+      reteIca: (data['reteIca'] as num?)?.toDouble() ?? 0,
       moneda: (data['moneda'] as String?) ?? 'COP',
       colorPrimario: (tema['colorPrimario'] as String?) ?? '#1A73E8',
       colorSecundario: (tema['colorSecundario'] as String?) ?? '#FF6B35',
@@ -90,6 +104,9 @@ class ParametrosEmpresa {
     double? margenCredito,
     double? costoEnvio,
     double? iva,
+    double? reteFuente,
+    double? reteIva,
+    double? reteIca,
     String? moneda,
     String? colorPrimario,
     String? colorSecundario,
@@ -102,6 +119,9 @@ class ParametrosEmpresa {
       margenCredito: margenCredito ?? this.margenCredito,
       costoEnvio: costoEnvio ?? this.costoEnvio,
       iva: iva ?? this.iva,
+      reteFuente: reteFuente ?? this.reteFuente,
+      reteIva: reteIva ?? this.reteIva,
+      reteIca: reteIca ?? this.reteIca,
       moneda: moneda ?? this.moneda,
       colorPrimario: colorPrimario ?? this.colorPrimario,
       colorSecundario: colorSecundario ?? this.colorSecundario,
