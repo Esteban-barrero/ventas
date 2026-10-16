@@ -56,6 +56,8 @@ class Producto {
     this.medidas = const Medidas(),
     this.categoriaId = '',
     this.color = '',
+    this.codigoBarras = '',
+    this.iva,
     this.fotoPrincipal = '',
     this.galeria = const <String>[],
     this.costo = 0,
@@ -79,6 +81,13 @@ class Producto {
 
   /// Color del producto (característica propia, para mostrar y filtrar).
   final String color;
+
+  /// Código de barras o contenido del QR (opcional).
+  final String codigoBarras;
+
+  /// IVA del producto en porcentaje. `null` = hereda el de la empresa (RN).
+  final double? iva;
+
   final String fotoPrincipal;
   final List<String> galeria;
 
@@ -121,6 +130,9 @@ class Producto {
   double costoEnvioEfectivo(ParametrosEmpresa empresa) =>
       costoEnvio ?? empresa.costoEnvio;
 
+  /// IVA efectivo: el del producto o el general de la empresa.
+  double ivaEfectivo(ParametrosEmpresa empresa) => iva ?? empresa.iva;
+
   Producto copyWith({
     String? codigo,
     String? nombre,
@@ -128,6 +140,8 @@ class Producto {
     Medidas? medidas,
     String? categoriaId,
     String? color,
+    String? codigoBarras,
+    Object? iva = _sinCambio,
     String? fotoPrincipal,
     List<String>? galeria,
     double? costo,
@@ -149,6 +163,8 @@ class Producto {
       medidas: medidas ?? this.medidas,
       categoriaId: categoriaId ?? this.categoriaId,
       color: color ?? this.color,
+      codigoBarras: codigoBarras ?? this.codigoBarras,
+      iva: iva == _sinCambio ? this.iva : iva as double?,
       fotoPrincipal: fotoPrincipal ?? this.fotoPrincipal,
       galeria: galeria ?? this.galeria,
       costo: costo ?? this.costo,
@@ -177,6 +193,8 @@ class Producto {
       'medidas': medidas.toMap(),
       'categoriaId': categoriaId,
       'color': color,
+      'codigoBarras': codigoBarras,
+      'iva': iva,
       'fotoPrincipal': fotoPrincipal,
       'galeria': galeria,
       'costo': costo,
@@ -205,6 +223,8 @@ class Producto {
           (data['medidas'] as Map?)?.cast<String, dynamic>()),
       categoriaId: (data['categoriaId'] as String?) ?? '',
       color: (data['color'] as String?) ?? '',
+      codigoBarras: (data['codigoBarras'] as String?) ?? '',
+      iva: (data['iva'] as num?)?.toDouble(),
       fotoPrincipal: (data['fotoPrincipal'] as String?) ?? '',
       galeria: (data['galeria'] as List<dynamic>?)
               ?.map((dynamic e) => e.toString())

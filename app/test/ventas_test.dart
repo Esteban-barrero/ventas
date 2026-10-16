@@ -85,9 +85,17 @@ void main() {
       expect(t.total, 0);
     });
 
-    test('impuestosPorIva aplica el IVA de la empresa sobre el subtotal', () {
-      expect(impuestosPorIva(2250, 19), closeTo(427.5, 0.001));
-      expect(impuestosPorIva(1000, 0), 0);
+    test('impuestosDeItems suma el impuesto de cada línea según su IVA', () {
+      const conIva = ItemVenta(
+        productoId: 'p1',
+        codigo: 'A-1',
+        nombre: 'Camiseta',
+        cantidad: 2,
+        precioUnitario: 1000,
+        iva: 19,
+      );
+      expect(impuestosDeItems(<ItemVenta>[conIva]), closeTo(380, 0.001));
+      expect(impuestosDeItems(<ItemVenta>[_itemB]), 0);
     });
   });
 

@@ -49,6 +49,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
       widget.imagenesRepository ?? ImagenesProductosRepository();
 
   final _codigo = TextEditingController();
+  final _codigoBarras = TextEditingController();
   final _nombre = TextEditingController();
   final _descripcion = TextEditingController();
   final _material = TextEditingController();
@@ -56,6 +57,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
   final _peso = TextEditingController();
   final _color = TextEditingController();
   final _costo = TextEditingController();
+  final _iva = TextEditingController();
   final _margenContado = TextEditingController();
   final _margenCredito = TextEditingController();
   final _costoEnvio = TextEditingController();
@@ -78,6 +80,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
     final p = widget.producto;
     if (p != null) {
       _codigo.text = p.codigo;
+      _codigoBarras.text = p.codigoBarras;
       _nombre.text = p.nombre;
       _descripcion.text = p.descripcion;
       _material.text = p.medidas.material;
@@ -85,6 +88,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
       _peso.text = p.medidas.peso;
       _color.text = p.color;
       _costo.text = _textoNumero(p.costo);
+      _iva.text = p.iva == null ? '' : _textoNumero(p.iva!);
       _margenContado.text =
           p.margenContado == null ? '' : _textoNumero(p.margenContado!);
       _margenCredito.text =
@@ -103,6 +107,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
   void dispose() {
     for (final c in <TextEditingController>[
       _codigo,
+      _codigoBarras,
       _nombre,
       _descripcion,
       _material,
@@ -110,6 +115,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
       _peso,
       _color,
       _costo,
+      _iva,
       _margenContado,
       _margenCredito,
       _costoEnvio,
@@ -209,6 +215,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
         id: id,
         empresaId: _empresaId,
         codigo: codigo,
+        codigoBarras: _codigoBarras.text.trim(),
         nombre: _nombre.text.trim(),
         descripcion: _descripcion.text.trim(),
         medidas: Medidas(
@@ -218,6 +225,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
         ),
         categoriaId: _categoriaId ?? '',
         color: _color.text.trim(),
+        iva: _opcional(_iva.text),
         fotoPrincipal: fotoUrl,
         galeria: widget.producto?.galeria ?? const <String>[],
         costo: costo,
@@ -261,6 +269,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
           const SizedBox(height: 16),
           _seccion(theme, 'Datos'),
           _campo(_codigo, 'Código *'),
+          _campo(_codigoBarras, 'Código de barras / QR'),
           _campo(_nombre, 'Nombre *'),
           _campo(_descripcion, 'Descripción', maxLines: 2),
           const SizedBox(height: 8),
@@ -278,6 +287,8 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
           const SizedBox(height: 8),
           _seccion(theme, 'Precios y márgenes'),
           _campo(_costo, 'Costo *', numero: true),
+          _campo(_iva, 'IVA % (vacío = general)', numero: true),
+          _chipsIva(),
           _campo(_margenContado, 'Margen contado % (vacío = general)',
               numero: true),
           _campo(_margenCredito, 'Margen crédito % (vacío = general)',
@@ -358,6 +369,22 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
             label: Text(c),
             selected: _color.text.trim().toLowerCase() == c.toLowerCase(),
             onSelected: (_) => setState(() => _color.text = c),
+          ),
+      ],
+    );
+  }
+
+  /// Chips con los IVA más comunes (0, 5, 19) para llenar el campo.
+  Widget _chipsIva() {
+    const valores = <String>['0', '5', '19'];
+    return Wrap(
+      spacing: 8,
+      children: <Widget>[
+        for (final v in valores)
+          ChoiceChip(
+            label: Text('$v%'),
+            selected: _iva.text.trim() == v,
+            onSelected: (_) => setState(() => _iva.text = v),
           ),
       ],
     );

@@ -75,6 +75,7 @@ class ItemVenta {
     required this.nombre,
     required this.cantidad,
     required this.precioUnitario,
+    this.iva = 0,
   });
 
   final String productoId;
@@ -83,8 +84,14 @@ class ItemVenta {
   final int cantidad;
   final double precioUnitario;
 
+  /// IVA aplicado a la línea (porcentaje), tomado del producto.
+  final double iva;
+
   /// Subtotal de la línea (`cantidad × precioUnitario`).
   double get subtotal => cantidad * precioUnitario;
+
+  /// Impuesto de la línea según su IVA.
+  double get impuesto => subtotal * iva / 100;
 
   Map<String, dynamic> toMap() => <String, dynamic>{
         'productoId': productoId,
@@ -92,7 +99,9 @@ class ItemVenta {
         'nombre': nombre,
         'cantidad': cantidad,
         'precioUnitario': precioUnitario,
+        'iva': iva,
         'subtotal': subtotal,
+        'impuesto': impuesto,
       };
 
   factory ItemVenta.fromMap(Map<String, dynamic> data) {
@@ -102,6 +111,7 @@ class ItemVenta {
       nombre: (data['nombre'] as String?) ?? '',
       cantidad: (data['cantidad'] as num?)?.toInt() ?? 0,
       precioUnitario: (data['precioUnitario'] as num?)?.toDouble() ?? 0,
+      iva: (data['iva'] as num?)?.toDouble() ?? 0,
     );
   }
 }

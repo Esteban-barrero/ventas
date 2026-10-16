@@ -21,11 +21,10 @@ class TotalesVenta {
 double subtotalDe(List<ItemVenta> items) =>
     items.fold(0.0, (double a, ItemVenta i) => a + i.subtotal);
 
-/// Impuestos según el **IVA** configurado en la empresa (porcentaje).
-///
-/// El IVA se aplica sobre el subtotal de los productos (no sobre el envío).
-double impuestosPorIva(double subtotal, double ivaPct) =>
-    ivaPct <= 0 ? 0.0 : subtotal * ivaPct / 100;
+/// Impuestos totales de la venta: suma del impuesto de cada línea (según el
+/// IVA de cada producto). Los productos con IVA 0% no generan impuesto.
+double impuestosDeItems(List<ItemVenta> items) =>
+    items.fold(0.0, (double a, ItemVenta i) => a + i.impuesto);
 
 /// Calcula los totales de la venta (RN-03, RN-08):
 ///

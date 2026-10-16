@@ -68,5 +68,7 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Se usa para guardar la ubicación del cliente y facilitar las entregas.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Se usa para escanear el código de barras o QR de los productos.</string>
 </dict>
 </plist>

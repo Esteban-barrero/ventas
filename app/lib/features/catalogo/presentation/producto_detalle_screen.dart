@@ -244,6 +244,10 @@ class _ProductoDetalleScreenState extends State<ProductoDetalleScreen> {
         Text('Código: ${producto.codigo}',
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: scheme.onSurfaceVariant)),
+        if (producto.codigoBarras.trim().isNotEmpty)
+          Text('Código de barras: ${producto.codigoBarras}',
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: scheme.onSurfaceVariant)),
         if (producto.descripcion.trim().isNotEmpty) ...<Widget>[
           const SizedBox(height: 8),
           Text(producto.descripcion),
@@ -256,6 +260,10 @@ class _ProductoDetalleScreenState extends State<ProductoDetalleScreen> {
             FilaDato(
               'Costo',
               formatearValor(producto.costo),
+            ),
+            FilaDato(
+              'IVA',
+              '${producto.ivaEfectivo(p).round()}%',
             ),
             FilaDato(
               'Contado (${producto.margenEfectivo(TipoPrecio.contado, p).round()}%)',

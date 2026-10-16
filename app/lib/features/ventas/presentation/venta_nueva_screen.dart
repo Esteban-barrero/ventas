@@ -5,6 +5,7 @@ import '../../auth/domain/usuario.dart';
 import '../../catalogo/data/productos_repository.dart';
 import '../../catalogo/domain/precio.dart';
 import '../../catalogo/domain/producto.dart';
+import '../../catalogo/presentation/escanear_codigo_screen.dart';
 import '../../clientes/data/clientes_repository.dart';
 import '../../clientes/domain/cliente.dart';
 import '../../creditos/data/creditos_repository.dart';
@@ -135,6 +136,7 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
             nombre: l.producto.nombre,
             cantidad: l.cantidad,
             precioUnitario: l.producto.precio(_tipoVenta, _parametros),
+            iva: l.producto.ivaEfectivo(_parametros),
           ),
       ];
 
@@ -142,13 +144,12 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
 
   TotalesVenta get _totales {
     final items = _items();
-    final subtotal = subtotalDe(items);
     return calcularTotales(
       items: items,
       tipoEntrega: _tipoEntrega,
       costoEnvio: double.tryParse(_costoEnvio.text.trim()) ?? 0,
       descuento: double.tryParse(_descuento.text.trim()) ?? 0,
-      impuestos: impuestosPorIva(subtotal, _parametros.iva),
+      impuestos: impuestosDeItems(items),
     );
   }
 
@@ -167,6 +168,46 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
         _lineas.add(_Linea(producto, 1));
       }
     });
+  }
+
+  /// Agrega un producto a partir de un código escaneado (barras o QR).
+  Future<void> _escanear() async {
+    String? leido;
+    try {
+      leido = await Navigator.of(context).push<String>(
+        MaterialPageRoute<String>(
+          builder: (_) => const EscanearCodigoScreen(),
+        ),
+      );
+    } catch (e) {
+      if (mounted) _avisar('No se pudo abrir el escáner: $e');
+      return;
+    }
+    if (leido == null) return;
+
+    final codigo = leido.trim();
+    Producto? encontrado;
+    for (final p in _productos) {
+      if (p.codigoBarras == codigo || p.codigo == codigo) {
+        encontrado = p;
+        break;
+      }
+    }
+    if (encontrado == null) {
+      if (mounted) _avisar('No hay un producto con el código "$codigo".');
+      return;
+    }
+
+    final producto = encontrado;
+    setState(() {
+      final idx = _lineas.indexWhere((l) => l.producto.id == producto.id);
+      if (idx >= 0) {
+        _lineas[idx].cantidad += 1;
+      } else {
+        _lineas.add(_Linea(producto, 1));
+      }
+    });
+    if (mounted) _avisar('Agregado: ${producto.nombre}');
   }
 
   Future<void> _registrar() async {
@@ -289,10 +330,22 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
           else
             ..._lineas.map(_lineaWidget),
           const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _agregarProducto,
-            icon: const Icon(Icons.add),
-            label: const Text('Agregar producto'),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _agregarProducto,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Agregar producto'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: _escanear,
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('Escanear'),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           _seccion(theme, 'Tipo de venta'),
@@ -424,8 +477,7 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Los impuestos se calculan con el IVA de la empresa '
-            '(${_parametros.iva.round()}%).',
+            'Los impuestos se calculan por producto, según su IVA.',
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
