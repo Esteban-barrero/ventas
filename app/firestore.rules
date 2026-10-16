@@ -40,6 +40,11 @@ service cloud.firestore {
         && roles().hasAny(['administrador', 'marketing']);
     }
 
+    // Personal interno que puede ver clientes (spec 004).
+    function esInternoClientes() {
+      return roles().hasAny(['administrador', 'gerente', 'vendedor', 'cajero']);
+    }
+
     // Permite solo modificar los campos indicados (update parcial controlado).
     function soloCambiaCampos(permitidos) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(permitidos);
@@ -159,6 +164,31 @@ service cloud.firestore {
         && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
       allow create: if puedeGestionarCatalogo(request.resource.data.empresaId);
       allow update, delete: if puedeGestionarCatalogo(resource.data.empresaId);
+    }
+
+    // Clientes (spec 004).
+    // - Lee: el Super Admin, el personal interno de la empresa (Administrador,
+    //   Gerente, Vendedor, Cajero) o el propio cliente (uid vinculado).
+    // - Escribe: el Administrador o Vendedor de la empresa; el cliente puede
+    //   editar su documento, pero no su empresaId, uid ni estado.
+    match /clientes/{clienteId} {
+      allow read: if autenticado() && (
+        esSuperAdmin()
+        || (esDeEmpresa(resource.data.empresaId) && esInternoClientes())
+        || resource.data.uid == request.auth.uid
+      );
+      allow create: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador', 'vendedor']);
+      allow update: if autenticado() && (
+        (esDeEmpresa(resource.data.empresaId)
+          && roles().hasAny(['administrador', 'vendedor']))
+        || (resource.data.uid == request.auth.uid
+            && request.resource.data.empresaId == resource.data.empresaId
+            && request.resource.data.uid == resource.data.uid
+            && request.resource.data.estado == resource.data.estado)
+      );
+      allow delete: if false;
     }
 
     // Todo lo demas queda denegado por defecto (incluye `mail`: solo lo escribe
