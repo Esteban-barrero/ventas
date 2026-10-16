@@ -5,6 +5,7 @@
 /// colecciones (RN-01, RN-02).
 library;
 
+import '../../../core/validacion/correo.dart';
 import '../../licencia/domain/licencia.dart' show EstadoEmpresa;
 import 'licencia.dart';
 import 'parametros_empresa.dart';
@@ -205,9 +206,11 @@ class DatosEmpresa {
     if (nombre.trim().isEmpty) return 'El nombre es obligatorio.';
     if (nit.trim().isEmpty) return 'El NIT es obligatorio.';
     if (adminEmail.trim().isEmpty) return 'El correo del administrador es obligatorio.';
-    if (!adminEmail.contains('@')) return 'El correo del administrador no es válido.';
+    if (!esCorreoValido(adminEmail)) {
+      return 'El correo del administrador no es válido.';
+    }
     if (correoNotificacion.trim().isNotEmpty &&
-        !correoNotificacion.contains('@')) {
+        !esCorreoValido(correoNotificacion)) {
       return 'El correo de notificación no es válido.';
     }
     return null;

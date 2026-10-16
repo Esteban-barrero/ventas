@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/formato/fechas.dart';
 import '../../../core/imagen/medir_imagen.dart';
+import '../../../core/validacion/correo.dart';
 import '../data/almacenamiento_repository.dart';
 import '../data/empresas_repository.dart';
 import '../data/planes_repository.dart';
@@ -500,7 +501,7 @@ class _EmpresaFormScreenState extends State<EmpresaFormScreen> {
         validator: (String? valor) {
           final texto = (valor ?? '').trim();
           if (obligatorio && texto.isEmpty) return 'Campo obligatorio.';
-          if (validadorEmail && texto.isNotEmpty && !texto.contains('@')) {
+          if (validadorEmail && texto.isNotEmpty && !esCorreoValido(texto)) {
             return 'Correo no válido.';
           }
           return null;

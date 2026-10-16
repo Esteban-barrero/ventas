@@ -1,3 +1,4 @@
+import '../../../core/validacion/correo.dart';
 import 'cliente.dart';
 
 /// Validaciones de un cliente (spec 004, RN-01, RN-02, RN-03).
@@ -35,7 +36,7 @@ List<String> validarCliente(
     errores.add('La dirección es obligatoria.');
   }
 
-  if (cliente.correo.trim().isNotEmpty && !cliente.correo.contains('@')) {
+  if (cliente.correo.trim().isNotEmpty && !esCorreoValido(cliente.correo)) {
     errores.add('El correo no es válido.');
   }
 

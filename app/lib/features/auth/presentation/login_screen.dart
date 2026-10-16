@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/validacion/correo.dart';
 import '../data/auth_repository.dart';
 
 /// Pantalla de inicio de sesion / registro (spec 001).
@@ -149,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     validator: (v) {
                       final value = (v ?? '').trim();
                       if (value.isEmpty) return 'Escribe tu correo';
-                      if (!value.contains('@') || !value.contains('.')) {
+                      if (!esCorreoValido(value)) {
                         return 'Correo no válido';
                       }
                       return null;
@@ -382,7 +383,7 @@ class _DialogoRecuperarState extends State<_DialogoRecuperar> {
               validator: (v) {
                 final value = (v ?? '').trim();
                 if (value.isEmpty) return 'Escribe tu correo';
-                if (!value.contains('@') || !value.contains('.')) {
+                if (!esCorreoValido(value)) {
                   return 'Correo no válido';
                 }
                 return null;
