@@ -478,7 +478,7 @@ Cada carpeta contiene `spec.md`, `plan.md` y `tasks.md`.
 ```bash
 cd app
 flutter analyze   # sin errores
-flutter test      # 162 pruebas
+flutter test      # 164 pruebas
 ```
 
 Las pruebas cubren: permisos y unión de roles, cálculo de la licencia (incluido

@@ -95,3 +95,20 @@ flutter build apk
 5. Ejecutar `flutter analyze` y `flutter test`.
 6. Hacer commit y push.
 7. Actualizar la documentación si aplica.
+
+---
+
+## 8. Skills del proyecto
+
+Las guías operativas viven en `.opencode/skills/` y se cargan cuando hacen
+falta (no ocupan contexto todo el tiempo):
+
+| Skill | Para qué |
+|---|---|
+| `implementar-spec` | Flujo SDD completo (implementar, documentar, probar, commit/push) |
+| `desplegar-reglas` | Desplegar reglas de Firestore/Storage por la API (sin Firebase CLI) |
+| `contexto-proyecto` | Repos, Firebase, empresa demo, Super Admin y convenciones |
+| `respaldo-datos` | Export/import de Firestore (+ Auth y Storage) |
+| `publicar` | `analyze` + `test` + commit + push + reiniciar la app |
+| `validar-correo` | Usar `esCorreoValido` (`core/validacion/correo.dart`) |
+| `formato-fechas` | Usar `core/formato/fechas.dart` (no `intl`) |
