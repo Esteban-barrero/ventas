@@ -83,7 +83,7 @@ el plan de cobros.
 - [x] CA-06 El stock se descuenta correctamente y no queda negativo.
 - [x] CA-07 La anulación revierte stock y queda auditada. *(el ajuste de caja llega con la spec 009)*
 - [ ] CA-08 La venta alimenta la caja/trazabilidad del dinero. *(spec 009)*
-- [ ] CA-09 La venta a crédito genera su plan de cobros. *(spec 006)*
+- [x] CA-09 La venta a crédito genera su plan de cobros. *(implementado en la spec 006)*
 
 ## 8. Datos Involucrados
 

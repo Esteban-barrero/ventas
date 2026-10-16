@@ -54,8 +54,13 @@ specs 005 y 010.
 **Spec 005 — Ventas:** implementada (núcleo). Registro con productos y cantidades,
 tipo de pago (contado/crédito), tipo de entrega, medio de pago, **factura
 consecutiva por empresa** y descuento de **stock transaccional**; la anulación
-revierte el stock. La **caja** (009), los **créditos** (006) y la factura en PDF
-quedan pendientes.
+revierte el stock. La **caja** (009) y la factura en PDF quedan pendientes.
+
+**Spec 006 — Créditos y Cobros:** implementada (núcleo). La **venta a crédito
+genera** el crédito y su **plan de cuotas** (semanal/quincenal/mensual, con
+interés opcional); aprobación, **abonos parciales** (transacción que baja el
+saldo y marca cuotas/crédito) y **cálculo de mora**. La **caja** del pago (009) y
+el marcado automático de moroso por Cloud Function quedan pendientes.
 
 | Funcionalidad | Estado |
 |---|---|
@@ -76,7 +81,7 @@ quedan pendientes.
 | Cloud Functions desplegadas | ✅ |
 | Reglas de Firestore y Storage desplegadas | ✅ |
 
-Las demás especificaciones (006 a 015) están definidas y pendientes de
+Las demás especificaciones (007 a 015) están definidas y pendientes de
 implementación. Ver [`specs/`](./specs).
 
 ---
@@ -196,6 +201,7 @@ gsutil cors get gs://aplicativo-de-ventas-d8bcd.firebasestorage.app
     │   │   ├── auditoria/    Registro de cambios
     │   │   ├── catalogo/     Productos, categorías, precios, stock
     │   │   ├── clientes/     Clientes, dirección, GPS, crédito
+    │   │   ├── creditos/     Créditos, cuotas, pagos y mora
     │   │   ├── empresas/     Empresas, licencias, planes, logo
     │   │   ├── home/         Pantalla de inicio
     │   │   ├── licencia/     Validación y bloqueo por licencia
@@ -435,6 +441,9 @@ Firestore (NoSQL, con soporte offline).
 | `clientes/{clienteId}` | Clientes: datos, dirección, GPS, clasificación, estado y crédito. |
 | `ventas/{ventaId}` | Ventas: ítems, tipo (contado/crédito), entrega, pago y totales. |
 | `consecutivos/{empresaId}` | Último número de factura asignado por empresa. |
+| `creditos/{creditoId}` | Créditos: monto, cuotas, saldo y mora. |
+| `creditos/{id}/cuotas/{cuotaId}` | Cuotas del plan de pagos. |
+| `pagos_credito/{pagoId}` | Abonos/pagos recibidos de un crédito. |
 | `planes/{planId}` | Límites y valor por plan (gratis, básico, premium). Ya sembrados. |
 | `notificaciones/{id}` | Avisos de vencimiento dentro de la app. |
 | `mail/{id}` | Correos pendientes (extensión *Trigger Email*). |
@@ -478,7 +487,7 @@ Cada carpeta contiene `spec.md`, `plan.md` y `tasks.md`.
 ```bash
 cd app
 flutter analyze   # sin errores
-flutter test      # 164 pruebas
+flutter test      # 172 pruebas
 ```
 
 Las pruebas cubren: permisos y unión de roles, cálculo de la licencia (incluido
@@ -491,7 +500,8 @@ el catálogo (cálculo de precios contado/crédito, herencia de márgenes y de c
 de envío, stock, filtros y tarjetas) y los clientes (validaciones de
 obligatorios y cédula única, filtro de departamento/ciudad, serialización,
 filtros y listado) y las ventas (cálculo de totales, regla de envío,
-serialización, filtros y listado).
+serialización, filtros y listado) y los créditos (generación de cuotas, cálculo
+de mora, serialización, filtros y listado).
 
 Además, las **reglas de Firestore se verifican con ID tokens reales** (no con el
 token de administrador, que las ignora). Se comprueba, entre otras cosas, que un

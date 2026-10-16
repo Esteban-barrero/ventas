@@ -22,7 +22,8 @@
 - [x] T015 Implementar medios de pago (efectivo, tarjeta, transferencia)
 - [x] T016 Implementar anulación con reverso de stock *(el ajuste de **caja**
       llega con la spec 009)*
-- [ ] T017 Integrar creación de crédito y plan de cobros *(depende de la spec 006)*
+- [x] T017 Integrar creación de crédito y plan de cobros *(implementado en la
+      spec 006: la venta a crédito genera el crédito y sus cuotas)*
 
 ## Fase 3 — Interfaz de Usuario
 

@@ -2,7 +2,7 @@
 
 - **ID:** 006 | **Carpeta:** `specs/006-creditos-cobros/`
 - **Fecha:** 2026-10-14
-- **Estado:** Borrador
+- **Estado:** Implementado (núcleo)
 - **Responsable:** Esteban Barrero
 
 ---
@@ -69,14 +69,14 @@ con **quién cobró, cuándo, cuánto y por qué medio**, y alimenta la caja.
 
 ## 7. Criterios de Aceptación
 
-- [ ] CA-01 Una venta a crédito genera su crédito y su plan de cuotas.
-- [ ] CA-02 Las cuotas se calculan según monto, número y periodicidad.
-- [ ] CA-03 Se puede aprobar un crédito.
-- [ ] CA-04 Se registran abonos y el saldo se actualiza.
-- [ ] CA-05 Los días de mora se calculan correctamente.
-- [ ] CA-06 El crédito cambia de estado (activo → pagado / vencido).
-- [ ] CA-07 El cliente moroso se marca automáticamente.
-- [ ] CA-08 Cada pago queda en la caja y en la auditoría.
+- [x] CA-01 Una venta a crédito genera su crédito y su plan de cuotas.
+- [x] CA-02 Las cuotas se calculan según monto, número y periodicidad.
+- [x] CA-03 Se puede aprobar un crédito.
+- [x] CA-04 Se registran abonos y el saldo se actualiza.
+- [x] CA-05 Los días de mora se calculan correctamente.
+- [x] CA-06 El crédito cambia de estado (activo → pagado / vencido).
+- [ ] CA-07 El cliente moroso se marca automáticamente. *(Cloud Function programada)*
+- [ ] CA-08 Cada pago queda en la caja y en la auditoría. *(caja: spec 009; auditoría: hecha)*
 
 ## 8. Datos Involucrados
 
