@@ -55,25 +55,39 @@ specs 005 y 010.
 **Spec 005 — Ventas:** implementada (núcleo). Registro con productos y cantidades,
 tipo de pago (contado/crédito), tipo de entrega, medio de pago, **factura
 consecutiva por empresa** y descuento de **stock transaccional**; la anulación
-revierte el stock. La **caja** (009) y la factura en PDF quedan pendientes.
+revierte el stock. El **ingreso a caja** del contado ya está (009); la factura en
+PDF queda pendiente.
 
 **Spec 006 — Créditos y Cobros:** implementada (núcleo). La **venta a crédito
 genera** el crédito y su **plan de cuotas** (semanal/quincenal/mensual, con
 interés opcional); aprobación, **abonos parciales** (transacción que baja el
-saldo y marca cuotas/crédito) y **cálculo de mora**. La **caja** del pago (009) y
-el marcado automático de moroso por Cloud Function quedan pendientes.
+saldo y marca cuotas/crédito) y **cálculo de mora**. El **ingreso a caja** del
+cobro ya está (009); el marcado automático de moroso por Cloud Function queda
+pendiente.
 
 **Spec 007 — Proveedores y Compras:** implementada (núcleo). Proveedores (NIT
 único por empresa) y compras que **suman inventario**, actualizan el **costo** y
 generan **cuentas por pagar**; incluye **retenciones** (fuente, reteIVA, reteICA)
 y **anexos legales** (escanear factura / subir PDF) con trazabilidad (quién y
-cuándo). La **caja** del pago a proveedor (009) queda pendiente.
+cuándo). El **egreso de caja** del pago a proveedor queda pendiente (no existe
+todavía el flujo de pago a proveedor).
 
 **Spec 008 — Inventario:** implementada (núcleo). **Kardex inmutable** de
 movimientos (entrada por compra, salida por venta, ajustes y reversos de
 anulación), **ajustes** con motivo, **conteo físico** que genera ajustes por
 diferencia, **alertas** de stock mínimo/agotado y **valorización**. Multibodega y
 aprobación de conteo quedan para después.
+
+**Spec 009 — Caja y Trazabilidad del dinero:** implementada (núcleo). **Apertura**
+de caja por cajero (una abierta por usuario), **movimientos** (ingreso, egreso,
+retiro, gasto) con medios de pago (efectivo, Nequi, Bancolombia, tarjeta) que
+recalculan el **saldo** en transacción, **cierre con arqueo** (sobrante/cuadre/
+faltante y justificación obligatoria si hay diferencia) y **trazabilidad** del
+dinero (responsable y estado: en caja, en tránsito, en banco, entregado). Las
+**ventas de contado** y los **cobros de crédito** ingresan a caja de forma
+best-effort (solo si el usuario tiene caja abierta, sin bloquear la operación). El
+**comprobante de cierre en PDF** y el egreso por pago a proveedor quedan
+pendientes.
 
 | Funcionalidad | Estado |
 |---|---|
@@ -94,7 +108,7 @@ aprobación de conteo quedan para después.
 | Cloud Functions desplegadas | ✅ |
 | Reglas de Firestore y Storage desplegadas | ✅ |
 
-Las demás especificaciones (009 a 015) están definidas y pendientes de
+Las demás especificaciones (010 a 015) están definidas y pendientes de
 implementación. Ver [`specs/`](./specs).
 
 ---

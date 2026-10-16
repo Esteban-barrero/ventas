@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/formato/fechas.dart';
 import '../../auth/domain/usuario.dart';
+import '../../caja/data/caja_repository.dart';
+import '../../caja/domain/caja.dart';
 import '../../catalogo/data/productos_repository.dart';
 import '../../catalogo/domain/precio.dart';
 import '../../catalogo/domain/producto.dart';
@@ -36,6 +38,7 @@ class VentaNuevaScreen extends StatefulWidget {
     this.clientesRepository,
     this.empresasRepository,
     this.creditosRepository,
+    this.cajaRepository,
   });
 
   final Usuario usuario;
@@ -44,6 +47,7 @@ class VentaNuevaScreen extends StatefulWidget {
   final ClientesRepository? clientesRepository;
   final EmpresasRepository? empresasRepository;
   final CreditosRepository? creditosRepository;
+  final CajaRepository? cajaRepository;
 
   @override
   State<VentaNuevaScreen> createState() => _VentaNuevaScreenState();
@@ -60,6 +64,8 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
       widget.empresasRepository ?? EmpresasRepository();
   late final CreditosRepository _creditos =
       widget.creditosRepository ?? CreditosRepository();
+  late final CajaRepository _caja =
+      widget.cajaRepository ?? CajaRepository();
 
   final List<_Linea> _lineas = <_Linea>[];
   final _costoEnvio = TextEditingController(text: '0');
@@ -267,6 +273,22 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
         } catch (e) {
           avisoCredito =
               'La venta quedó registrada, pero no se pudo crear el crédito: $e';
+        }
+      }
+      // Caja (best-effort): ingreso por la venta de contado si hay caja abierta.
+      if (_tipoVenta == TipoPrecio.contado) {
+        try {
+          await _caja.registrarIngresoSiAbierta(
+            empresaId: _empresaId,
+            usuarioUid: widget.usuario.uid,
+            monto: t.total,
+            concepto: 'Venta contado',
+            medioPago: MedioPagoCaja.desdeVenta(_medioPago),
+            referenciaTipo: ReferenciaCaja.venta,
+            referenciaId: ventaId,
+          );
+        } catch (_) {
+          // No bloquea la venta.
         }
       }
       if (!mounted) return;

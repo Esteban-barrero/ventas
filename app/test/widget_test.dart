@@ -146,11 +146,11 @@ void main() {
 
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -400));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Caja'));
+    await tester.tap(find.text('Reportes'));
     await tester.pumpAndSettle();
 
     expect(find.text('Módulo en construcción.'), findsOneWidget);
-    expect(find.text('Requiere: Ver caja'), findsOneWidget);
+    expect(find.text('Requiere: Ver reportes'), findsOneWidget);
   });
 
   testWidgets('HomePage avisa cuando se muestran datos guardados sin conexión',

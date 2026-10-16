@@ -7,6 +7,7 @@ import '../auth/domain/permisos.dart';
 import '../auth/domain/roles.dart';
 import '../auth/domain/usuario.dart';
 import '../auth/presentation/usuarios_list_screen.dart';
+import '../caja/presentation/caja_panel_screen.dart';
 import '../catalogo/presentation/catalogo_screen.dart';
 import '../clientes/presentation/clientes_list_screen.dart';
 import '../compras/presentation/compras_list_screen.dart';
@@ -69,7 +70,8 @@ class HomePage extends StatelessWidget {
           requiereEmpresa: true,
           constructor: (_, u) => InventarioListScreen(usuario: u)),
       _Modulo('Caja', Icons.account_balance_wallet_outlined, Permiso.cajaVer,
-          requiereEmpresa: true),
+          requiereEmpresa: true,
+          constructor: (_, u) => CajaPanelScreen(usuario: u)),
       _Modulo('Reportes', Icons.bar_chart_outlined, Permiso.reportesVer,
           requiereEmpresa: true),
       _Modulo(

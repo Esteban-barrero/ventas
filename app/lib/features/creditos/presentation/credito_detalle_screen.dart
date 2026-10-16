@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/formato/fechas.dart';
 import '../../auth/domain/permisos.dart';
 import '../../auth/domain/usuario.dart';
+import '../../caja/data/caja_repository.dart';
+import '../../caja/domain/caja.dart';
 import '../../empresas/presentation/widgets/tarjeta_datos.dart';
 import '../../ventas/domain/venta.dart' show MedioPago;
 import '../data/creditos_repository.dart';
@@ -16,11 +18,13 @@ class CreditoDetalleScreen extends StatefulWidget {
     required this.creditoId,
     required this.usuario,
     this.creditosRepository,
+    this.cajaRepository,
   });
 
   final String creditoId;
   final Usuario usuario;
   final CreditosRepository? creditosRepository;
+  final CajaRepository? cajaRepository;
 
   @override
   State<CreditoDetalleScreen> createState() => _CreditoDetalleScreenState();
@@ -29,6 +33,8 @@ class CreditoDetalleScreen extends StatefulWidget {
 class _CreditoDetalleScreenState extends State<CreditoDetalleScreen> {
   late final CreditosRepository _repo =
       widget.creditosRepository ?? CreditosRepository();
+  late final CajaRepository _caja =
+      widget.cajaRepository ?? CajaRepository();
 
   Credito? _credito;
   bool _cargando = true;
@@ -161,6 +167,20 @@ class _CreditoDetalleScreenState extends State<CreditoDetalleScreen> {
         medio,
         cobradorUid: widget.usuario.uid,
       );
+      // Caja (best-effort): ingreso por el cobro si hay caja abierta.
+      try {
+        await _caja.registrarIngresoSiAbierta(
+          empresaId: widget.usuario.empresaId ?? '',
+          usuarioUid: widget.usuario.uid,
+          monto: valor,
+          concepto: 'Cobro de crédito',
+          medioPago: MedioPagoCaja.desdeVenta(medio),
+          referenciaTipo: ReferenciaCaja.cobro,
+          referenciaId: credito.id,
+        );
+      } catch (_) {
+        // No bloquea el cobro.
+      }
       await _cargar();
       if (mounted) _avisar('Pago registrado.');
     } catch (e) {

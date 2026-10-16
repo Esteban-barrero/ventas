@@ -326,6 +326,36 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Caja y trazabilidad del dinero (spec 009).
+    match /cajas/{cajaId} {
+      allow read: if autenticado()
+        && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
+      allow create, update: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador', 'gerente', 'cajero', 'vendedor']);
+      allow delete: if false;
+    }
+
+    // Movimientos de caja. Solo inserción (inmutable, spec 009).
+    match /movimientos_caja/{movId} {
+      allow read: if autenticado()
+        && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
+      allow create: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador', 'gerente', 'cajero', 'vendedor']);
+      allow update, delete: if false;
+    }
+
+    // Arqueos de cierre (spec 009).
+    match /arqueos/{arqueoId} {
+      allow read: if autenticado()
+        && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
+      allow create: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador', 'gerente', 'cajero']);
+      allow update, delete: if false;
+    }
+
     // Todo lo demas queda denegado por defecto (incluye `mail`: solo lo escribe
     // la Cloud Function con privilegios de administrador).
     match /{document=**} {
