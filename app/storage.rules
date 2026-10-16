@@ -1,8 +1,9 @@
 rules_version = '2';
 
 // Reglas de Firebase Storage — Aplicativo de Ventas
-// Solo se almacenan logos de empresa: empresas/{empresaId}/logo.{ext}
-// Límites: PNG/JPG/WebP, máximo 500 KB (RF-06).
+// Logos de empresa: empresas/{empresaId}/logo.{ext}
+// Fotos de perfil: usuarios/{uid}/foto.{ext}
+// Límites: PNG/JPG/WebP. Logo 500 KB; foto de perfil 1 MB.
 //
 // Nota: en las reglas de Storage un segmento de ruta no puede mezclar texto y
 // variable (`logo{ext}`); por eso se enumeran las extensiones permitidas.
@@ -61,6 +62,31 @@ service firebase.storage {
             || request.resource.contentType == 'application/pdf');
     }
 
+    // Fotos de perfil de usuario (spec 001). Cada quien sube/borra la suya.
+    match /usuarios/{uid}/foto.png {
+      allow read: if request.auth != null;
+      allow delete: if esMiFoto(uid);
+      allow create, update: if esMiFoto(uid) && esFoto('image/png');
+    }
+
+    match /usuarios/{uid}/foto.jpg {
+      allow read: if request.auth != null;
+      allow delete: if esMiFoto(uid);
+      allow create, update: if esMiFoto(uid) && esFoto('image/jpeg');
+    }
+
+    match /usuarios/{uid}/foto.jpeg {
+      allow read: if request.auth != null;
+      allow delete: if esMiFoto(uid);
+      allow create, update: if esMiFoto(uid) && esFoto('image/jpeg');
+    }
+
+    match /usuarios/{uid}/foto.webp {
+      allow read: if request.auth != null;
+      allow delete: if esMiFoto(uid);
+      allow create, update: if esMiFoto(uid) && esFoto('image/webp');
+    }
+
     // Todo lo demás queda denegado.
     match /{allPaths=**} {
       allow read, write: if false;
@@ -85,6 +111,17 @@ service firebase.storage {
     // Una imagen de máximo 500 KB (RN-07) con el tipo de contenido correcto.
     function esImagen(tipo) {
       return request.resource.size <= 512 * 1024
+          && request.resource.contentType == tipo;
+    }
+
+    // La foto es del propio usuario autenticado.
+    function esMiFoto(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Una foto de máximo 1 MB con el tipo de contenido correcto.
+    function esFoto(tipo) {
+      return request.resource.size <= 1024 * 1024
           && request.resource.contentType == tipo;
     }
   }

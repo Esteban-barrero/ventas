@@ -265,16 +265,18 @@ class UsuariosRepository {
     return _actualizarCampos(uid, <String, dynamic>{'activo': activo}, autor: autor);
   }
 
-  /// Actualiza el nombre y/o el teléfono de un usuario, con auditoría.
+  /// Actualiza el nombre, el teléfono y/o la foto de un usuario, con auditoría.
   Future<void> actualizarDatos(
     String uid, {
     String? nombre,
     String? telefono,
+    String? foto,
     String? autor,
   }) {
     final cambios = <String, dynamic>{
       if (nombre != null) 'nombre': nombre.trim(),
       if (telefono != null) 'telefono': telefono.trim(),
+      if (foto != null) 'foto': foto.trim(),
     };
     if (cambios.isEmpty) return Future<void>.value();
     return _actualizarCampos(uid, cambios, autor: autor);

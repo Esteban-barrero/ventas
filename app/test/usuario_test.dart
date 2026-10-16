@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ventas_app/features/auth/domain/datos_usuario.dart';
 import 'package:ventas_app/features/auth/domain/permisos.dart';
 import 'package:ventas_app/features/auth/domain/roles.dart';
+import 'package:ventas_app/features/auth/domain/usuario.dart';
 
 void main() {
   group('Rol.asignables', () {
@@ -98,6 +99,24 @@ void main() {
     test('el Vendedor no puede gestionar usuarios', () {
       final permisos = permisosDeRoles(<Rol>[Rol.vendedor]);
       expect(permisos.contains(Permiso.usuariosGestionar), isFalse);
+    });
+  });
+
+  group('Usuario.foto (spec 001)', () {
+    test('la foto sobrevive la serialización y copyWith', () {
+      const u = Usuario(
+        uid: 'u1',
+        nombre: 'Ana',
+        email: 'ana@ejemplo.com',
+        telefono: '3001234567',
+        roles: <String>['administrador'],
+      );
+      expect(u.foto, '');
+      final conFoto = u.copyWith(foto: 'https://x/foto.jpg');
+      expect(conFoto.foto, 'https://x/foto.jpg');
+      final copia = Usuario.fromMap('u1', conFoto.toMap());
+      expect(copia.foto, 'https://x/foto.jpg');
+      expect(copia.nombre, 'Ana');
     });
   });
 }

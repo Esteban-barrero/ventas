@@ -15,7 +15,8 @@ class ArchivoInvalidoException implements Exception {
 
 /// Sube archivos a Firebase Storage. Ver spec 002, RF-06.
 ///
-/// Los logos viven en `empresas/{empresaId}/logo.{ext}`.
+/// Los logos viven en `empresas/{empresaId}/logo.{ext}` y las fotos de perfil
+/// en `usuarios/{uid}/foto.{ext}` (spec 001).
 class AlmacenamientoRepository {
   AlmacenamientoRepository({FirebaseStorage? storage})
       : _storageOverride = storage;
@@ -65,6 +66,47 @@ class AlmacenamientoRepository {
     }
 
     final ref = _storage.ref('empresas/$empresaId/logo.$extension');
+    final tarea = await ref.putData(
+      bytes,
+      SettableMetadata(contentType: _tipoContenido(extension)),
+    );
+    return tarea.ref.getDownloadURL();
+  }
+
+  /// Tamaño máximo de la foto de perfil del usuario (1 MB).
+  static const int maxFotoBytes = 1024 * 1024;
+
+  /// Valida la foto de perfil antes de subirla.
+  static void validarFoto(Uint8List bytes, {required String extension}) {
+    final ext = extension.toLowerCase();
+    if (!extensionesPermitidas.contains(ext)) {
+      throw const ArchivoInvalidoException(
+        'Formato no permitido. Usa PNG, JPG o WebP.',
+      );
+    }
+    if (bytes.lengthInBytes > maxFotoBytes) {
+      throw ArchivoInvalidoException(
+        'La foto pesa ${(bytes.lengthInBytes / 1024).round()} KB y el máximo '
+        'es 1024 KB.',
+      );
+    }
+  }
+
+  /// Sube la **foto de perfil** de un usuario y devuelve su URL de descarga.
+  ///
+  /// Vive en `usuarios/{uid}/foto.{ext}` (spec 001).
+  Future<String> subirFotoUsuario(
+    String uid,
+    Uint8List bytes, {
+    String extension = 'jpg',
+  }) async {
+    validarFoto(bytes, extension: extension);
+    try {
+      await FirebaseAuth.instance.currentUser?.getIdToken(true);
+    } catch (_) {
+      // Si no se puede refrescar (p. ej. sin conexión), se intenta igualmente.
+    }
+    final ref = _storage.ref('usuarios/$uid/foto.$extension');
     final tarea = await ref.putData(
       bytes,
       SettableMetadata(contentType: _tipoContenido(extension)),

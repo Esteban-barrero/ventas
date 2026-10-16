@@ -6,6 +6,7 @@ import '../../firebase_options.dart';
 import '../auth/domain/permisos.dart';
 import '../auth/domain/roles.dart';
 import '../auth/domain/usuario.dart';
+import '../auth/presentation/mi_perfil_screen.dart';
 import '../auth/presentation/usuarios_list_screen.dart';
 import '../caja/presentation/caja_panel_screen.dart';
 import '../catalogo/presentation/catalogo_screen.dart';
@@ -202,32 +203,60 @@ class HomePage extends StatelessWidget {
   }
 }
 
-/// Encabezado con avatar, nombre y correo.
-class _Encabezado extends StatelessWidget {
+/// Encabezado con avatar, nombre y correo. Tocar el avatar abre "Mi perfil".
+class _Encabezado extends StatefulWidget {
   const _Encabezado({required this.usuario, required this.scheme});
 
   final Usuario usuario;
   final ColorScheme scheme;
 
   @override
+  State<_Encabezado> createState() => _EncabezadoState();
+}
+
+class _EncabezadoState extends State<_Encabezado> {
+  late String _foto = widget.usuario.foto;
+
+  /// Abre "Mi perfil" y refleja la foto nueva si la cambió.
+  Future<void> _abrirPerfil() async {
+    final nueva = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => MiPerfilScreen(usuario: widget.usuario),
+      ),
+    );
+    if (nueva != null && mounted) setState(() => _foto = nueva);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final iniciales = _iniciales(usuario.nombre.isEmpty
-        ? usuario.email
-        : usuario.nombre);
+    final scheme = widget.scheme;
+    final usuario = widget.usuario;
+    final iniciales = _iniciales(
+        usuario.nombre.isEmpty ? usuario.email : usuario.nombre);
 
     return Row(
       children: <Widget>[
-        CircleAvatar(
-          radius: 32,
-          backgroundColor: scheme.primary,
-          child: Text(
-            iniciales,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: scheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+        InkWell(
+          onTap: _abrirPerfil,
+          customBorder: const CircleBorder(),
+          child: _foto.trim().isEmpty
+              ? CircleAvatar(
+                  radius: 32,
+                  backgroundColor: scheme.primary,
+                  child: Text(
+                    iniciales,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: scheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              : CircleAvatar(
+                  radius: 32,
+                  backgroundImage: NetworkImage(_foto),
+                  backgroundColor: scheme.primary,
+                ),
         ),
         const SizedBox(width: 16),
         Expanded(

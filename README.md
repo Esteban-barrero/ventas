@@ -119,6 +119,7 @@ bancaria** quedan pendientes.
 | Guardas de navegación por permiso | ✅ |
 | Auditoría de cambios de usuarios y roles | ✅ |
 | Caché de sesión para uso sin conexión | ✅ |
+| Foto de perfil del usuario ("Mi perfil") | ✅ |
 | Reglas de Firestore por rol y `empresaId` | ✅ |
 | Listado, creación y detalle de empresas (Super Admin) | ✅ |
 | Licencia, plan, renovación y suspensión | ✅ |

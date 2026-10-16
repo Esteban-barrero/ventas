@@ -8,6 +8,7 @@ class Usuario {
     required this.nombre,
     required this.email,
     this.telefono = '',
+    this.foto = '',
     this.empresaId,
     this.roles = const <String>[],
     this.activo = true,
@@ -19,6 +20,9 @@ class Usuario {
   final String nombre;
   final String email;
   final String telefono;
+
+  /// URL de la foto del usuario (Firebase Storage). Vacío = mostrar iniciales.
+  final String foto;
 
   /// Empresa a la que pertenece (`null` para Super Admin).
   final String? empresaId;
@@ -47,6 +51,7 @@ class Usuario {
         'nombre': nombre,
         'email': email,
         'telefono': telefono,
+        'foto': foto,
         'empresaId': empresaId,
         'roles': roles,
         'activo': activo,
@@ -60,6 +65,7 @@ class Usuario {
       nombre: (data['nombre'] as String?) ?? '',
       email: (data['email'] as String?) ?? '',
       telefono: (data['telefono'] as String?) ?? '',
+      foto: (data['foto'] as String?) ?? '',
       empresaId: data['empresaId'] as String?,
       roles: (data['roles'] as List<dynamic>?)
               ?.map((dynamic e) => e.toString())
@@ -73,6 +79,7 @@ class Usuario {
   Usuario copyWith({
     String? nombre,
     String? telefono,
+    String? foto,
     String? empresaId,
     List<String>? roles,
     bool? activo,
@@ -82,6 +89,7 @@ class Usuario {
       nombre: nombre ?? this.nombre,
       email: email,
       telefono: telefono ?? this.telefono,
+      foto: foto ?? this.foto,
       empresaId: empresaId ?? this.empresaId,
       roles: roles ?? this.roles,
       activo: activo ?? this.activo,
