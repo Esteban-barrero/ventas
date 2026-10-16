@@ -2,7 +2,7 @@
 
 - **ID:** 008 | **Carpeta:** `specs/008-inventario/`
 - **Fecha:** 2026-10-14
-- **Estado:** Borrador
+- **Estado:** Implementado (núcleo)
 - **Responsable:** Esteban Barrero
 
 ---
@@ -66,14 +66,14 @@ salidas y ajustes). Cada movimiento queda registrado con **quién, cuándo, cuá
 
 ## 7. Criterios de Aceptación
 
-- [ ] CA-01 El stock actual coincide con la suma de los movimientos del kardex.
-- [ ] CA-02 Las compras suman y las ventas restan automáticamente.
-- [ ] CA-03 Un ajuste manual pide motivo y queda auditado.
-- [ ] CA-04 Se alerta cuando el stock llega al mínimo.
-- [ ] CA-05 Se alerta cuando el producto se agota.
-- [ ] CA-06 La valorización se calcula correctamente.
-- [ ] CA-07 El conteo físico genera los ajustes por diferencia.
-- [ ] CA-08 Los movimientos no se pueden eliminar.
+- [x] CA-01 El stock actual coincide con la suma de los movimientos del kardex.
+- [x] CA-02 Las compras suman y las ventas restan automáticamente.
+- [x] CA-03 Un ajuste manual pide motivo y queda auditado.
+- [x] CA-04 Se alerta cuando el stock llega al mínimo.
+- [x] CA-05 Se alerta cuando el producto se agota.
+- [x] CA-06 La valorización se calcula correctamente.
+- [x] CA-07 El conteo físico genera los ajustes por diferencia.
+- [x] CA-08 Los movimientos no se pueden eliminar.
 
 ## 8. Datos Involucrados
 

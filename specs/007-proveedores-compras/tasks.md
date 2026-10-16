@@ -63,8 +63,9 @@
 
 ## Pendiente (no bloqueante)
 
-- Movimientos de inventario formales (spec 008) y **pago a proveedor por caja**
-  (spec 009).
+- **Movimientos de inventario:** ya **integrados** (la spec 008 escribe el kardex
+  al registrar y anular la compra); el **pago a proveedor por caja** (spec 009)
+  queda pendiente.
 - OCR de facturas y órdenes de compra con aprobación (fuera de alcance).
 
 ---

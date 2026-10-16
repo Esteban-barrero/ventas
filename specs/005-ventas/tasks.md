@@ -70,7 +70,8 @@
 ## Pendiente (no bloqueante)
 
 - Caja/trazabilidad (spec 009) y plan de cobros del crédito (spec 006).
-- Movimientos de inventario (spec 008).
+- **Movimientos de inventario:** ya **integrados** (la spec 008 escribe el kardex
+  al registrar y anular la venta).
 - Factura en PDF e impresión.
 
 ---
