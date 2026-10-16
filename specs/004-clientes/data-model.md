@@ -16,7 +16,7 @@
 | tipoDocumento | string | No | CC, NIT, CE, Pasaporte |
 | telefono | string | **Sí** | Teléfono principal |
 | correo | string | No | Correo electrónico |
-| contacto | string | No | Nombre de contacto alterno |
+| contacto | string | No | Persona de contacto en la dirección (quién recibe) |
 | telefonoAlterno | string | No | Teléfono alternativo |
 | direccion | map | **Sí** | Ver abajo |
 | ubicacionGPS | map | No | Ver abajo |

@@ -220,7 +220,6 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
           ),
           _campo(_telefono, 'Teléfono *'),
           _campo(_correo, 'Correo'),
-          _campo(_contacto, 'Nombre de contacto'),
           _campo(_telefonoAlterno, 'Teléfono alterno'),
           const SizedBox(height: 8),
           _seccion(theme, 'Dirección'),
@@ -229,6 +228,11 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
           _campo(_direccion, 'Dirección *'),
           _campo(_barrio, 'Barrio'),
           _campo(_referencia, 'Punto de referencia'),
+          _campo(
+            _contacto,
+            'Persona de contacto (opcional)',
+            ayuda: 'Quién recibe en esa dirección, si no es el cliente',
+          ),
           const SizedBox(height: 8),
           _seccion(theme, 'Ubicación GPS'),
           _ubicacionWidget(theme),
@@ -299,6 +303,7 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
     String etiqueta, {
     bool numero = false,
     int maxLines = 1,
+    String? ayuda,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -308,6 +313,7 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
         keyboardType: numero ? TextInputType.number : TextInputType.text,
         decoration: InputDecoration(
           labelText: etiqueta,
+          helperText: ayuda,
           border: const OutlineInputBorder(),
         ),
       ),

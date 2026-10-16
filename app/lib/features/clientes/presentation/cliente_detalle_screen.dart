@@ -165,8 +165,6 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
             if (cliente.telefonoAlterno.isNotEmpty)
               FilaDato('Teléfono alterno', cliente.telefonoAlterno),
             if (cliente.correo.isNotEmpty) FilaDato('Correo', cliente.correo),
-            if (cliente.contacto.isNotEmpty)
-              FilaDato('Contacto', cliente.contacto),
             FilaDato('Clasificación', cliente.clasificacion.nombre),
           ],
         ),
@@ -192,6 +190,8 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
               FilaDato('Barrio', cliente.direccion.barrio),
             if (cliente.direccion.referencia.isNotEmpty)
               FilaDato('Referencia', cliente.direccion.referencia),
+            if (cliente.contacto.isNotEmpty)
+              FilaDato('Persona de contacto', cliente.contacto),
           ],
         ),
         const SizedBox(height: 12),
