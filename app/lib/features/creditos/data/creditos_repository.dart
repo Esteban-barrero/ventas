@@ -142,7 +142,10 @@ class CreditosRepository {
 
       tx.set(creditoRef, credito.toMap());
       for (final c in cuotas) {
-        tx.set(creditoRef.collection('cuotas').doc(idCuota(c.numero)), c.toMap());
+        tx.set(
+          creditoRef.collection('cuotas').doc(idCuota(c.numero)),
+          <String, dynamic>{...c.toMap(), 'empresaId': empresa},
+        );
       }
       tx.update(ventaRef, <String, dynamic>{'creditoId': creditoRef.id});
     });

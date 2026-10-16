@@ -69,6 +69,7 @@ class Cuota {
     required this.numero,
     required this.fechaVencimiento,
     required this.monto,
+    this.empresaId = '',
     this.pagado = 0,
     this.estado = EstadoCuota.pendiente,
     this.fechaPago,
@@ -77,6 +78,9 @@ class Cuota {
   final int numero;
   final DateTime fechaVencimiento;
   final double monto;
+
+  /// Empresa dueña de la cuota (para las reglas de Firestore).
+  final String empresaId;
   final double pagado;
   final EstadoCuota estado;
   final DateTime? fechaPago;
@@ -99,6 +103,7 @@ class Cuota {
       numero: numero,
       fechaVencimiento: fechaVencimiento,
       monto: monto,
+      empresaId: empresaId,
       pagado: pagado ?? this.pagado,
       estado: estado ?? this.estado,
       fechaPago: fechaPago ?? this.fechaPago,
@@ -109,6 +114,7 @@ class Cuota {
         'numero': numero,
         'fechaVencimiento': fechaVencimiento.toUtc().toIso8601String(),
         'monto': monto,
+        'empresaId': empresaId,
         'pagado': pagado,
         'saldo': saldo,
         'estado': estado.id,
@@ -120,6 +126,7 @@ class Cuota {
       numero: (data['numero'] as num?)?.toInt() ?? 0,
       fechaVencimiento: _aFecha(data['fechaVencimiento']) ?? DateTime.now(),
       monto: (data['monto'] as num?)?.toDouble() ?? 0,
+      empresaId: (data['empresaId'] as String?) ?? '',
       pagado: (data['pagado'] as num?)?.toDouble() ?? 0,
       estado: EstadoCuota.desdeId(data['estado'] as String?),
       fechaPago: _aFecha(data['fechaPago']),

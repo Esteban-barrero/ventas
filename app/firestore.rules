@@ -237,13 +237,18 @@ service cloud.firestore {
         && roles().hasAny(['administrador', 'cajero', 'gerente']);
       allow delete: if false;
 
-      // Cuotas (subcolección). La empresa se obtiene del crédito padre.
+      // Cuotas (subcolección).
       match /cuotas/{cuotaId} {
         allow read: if autenticado() && (
           esSuperAdmin()
           || esDeEmpresa(get(/databases/$(database)/documents/creditos/$(creditoId)).data.empresaId)
         );
-        allow write: if autenticado()
+        // El alta usa el empresaId de la propia cuota: el crédito padre puede
+        // estar creándose en la misma transacción y `get` aún no lo vería.
+        allow create: if autenticado()
+          && esDeEmpresa(request.resource.data.empresaId)
+          && roles().hasAny(['administrador', 'vendedor', 'cajero']);
+        allow update, delete: if autenticado()
           && esDeEmpresa(get(/databases/$(database)/documents/creditos/$(creditoId)).data.empresaId)
           && roles().hasAny(['administrador', 'vendedor', 'cajero']);
       }
