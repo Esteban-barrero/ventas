@@ -13,6 +13,7 @@ import '../catalogo/presentation/catalogo_screen.dart';
 import '../clientes/presentation/clientes_list_screen.dart';
 import '../compras/presentation/compras_list_screen.dart';
 import '../creditos/presentation/creditos_list_screen.dart';
+import '../empresas/data/empresas_repository.dart';
 import '../empresas/presentation/empresas_list_screen.dart';
 import '../empresas/presentation/mi_empresa_screen.dart';
 import '../envios/presentation/entregas_list_screen.dart';
@@ -293,17 +294,52 @@ class _EncabezadoState extends State<_Encabezado> {
   }
 }
 
-/// Tarjeta con los roles del usuario y cuantos permisos tiene.
-class _TarjetaRoles extends StatelessWidget {
+/// Tarjeta con los roles del usuario y cuántos permisos tiene.
+class _TarjetaRoles extends StatefulWidget {
   const _TarjetaRoles({required this.usuario});
 
   final Usuario usuario;
 
   @override
+  State<_TarjetaRoles> createState() => _TarjetaRolesState();
+}
+
+class _TarjetaRolesState extends State<_TarjetaRoles> {
+  late final EmpresasRepository _empresasRepo = EmpresasRepository();
+
+  /// Nombre de la empresa en MAYÚSCULAS (vacío mientras carga o si no se pudo).
+  String _empresaNombre = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarEmpresa();
+  }
+
+  /// Carga el nombre de la empresa para mostrarlo en vez del id.
+  Future<void> _cargarEmpresa() async {
+    final id = widget.usuario.empresaId;
+    if (id == null || id.isEmpty) return;
+    try {
+      final empresa = await _empresasRepo.obtener(id);
+      final nombre = (empresa?.nombre ?? '').trim();
+      if (!mounted || nombre.isEmpty) return;
+      setState(() => _empresaNombre = nombre.toUpperCase());
+    } catch (_) {
+      // Sin conexión o sin permisos: se muestra el id como respaldo.
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final usuario = widget.usuario;
     final roles = usuario.rolesTipados;
+    final idEmpresa = usuario.empresaId;
+    final empresaTexto = (idEmpresa == null || idEmpresa.isEmpty)
+        ? 'sin asignar'
+        : (_empresaNombre.isNotEmpty ? _empresaNombre : idEmpresa);
 
     return Card(
       color: scheme.primaryContainer,
@@ -347,7 +383,7 @@ class _TarjetaRoles extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               'Permisos efectivos: ${usuario.permisos.length} '
-              '· Empresa: ${(usuario.empresaId == null || usuario.empresaId!.isEmpty) ? "sin asignar" : usuario.empresaId}',
+              '· Empresa: $empresaTexto',
               style: theme.textTheme.bodySmall,
             ),
           ],
