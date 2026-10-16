@@ -63,6 +63,13 @@ interés opcional); aprobación, **abonos parciales** (transacción que baja el
 saldo y marca cuotas/crédito) y **cálculo de mora**. La **caja** del pago (009) y
 el marcado automático de moroso por Cloud Function quedan pendientes.
 
+**Spec 007 — Proveedores y Compras:** implementada (núcleo). Proveedores (NIT
+único por empresa) y compras que **suman inventario**, actualizan el **costo** y
+generan **cuentas por pagar**; incluye **retenciones** (fuente, reteIVA, reteICA)
+y **anexos legales** (escanear factura / subir PDF) con trazabilidad (quién y
+cuándo). La **caja** del pago a proveedor (009) y los movimientos de inventario
+(008) quedan pendientes.
+
 | Funcionalidad | Estado |
 |---|---|
 | Login con correo/contraseña y Google Sign-In | ✅ |
@@ -82,7 +89,7 @@ el marcado automático de moroso por Cloud Function quedan pendientes.
 | Cloud Functions desplegadas | ✅ |
 | Reglas de Firestore y Storage desplegadas | ✅ |
 
-Las demás especificaciones (007 a 015) están definidas y pendientes de
+Las demás especificaciones (008 a 015) están definidas y pendientes de
 implementación. Ver [`specs/`](./specs).
 
 ---
@@ -202,6 +209,7 @@ gsutil cors get gs://aplicativo-de-ventas-d8bcd.firebasestorage.app
     │   │   ├── auditoria/    Registro de cambios
     │   │   ├── catalogo/     Productos, categorías, precios, stock
     │   │   ├── clientes/     Clientes, dirección, GPS, crédito
+    │   │   ├── compras/      Proveedores, compras y anexos legales
     │   │   ├── creditos/     Créditos, cuotas, pagos y mora
     │   │   ├── empresas/     Empresas, licencias, planes, logo
     │   │   ├── home/         Pantalla de inicio
@@ -445,6 +453,10 @@ Firestore (NoSQL, con soporte offline).
 | `creditos/{creditoId}` | Créditos: monto, cuotas, saldo y mora. |
 | `creditos/{id}/cuotas/{cuotaId}` | Cuotas del plan de pagos. |
 | `pagos_credito/{pagoId}` | Abonos/pagos recibidos de un crédito. |
+| `proveedores/{proveedorId}` | Proveedores (NIT único por empresa). |
+| `compras/{compraId}` | Compras: ítems, totales, retenciones y estado. |
+| `compras/{id}/anexos/{anexoId}` | Anexos legales de la compra (factura, PDF…). |
+| `cuentas_por_pagar/{cuentaId}` | Cuentas por pagar de compras a crédito. |
 | `planes/{planId}` | Límites y valor por plan (gratis, básico, premium). Ya sembrados. |
 | `notificaciones/{id}` | Avisos de vencimiento dentro de la app. |
 | `mail/{id}` | Correos pendientes (extensión *Trigger Email*). |
@@ -488,7 +500,7 @@ Cada carpeta contiene `spec.md`, `plan.md` y `tasks.md`.
 ```bash
 cd app
 flutter analyze   # sin errores
-flutter test      # 173 pruebas
+flutter test      # 180 pruebas
 ```
 
 Las pruebas cubren: permisos y unión de roles, cálculo de la licencia (incluido
@@ -502,7 +514,8 @@ de envío, stock, filtros y tarjetas) y los clientes (validaciones de
 obligatorios y cédula única, filtro de departamento/ciudad, serialización,
 filtros y listado) y las ventas (cálculo de totales, regla de envío,
 serialización, filtros y listado) y los créditos (generación de cuotas, cálculo
-de mora, serialización, filtros y listado).
+de mora, serialización, filtros y listado) y las compras (totales con
+retenciones, filtros de proveedores, serialización y listado).
 
 Además, las **reglas de Firestore se verifican con ID tokens reales** (no con el
 token de administrador, que las ignora). Se comprueba, entre otras cosas, que un

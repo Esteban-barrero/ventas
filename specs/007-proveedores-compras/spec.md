@@ -2,7 +2,7 @@
 
 - **ID:** 007 | **Carpeta:** `specs/007-proveedores-compras/`
 - **Fecha:** 2026-10-14
-- **Estado:** Borrador
+- **Estado:** Implementado (núcleo)
 - **Responsable:** Esteban Barrero
 
 ---
@@ -69,15 +69,15 @@ los productos.
 
 ## 7. Criterios de Aceptación
 
-- [ ] CA-01 Se puede registrar un proveedor con sus datos.
-- [ ] CA-02 Se puede registrar una compra con productos y costos.
-- [ ] CA-03 Se puede **escanear** o subir el PDF de la factura.
-- [ ] CA-04 Se pueden subir anexos adicionales.
-- [ ] CA-05 Cada anexo muestra quién lo subió y cuándo.
-- [ ] CA-06 La compra **suma al inventario**.
-- [ ] CA-07 El estado de la compra cambia (pendiente → pagada / anulada).
-- [ ] CA-08 Las cuentas por pagar reflejan las compras a crédito.
-- [ ] CA-09 Los cambios quedan auditados.
+- [x] CA-01 Se puede registrar un proveedor con sus datos.
+- [x] CA-02 Se puede registrar una compra con productos y costos.
+- [x] CA-03 Se puede **escanear** o subir el PDF de la factura.
+- [x] CA-04 Se pueden subir anexos adicionales.
+- [x] CA-05 Cada anexo muestra quién lo subió y cuándo.
+- [x] CA-06 La compra **suma al inventario**.
+- [x] CA-07 El estado de la compra cambia (pendiente → pagada / anulada).
+- [x] CA-08 Las cuentas por pagar reflejan las compras a crédito.
+- [x] CA-09 Los cambios quedan auditados.
 
 ## 8. Datos Involucrados
 

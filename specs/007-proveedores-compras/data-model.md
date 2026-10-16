@@ -32,7 +32,12 @@
 | proveedorId | string | Proveedor |
 | proveedorNombre | string | Nombre del proveedor |
 | items | array | Ver abajo |
-| valorTotal | number | Valor total |
+| subtotal | number | Suma de los subtotales de las líneas |
+| iva | number | IVA total (por línea, según el IVA del producto) |
+| retencionFuente | number | Retención en la fuente |
+| retencionIva | number | ReteIVA |
+| retencionIca | number | ReteICA |
+| valorTotal | number | Total a pagar = subtotal + IVA − retenciones |
 | formaPago | string | `contado` \| `credito` \| `transferencia` |
 | estado | string | `pendiente` \| `pagada` \| `anulada` |
 | actualizaCosto | boolean | Si actualiza el costo de los productos |
