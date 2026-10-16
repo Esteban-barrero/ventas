@@ -115,11 +115,29 @@ class VentasRepository {
     var numeroFinal = venta.numeroFactura;
 
     await _db.runTransaction((Transaction tx) async {
-      // 1) Consecutivo de factura por empresa (RN-04).
+      // 1) LECTURAS (todas antes de cualquier escritura).
       final consRef = _consecutivos.doc(venta.empresaId);
       final consSnap = await tx.get(consRef);
       final actual = (consSnap.data()?['facturaActual'] as num?)?.toInt() ?? 0;
       final prefijo = (consSnap.data()?['prefijo'] as String?) ?? 'FV-';
+
+      // Stock de cada producto (RN-05).
+      final stocks = <String, int>{};
+      for (final ItemVenta it in venta.items) {
+        final pSnap =
+            await tx.get(_db.collection('productos').doc(it.productoId));
+        final data = pSnap.data();
+        if (data == null) {
+          throw StateError('Producto no encontrado: ${it.nombre}.');
+        }
+        final stock = (data['stock'] as num?)?.toInt() ?? 0;
+        if (stock < it.cantidad) {
+          throw StockInsuficienteVentaException(it.nombre, stock, it.cantidad);
+        }
+        stocks[it.productoId] = stock;
+      }
+
+      // 2) ESCRITURAS.
       final siguiente = actual + 1;
       numeroFinal = _formatear(prefijo, siguiente);
       tx.set(
@@ -132,25 +150,14 @@ class VentasRepository {
         SetOptions(merge: true),
       );
 
-      // 2) Stock de cada producto (RN-05).
       for (final ItemVenta it in venta.items) {
-        final pRef = _db.collection('productos').doc(it.productoId);
-        final pSnap = await tx.get(pRef);
-        final data = pSnap.data();
-        if (data == null) {
-          throw StateError('Producto no encontrado: ${it.nombre}.');
-        }
-        final stock = (data['stock'] as num?)?.toInt() ?? 0;
-        if (stock < it.cantidad) {
-          throw StockInsuficienteVentaException(it.nombre, stock, it.cantidad);
-        }
-        tx.update(pRef, <String, dynamic>{
-          'stock': stock - it.cantidad,
-          'fechaActualizacion': DateTime.now().toUtc().toIso8601String(),
-        });
+        tx.update(_db.collection('productos').doc(it.productoId),
+            <String, dynamic>{
+              'stock': (stocks[it.productoId] ?? 0) - it.cantidad,
+              'fechaActualizacion': DateTime.now().toUtc().toIso8601String(),
+            });
       }
 
-      // 3) La venta.
       tx.set(ventaRef, <String, dynamic>{
         ...venta.toMap(),
         'id': ventaRef.id,
@@ -194,18 +201,25 @@ class VentasRepository {
       }
       empresa = (data['empresaId'] as String?) ?? empresa;
 
+      // LECTURAS (todas antes de escribir).
       final items = (data['items'] as List<dynamic>? ?? const <dynamic>[])
           .whereType<Map<dynamic, dynamic>>();
+      final stocks = <String, int>{};
+      final devoluciones = <String, int>{};
       for (final Map<dynamic, dynamic> it in items) {
         final productoId = it['productoId'] as String? ?? '';
         final cantidad = (it['cantidad'] as num?)?.toInt() ?? 0;
         if (productoId.isEmpty || cantidad <= 0) continue;
-        final pRef = _db.collection('productos').doc(productoId);
-        final pSnap = await tx.get(pRef);
+        final pSnap = await tx.get(_db.collection('productos').doc(productoId));
         if (!pSnap.exists) continue;
-        final stock = (pSnap.data()?['stock'] as num?)?.toInt() ?? 0;
-        tx.update(pRef, <String, dynamic>{
-          'stock': stock + cantidad,
+        stocks[productoId] = (pSnap.data()?['stock'] as num?)?.toInt() ?? 0;
+        devoluciones[productoId] = (devoluciones[productoId] ?? 0) + cantidad;
+      }
+
+      // ESCRITURAS.
+      for (final String productoId in stocks.keys) {
+        tx.update(_db.collection('productos').doc(productoId), <String, dynamic>{
+          'stock': (stocks[productoId] ?? 0) + (devoluciones[productoId] ?? 0),
           'fechaActualizacion': DateTime.now().toUtc().toIso8601String(),
         });
       }
