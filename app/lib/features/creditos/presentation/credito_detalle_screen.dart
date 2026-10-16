@@ -90,13 +90,16 @@ class _CreditoDetalleScreenState extends State<CreditoDetalleScreen> {
     }
   }
 
-  Future<void> _registrarPago() async {
+  Future<void> _registrarPago(List<Cuota> cuotas) async {
     final credito = _credito;
     if (credito == null) return;
 
-    final monto = TextEditingController(
-      text: credito.saldoActual.round().toString(),
-    );
+    // Por defecto, el valor de la próxima cuota sin pagar (no el saldo total).
+    final pendientes = cuotas.where((Cuota c) => c.saldo > 0).toList()
+      ..sort((Cuota a, Cuota b) => a.numero.compareTo(b.numero));
+    final sugerido =
+        pendientes.isNotEmpty ? pendientes.first.saldo : credito.saldoActual;
+    final monto = TextEditingController(text: sugerido.round().toString());
     var medio = MedioPago.efectivo;
 
     final pagar = await showDialog<bool>(
@@ -302,7 +305,7 @@ class _CreditoDetalleScreenState extends State<CreditoDetalleScreen> {
             if (!credito.pagado && !credito.cancelado && _puedeGestionar) ...<Widget>[
               const SizedBox(height: 12),
               FilledButton.icon(
-                onPressed: _registrarPago,
+                onPressed: () => _registrarPago(cuotas),
                 icon: const Icon(Icons.payments_outlined),
                 label: const Text('Registrar pago'),
               ),
