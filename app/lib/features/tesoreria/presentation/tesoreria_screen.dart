@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/formato/entrada_miles.dart';
 import '../../../core/formato/fechas.dart';
 import '../../auth/domain/permisos.dart';
 import '../../auth/domain/usuario.dart';
@@ -91,6 +92,9 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
                 TextField(
                   controller: monto,
                   keyboardType: TextInputType.number,
+                  inputFormatters: const <MilesInputFormatter>[
+                    MilesInputFormatter()
+                  ],
                   decoration: const InputDecoration(
                     labelText: 'Monto',
                     border: OutlineInputBorder(),
@@ -178,6 +182,9 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
                 TextField(
                   controller: monto,
                   keyboardType: TextInputType.number,
+                  inputFormatters: const <MilesInputFormatter>[
+                    MilesInputFormatter()
+                  ],
                   decoration: const InputDecoration(
                     labelText: 'Monto',
                     border: OutlineInputBorder(),
@@ -430,6 +437,9 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
                   TextField(
                     controller: contado,
                     keyboardType: TextInputType.number,
+                    inputFormatters: const <MilesInputFormatter>[
+                      MilesInputFormatter()
+                    ],
                     onChanged: (_) => setDialogState(() {}),
                     decoration: const InputDecoration(
                       labelText: 'Efectivo contado',

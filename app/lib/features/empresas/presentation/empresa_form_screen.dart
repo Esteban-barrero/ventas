@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/formato/entrada_miles.dart';
 import '../../../core/formato/fechas.dart';
 import '../../../core/imagen/medir_imagen.dart';
 import '../../../core/validacion/correo.dart';
@@ -445,6 +446,9 @@ class _EmpresaFormScreenState extends State<EmpresaFormScreen> {
               TextFormField(
                 controller: _valorPagado,
                 keyboardType: TextInputType.number,
+                inputFormatters: const <MilesInputFormatter>[
+                  MilesInputFormatter()
+                ],
                 decoration: const InputDecoration(
                   labelText: 'Valor pagado',
                   border: OutlineInputBorder(),
@@ -454,6 +458,9 @@ class _EmpresaFormScreenState extends State<EmpresaFormScreen> {
               TextFormField(
                 controller: _saldoInicial,
                 keyboardType: TextInputType.number,
+                inputFormatters: const <MilesInputFormatter>[
+                  MilesInputFormatter()
+                ],
                 decoration: const InputDecoration(
                   labelText: 'Saldo inicial de caja (opcional)',
                   helperText: 'Dinero con el que arranca la empresa',

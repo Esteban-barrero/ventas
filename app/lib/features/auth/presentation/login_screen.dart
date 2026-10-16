@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../../../core/validacion/correo.dart';
 import '../data/auth_repository.dart';
+import '../data/preferencias_login.dart';
 
 /// Pantalla de inicio de sesion / registro (spec 001).
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.repository});
+  const LoginScreen({super.key, this.repository, this.preferencias});
 
   /// Permite inyectar un repositorio distinto en las pruebas.
   final AuthRepository? repository;
+
+  /// Permite inyectar las preferencias en las pruebas.
+  final PreferenciasLogin? preferencias;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -16,6 +20,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   late final AuthRepository _auth = widget.repository ?? AuthRepository();
+  late final PreferenciasLogin _prefs =
+      widget.preferencias ?? const PreferenciasLogin();
 
   final _correo = TextEditingController();
   final _contrasena = TextEditingController();
@@ -24,7 +30,29 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _esRegistro = false;
   bool _cargando = false;
   bool _ocultaContrasena = true;
+  bool _recordar = true;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarPreferencias();
+  }
+
+  /// Precarga el correo recordado (spec 001).
+  Future<void> _cargarPreferencias() async {
+    try {
+      final recordar = await _prefs.recordar();
+      final correo = await _prefs.correoGuardado();
+      if (!mounted) return;
+      setState(() {
+        _recordar = recordar;
+        if (correo.isNotEmpty) _correo.text = correo;
+      });
+    } catch (_) {
+      // Sin preferencias disponibles: se ignora.
+    }
+  }
 
   @override
   void dispose() {
@@ -46,6 +74,11 @@ class _LoginScreenState extends State<LoginScreen> {
         await _auth.registrar(_correo.text, _contrasena.text);
       } else {
         await _auth.iniciarSesion(_correo.text, _contrasena.text);
+      }
+      try {
+        await _prefs.guardar(correo: _correo.text, recordar: _recordar);
+      } catch (_) {
+        // Si no se pueden guardar las preferencias, no bloquea el ingreso.
       }
       // Al autenticarse, AuthGate cambia de pantalla automaticamente.
     } catch (e) {
@@ -189,6 +222,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: _cargando ? null : _recuperarContrasena,
                         child: const Text('¿Olvidaste tu contraseña?'),
                       ),
+                    ),
+                  if (!_esRegistro)
+                    CheckboxListTile(
+                      value: _recordar,
+                      onChanged: (bool? v) =>
+                          setState(() => _recordar = v ?? true),
+                      title: const Text('Recordar mis datos'),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
                     ),
                   if (_error != null) ...<Widget>[
                     const SizedBox(height: 8),

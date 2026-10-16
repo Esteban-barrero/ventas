@@ -122,6 +122,8 @@ física* dentro del mismo libro. El **pago a proveedor** (egreso) y la
 | Auditoría de cambios de usuarios y roles | ✅ |
 | Caché de sesión para uso sin conexión | ✅ |
 | Foto de perfil del usuario ("Mi perfil") | ✅ |
+| Recordar datos en el login (correo) | ✅ |
+| Campos de dinero con separador de miles | ✅ |
 | Reglas de Firestore por rol y `empresaId` | ✅ |
 | Listado, creación y detalle de empresas (Super Admin) | ✅ |
 | Licencia, plan, renovación y suspensión | ✅ |

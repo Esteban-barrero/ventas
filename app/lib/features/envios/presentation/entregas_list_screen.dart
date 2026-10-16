@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/formato/entrada_miles.dart';
 import '../../../core/formato/fechas.dart';
 import '../../auth/domain/usuario.dart';
 import '../../clientes/data/clientes_repository.dart';
@@ -130,6 +131,9 @@ class _EntregasListScreenState extends State<EntregasListScreen> {
               TextField(
                 controller: monto,
                 keyboardType: TextInputType.number,
+                inputFormatters: const <MilesInputFormatter>[
+                  MilesInputFormatter()
+                ],
                 decoration: const InputDecoration(
                   labelText: 'Monto a entregar',
                   border: OutlineInputBorder(),

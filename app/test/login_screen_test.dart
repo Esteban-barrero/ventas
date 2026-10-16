@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ventas_app/features/auth/presentation/login_screen.dart';
 
 void main() {
+  setUp(() {
+    // Preferencias en memoria para el "recordar datos" (spec 001).
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+  });
+
   // Se construye sin repositorio: AuthRepository resuelve Firebase de forma
   // perezosa, por lo que no hace falta inicializar Firebase para estas pruebas.
   Future<void> montar(WidgetTester tester) async {
@@ -25,6 +31,7 @@ void main() {
     expect(find.text('Continuar con Google'), findsOneWidget);
     expect(find.text('¿Olvidaste tu contraseña?'), findsOneWidget);
     expect(find.text('¿No tienes cuenta? Regístrate'), findsOneWidget);
+    expect(find.text('Recordar mis datos'), findsOneWidget);
   });
 
   testWidgets('al cambiar a registro oculta recuperar contraseña',

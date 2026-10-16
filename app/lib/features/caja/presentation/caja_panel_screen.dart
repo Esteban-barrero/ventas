@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/formato/entrada_miles.dart';
 import '../../../core/formato/fechas.dart';
 import '../../auth/domain/usuario.dart';
 import '../../tesoreria/domain/movimiento_dinero.dart';
@@ -65,6 +66,9 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
               TextField(
                 controller: monto,
                 keyboardType: TextInputType.number,
+                inputFormatters: const <MilesInputFormatter>[
+                  MilesInputFormatter()
+                ],
                 decoration: const InputDecoration(
                   labelText: 'Monto inicial',
                   border: OutlineInputBorder(),
@@ -151,6 +155,9 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
                 TextField(
                   controller: monto,
                   keyboardType: TextInputType.number,
+                  inputFormatters: const <MilesInputFormatter>[
+                    MilesInputFormatter()
+                  ],
                   decoration: const InputDecoration(
                     labelText: 'Monto',
                     border: OutlineInputBorder(),
@@ -239,6 +246,9 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
                   TextField(
                     controller: contado,
                     keyboardType: TextInputType.number,
+                    inputFormatters: const <MilesInputFormatter>[
+                      MilesInputFormatter()
+                    ],
                     onChanged: (_) => setDialogState(() {}),
                     decoration: const InputDecoration(
                       labelText: 'Efectivo contado',

@@ -26,28 +26,29 @@ String formatearValor(num valor) {
   return '$signo$enteroTexto,${centavos.toString().padLeft(2, '0')}';
 }
 
-/// Devuelve un número listo para un campo de texto **sin perder decimales**:
-/// sin decimales si es entero y con 2 decimales (punto) si no.
+/// Devuelve un número listo para un campo de texto, con **miles con punto** y
+/// **decimales con coma** (estilo Colombia), sin perder centavos.
 ///
-/// Ej: `50000` → `50000`; `20677.5` → `20677.50`. Evita que un `.round()`
-/// altere el valor real (por ejemplo, al proponer el monto de una rendición).
-String numeroParaEditar(num valor) {
-  if (valor == valor.roundToDouble()) return valor.round().toString();
-  return valor.toStringAsFixed(2);
-}
+/// Ej: `50000` → `50.000`; `20677.5` → `20.677,50`.
+String numeroParaEditar(num valor) => formatearValor(valor);
 
-/// Interpreta un número escrito por el usuario aceptando **coma** o **punto**
-/// como separador decimal (y quitando los puntos de miles si hay coma).
+/// Interpreta un número escrito por el usuario en estilo **Colombia**: la coma
+/// es el separador decimal y el punto el de miles.
 ///
-/// Ej: `20677.50` → `20677.5`; `20.677,50` → `20677.5`; `20677,5` → `20677.5`.
-/// Devuelve `null` si el texto no es un número válido.
+/// Ej: `2.400.000` → `2400000`; `20.677,50` → `20677.5`; `20677.50` → `20677.5`;
+/// `20677,5` → `20677.5`. Devuelve `null` si el texto no es un número válido.
 double? parsearNumero(String texto) {
   final t = texto.trim();
   if (t.isEmpty) return null;
   if (t.contains(',')) {
     return double.tryParse(t.replaceAll('.', '').replaceAll(',', '.'));
   }
-  return double.tryParse(t);
+  // Sin coma: el punto puede ser decimal (1 dígito) o de miles (grupos de 3).
+  final partes = t.split('.');
+  if (partes.length == 2 && partes[1].length != 3) {
+    return double.tryParse(t);
+  }
+  return double.tryParse(t.replaceAll('.', ''));
 }
 
 /// Inserta el separador de miles (`.`) cada tres dígitos.
