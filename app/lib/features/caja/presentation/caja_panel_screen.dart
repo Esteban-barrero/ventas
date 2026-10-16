@@ -2,9 +2,24 @@ import 'package:flutter/material.dart';
 
 import '../../../core/formato/fechas.dart';
 import '../../auth/domain/usuario.dart';
+import '../../tesoreria/domain/movimiento_dinero.dart';
+import '../../tesoreria/presentation/tesoreria_screen.dart';
 import '../data/caja_repository.dart';
 import '../domain/caja.dart';
-import 'trazabilidad_screen.dart';
+
+/// Acción de caja del panel (se mapea al libro único, spec 016).
+enum _AccionCaja {
+  ingreso('Ingreso', TipoMovimientoDinero.ingreso, ReferenciaDinero.manual),
+  egreso('Egreso', TipoMovimientoDinero.egreso, ReferenciaDinero.manual),
+  retiro('Retiro', TipoMovimientoDinero.egreso, ReferenciaDinero.retiro),
+  gasto('Gasto', TipoMovimientoDinero.egreso, ReferenciaDinero.gasto);
+
+  const _AccionCaja(this.nombre, this.tipo, this.referencia);
+
+  final String nombre;
+  final TipoMovimientoDinero tipo;
+  final ReferenciaDinero referencia;
+}
 
 /// Panel de caja (spec 009, T020..T023): abrir, mover, cerrar y ver movimientos.
 class CajaPanelScreen extends StatefulWidget {
@@ -18,11 +33,11 @@ class CajaPanelScreen extends StatefulWidget {
 }
 
 class _CajaPanelScreenState extends State<CajaPanelScreen> {
-  late final CajaRepository _repo =
-      widget.cajaRepository ?? CajaRepository();
+  late final CajaRepository _repo = widget.cajaRepository ?? CajaRepository();
 
   String get _empresaId => widget.usuario.empresaId ?? '';
   String get _uid => widget.usuario.uid;
+  String get _nombre => widget.usuario.nombre;
 
   void _avisar(String m, {bool error = false}) {
     final messenger = ScaffoldMessenger.of(context);
@@ -37,7 +52,7 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
 
   Future<void> _abrir() async {
     final monto = TextEditingController(text: '0');
-    var medio = MedioPagoCaja.efectivo;
+    var medio = MedioDinero.efectivo;
     final ok = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -56,20 +71,20 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<MedioPagoCaja>(
+              DropdownButtonFormField<MedioDinero>(
                 initialValue: medio,
                 isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Medio predominante',
                   border: OutlineInputBorder(),
                 ),
-                items: <DropdownMenuItem<MedioPagoCaja>>[
-                  for (final m in MedioPagoCaja.values)
-                    DropdownMenuItem<MedioPagoCaja>(
+                items: <DropdownMenuItem<MedioDinero>>[
+                  for (final m in MedioDinero.values)
+                    DropdownMenuItem<MedioDinero>(
                         value: m, child: Text(m.nombre)),
                 ],
-                onChanged: (MedioPagoCaja? v) =>
-                    setDialogState(() => medio = v ?? MedioPagoCaja.efectivo),
+                onChanged: (MedioDinero? v) =>
+                    setDialogState(() => medio = v ?? MedioDinero.efectivo),
               ),
             ],
           ),
@@ -91,7 +106,7 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
       await _repo.abrirCaja(
         empresaId: _empresaId,
         usuarioUid: _uid,
-        usuarioNombre: widget.usuario.nombre,
+        usuarioNombre: _nombre,
         montoInicial: double.tryParse(monto.text.trim()) ?? 0,
         medioPredominante: medio,
       );
@@ -104,7 +119,7 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
   Future<void> _nuevoMovimiento(Caja caja) async {
     final monto = TextEditingController();
     final concepto = TextEditingController();
-    var tipo = TipoMovimientoCaja.ingreso;
+    var accion = _AccionCaja.ingreso;
     var medio = caja.medioPredominante;
 
     final ok = await showDialog<bool>(
@@ -117,20 +132,20 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                DropdownButtonFormField<TipoMovimientoCaja>(
-                  initialValue: tipo,
+                DropdownButtonFormField<_AccionCaja>(
+                  initialValue: accion,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Tipo',
                     border: OutlineInputBorder(),
                   ),
-                  items: <DropdownMenuItem<TipoMovimientoCaja>>[
-                    for (final t in TipoMovimientoCaja.values)
-                      DropdownMenuItem<TipoMovimientoCaja>(
-                          value: t, child: Text(t.nombre)),
+                  items: <DropdownMenuItem<_AccionCaja>>[
+                    for (final a in _AccionCaja.values)
+                      DropdownMenuItem<_AccionCaja>(
+                          value: a, child: Text(a.nombre)),
                   ],
-                  onChanged: (TipoMovimientoCaja? v) =>
-                      setDialogState(() => tipo = v ?? TipoMovimientoCaja.ingreso),
+                  onChanged: (_AccionCaja? v) =>
+                      setDialogState(() => accion = v ?? _AccionCaja.ingreso),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -150,20 +165,20 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<MedioPagoCaja>(
+                DropdownButtonFormField<MedioDinero>(
                   initialValue: medio,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Medio de pago',
                     border: OutlineInputBorder(),
                   ),
-                  items: <DropdownMenuItem<MedioPagoCaja>>[
-                    for (final m in MedioPagoCaja.values)
-                      DropdownMenuItem<MedioPagoCaja>(
+                  items: <DropdownMenuItem<MedioDinero>>[
+                    for (final m in MedioDinero.values)
+                      DropdownMenuItem<MedioDinero>(
                           value: m, child: Text(m.nombre)),
                   ],
-                  onChanged: (MedioPagoCaja? v) =>
-                      setDialogState(() => medio = v ?? MedioPagoCaja.efectivo),
+                  onChanged: (MedioDinero? v) =>
+                      setDialogState(() => medio = v ?? MedioDinero.efectivo),
                 ),
               ],
             ),
@@ -188,12 +203,13 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
       await _repo.registrarMovimiento(
         empresaId: _empresaId,
         cajaId: caja.id,
-        tipo: tipo,
+        tipo: accion.tipo,
         concepto: concepto.text.trim(),
         monto: valor,
         medioPago: medio,
-        referenciaTipo: ReferenciaCaja.manual,
+        referenciaTipo: accion.referencia,
         usuarioUid: _uid,
+        usuarioNombre: _nombre,
       );
       if (mounted) _avisar('Movimiento registrado.');
     } catch (e) {
@@ -297,11 +313,11 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
         title: const Text('Caja'),
         actions: <Widget>[
           IconButton(
-            tooltip: 'Trazabilidad del dinero',
-            icon: const Icon(Icons.account_balance_wallet_outlined),
+            tooltip: 'Tesorería',
+            icon: const Icon(Icons.account_balance_outlined),
             onPressed: () => Navigator.of(context).push<void>(
               MaterialPageRoute<void>(
-                builder: (_) => TrazabilidadScreen(usuario: widget.usuario),
+                builder: (_) => TesoreriaScreen(usuario: widget.usuario),
               ),
             ),
           ),
@@ -358,7 +374,9 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
                     children: <Widget>[
                       const Icon(Icons.account_balance_wallet_outlined),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(caja.nombre, style: theme.textTheme.titleMedium)),
+                      Expanded(
+                          child: Text(caja.nombre,
+                              style: theme.textTheme.titleMedium)),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -411,10 +429,10 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
           ),
         ),
         Expanded(
-          child: StreamBuilder<List<MovimientoCaja>>(
+          child: StreamBuilder<List<MovimientoDinero>>(
             stream: _repo.movimientos(_empresaId, cajaId: caja.id),
             builder: (context, snap) {
-              final movs = snap.data ?? const <MovimientoCaja>[];
+              final movs = snap.data ?? const <MovimientoDinero>[];
               if (movs.isEmpty) {
                 return const Center(
                   child: Padding(
@@ -428,21 +446,19 @@ class _CajaPanelScreenState extends State<CajaPanelScreen> {
                 separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, i) {
                   final m = movs[i];
+                  final suma = m.tipo.suma;
                   return ListTile(
                     leading: Icon(
-                      m.suma ? Icons.south_west : Icons.north_east,
-                      color: m.suma ? Colors.green : theme.colorScheme.error,
+                      suma ? Icons.south_west : Icons.north_east,
+                      color: suma ? Colors.green : theme.colorScheme.error,
                     ),
-                    title: Text(
-                        '${m.tipo.nombre} · ${formatearValor(m.monto)}'),
+                    title: Text('${m.tipo.nombre} · ${formatearValor(m.monto)}'),
                     subtitle: Text(
-                      '${m.concepto.isEmpty ? m.referenciaTipo.nombre : m.concepto}'
+                      '${m.descripcion.isEmpty ? m.referenciaTipo.nombre : m.descripcion}'
                       ' · ${m.medioPago.nombre} · ${formatearFecha(m.fecha)}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    trailing: Text('Saldo ${formatearValor(m.saldoResultante)}',
-                        style: theme.textTheme.bodySmall),
                   );
                 },
               );

@@ -326,7 +326,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Caja y trazabilidad del dinero (spec 009).
+    // Caja por turno (spec 009) sobre el libro único del dinero (spec 016).
     match /cajas/{cajaId} {
       allow read: if autenticado()
         && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
@@ -336,8 +336,8 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Movimientos de caja. Solo inserción (inmutable, spec 009).
-    match /movimientos_caja/{movId} {
+    // Tesorería: libro único del dinero. Solo inserción (inmutable, spec 016).
+    match /movimientos_dinero/{movId} {
       allow read: if autenticado()
         && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
       allow create: if autenticado()

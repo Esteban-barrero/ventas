@@ -2,8 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../auditoria/data/auditoria_repository.dart';
 import '../../auditoria/domain/auditoria.dart';
+import '../../tesoreria/data/tesoreria_repository.dart';
+import '../../tesoreria/domain/movimiento_dinero.dart';
 import '../domain/caja.dart';
-import '../domain/calculos_caja.dart';
 
 /// Ya hay una caja abierta para el usuario (RN-03).
 class CajaYaAbiertaException implements Exception {
@@ -29,26 +30,25 @@ class JustificacionRequeridaException implements Exception {
   String toString() => 'Debes justificar la diferencia del arqueo.';
 }
 
-/// Acceso a `cajas`, `movimientos_caja` y `arqueos` (spec 009).
-///
-/// Las lecturas filtran por `empresaId` (lo exigen las reglas de Firestore) y
-/// refinan en el cliente (usuario/estado/caja), sin índices compuestos.
+/// Caja por turno (spec 009) sobre el **libro único** `movimientos_dinero`
+/// (spec 016). Las lecturas filtran por `empresaId` y refinan en el cliente.
 class CajaRepository {
   CajaRepository({
     FirebaseFirestore? firestore,
     AuditoriaRepository? auditoria,
+    TesoreriaRepository? tesoreria,
   })  : _firestoreOverride = firestore,
-        _auditoria = auditoria ?? AuditoriaRepository();
+        _auditoria = auditoria ?? AuditoriaRepository(),
+        _tesoreria = tesoreria ?? TesoreriaRepository(firestore: firestore);
 
   final FirebaseFirestore? _firestoreOverride;
   final AuditoriaRepository _auditoria;
+  final TesoreriaRepository _tesoreria;
 
   FirebaseFirestore get _db => _firestoreOverride ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _cajas =>
       _db.collection('cajas');
-  CollectionReference<Map<String, dynamic>> get _movimientos =>
-      _db.collection('movimientos_caja');
   CollectionReference<Map<String, dynamic>> get _arqueos =>
       _db.collection('arqueos');
 
@@ -80,7 +80,7 @@ class CajaRepository {
     required String usuarioUid,
     required String usuarioNombre,
     required double montoInicial,
-    MedioPagoCaja medioPredominante = MedioPagoCaja.efectivo,
+    MedioDinero medioPredominante = MedioDinero.efectivo,
   }) async {
     if (await cajaAbierta(empresaId, usuarioUid) != null) {
       throw const CajaYaAbiertaException();
@@ -109,101 +109,37 @@ class CajaRepository {
     return ref.id;
   }
 
-  /// Registra un **movimiento** en una caja abierta y recalcula el saldo
-  /// (RF-03, ADR-005). El movimiento es inmutable (ADR-002).
+  /// Registra un **movimiento** del turno (ingreso/egreso) en el libro único,
+  /// actualizando el saldo en la misma transacción (RF-03, spec 016).
   Future<void> registrarMovimiento({
     required String empresaId,
     required String cajaId,
-    required TipoMovimientoCaja tipo,
+    required TipoMovimientoDinero tipo,
     required String concepto,
     required double monto,
-    required MedioPagoCaja medioPago,
-    required ReferenciaCaja referenciaTipo,
+    required MedioDinero medioPago,
+    required ReferenciaDinero referenciaTipo,
     required String usuarioUid,
-    String referenciaId = '',
+    String usuarioNombre = '',
     String responsableUid = '',
-    EstadoDinero estadoDinero = EstadoDinero.enCaja,
-    String empresaEnvio = '',
-    String domiciliario = '',
-  }) async {
-    if (monto <= 0) {
-      throw ArgumentError('El monto debe ser mayor que cero.');
-    }
-    final cajaRef = _cajas.doc(cajaId);
-    final movRef = _movimientos.doc();
-
-    await _db.runTransaction((Transaction tx) async {
-      final snap = await tx.get(cajaRef);
-      final data = snap.data();
-      if (data == null) throw StateError('La caja no existe.');
-      final caja = Caja.fromMap(cajaId, data);
-      if (!caja.abierta) throw const CajaCerradaException();
-
-      final saldoResultante = saldoConMovimiento(caja.saldo, tipo, monto);
-      tx.update(cajaRef, <String, dynamic>{'saldo': saldoResultante});
-
-      final mov = MovimientoCaja(
-        id: movRef.id,
-        empresaId: empresaId,
-        cajaId: cajaId,
-        tipo: tipo,
-        concepto: concepto,
-        monto: monto,
-        medioPago: medioPago,
-        referenciaTipo: referenciaTipo,
-        referenciaId: referenciaId,
-        responsableUid: responsableUid.isEmpty ? usuarioUid : responsableUid,
-        estadoDinero: estadoDinero,
-        empresaEnvio: empresaEnvio,
-        domiciliario: domiciliario,
-        saldoResultante: saldoResultante,
-        usuarioUid: usuarioUid,
-        fecha: DateTime.now(),
-      );
-      tx.set(movRef, mov.toMap());
-    });
-
-    await _auditoria.registrarEvento(
-      empresaId: empresaId,
-      operacion: OperacionAuditoria.insert,
-      tabla: 'movimientos_caja',
-      documentoId: movRef.id,
-      datos: <String, dynamic>{
-        'tipo': tipo.id,
-        'monto': monto,
-        'concepto': concepto,
-      },
-    );
-  }
-
-  /// **Integración:** registra un **ingreso** si el usuario tiene caja abierta.
-  ///
-  /// Devuelve `true` si se registró (había caja abierta) o `false` si no
-  /// (no bloquea la operación de origen). Ver nota en `tasks.md`.
-  Future<bool> registrarIngresoSiAbierta({
-    required String empresaId,
-    required String usuarioUid,
-    required double monto,
-    required String concepto,
-    required MedioPagoCaja medioPago,
-    required ReferenciaCaja referenciaTipo,
+    String responsableNombre = '',
     String referenciaId = '',
   }) async {
-    if (monto <= 0) return false;
-    final caja = await cajaAbierta(empresaId, usuarioUid);
-    if (caja == null) return false;
-    await registrarMovimiento(
+    await _tesoreria.registrarMovimiento(
       empresaId: empresaId,
-      cajaId: caja.id,
-      tipo: TipoMovimientoCaja.ingreso,
-      concepto: concepto,
+      tipo: tipo,
       monto: monto,
+      ubicacion: UbicacionDinero.cajaFisica,
       medioPago: medioPago,
       referenciaTipo: referenciaTipo,
-      referenciaId: referenciaId,
       usuarioUid: usuarioUid,
+      usuarioNombre: usuarioNombre,
+      responsableUid: responsableUid,
+      responsableNombre: responsableNombre,
+      descripcion: concepto,
+      referenciaId: referenciaId,
+      cajaId: cajaId,
     );
-    return true;
   }
 
   /// Cierra la caja con **arqueo** y diferencia (RF-02, RF-08, RF-09).
@@ -227,7 +163,7 @@ class CajaRepository {
       if (!caja.abierta) throw const CajaCerradaException();
 
       final esperado = caja.saldo;
-      final diferencia = calcularDiferenciaArqueo(totalContado, esperado);
+      final diferencia = totalContado - esperado;
       if (diferencia.abs() > 0.001 && justificacion.trim().isEmpty) {
         throw const JustificacionRequeridaException();
       }
@@ -241,7 +177,7 @@ class CajaRepository {
         totalContado: totalContado,
         diferencia: diferencia,
         justificacion: justificacion,
-        desgloseEfectivo: desglose,
+        desglose: desglose,
         usuarioUid: usuarioUid,
       );
       tx.set(arqueoRef, arqueo!.toMap());
@@ -267,43 +203,15 @@ class CajaRepository {
     return arqueo!;
   }
 
-  /// Movimientos de caja de una empresa (más recientes primero).
-  Stream<List<MovimientoCaja>> movimientos(
-    String empresaId, {
-    String? cajaId,
-  }) {
-    return _movimientos
-        .where('empresaId', isEqualTo: empresaId)
-        .snapshots()
-        .map((QuerySnapshot<Map<String, dynamic>> snap) {
-      final lista = _aListaMovs(snap);
-      if (cajaId == null || cajaId.isEmpty) return lista;
-      return lista
-          .where((MovimientoCaja m) => m.cajaId == cajaId)
-          .toList(growable: false);
-    });
+  /// Movimientos del libro (opcionalmente de un turno).
+  Stream<List<MovimientoDinero>> movimientos(String empresaId, {String? cajaId}) {
+    if (cajaId == null || cajaId.isEmpty) {
+      return _tesoreria.escucharMovimientos(empresaId);
+    }
+    return _tesoreria.escucharDeCaja(empresaId, cajaId);
   }
 
-  /// Movimientos para la **trazabilidad del dinero** (RF-10).
-  Future<List<MovimientoCaja>> trazabilidad(
-    String empresaId, {
-    EstadoDinero? estadoDinero,
-    String? responsableUid,
-  }) async {
-    final snap =
-        await _movimientos.where('empresaId', isEqualTo: empresaId).get();
-    return _aListaMovs(snap).where((MovimientoCaja m) {
-      if (estadoDinero != null && m.estadoDinero != estadoDinero) return false;
-      if (responsableUid != null &&
-          responsableUid.isNotEmpty &&
-          m.responsableUid != responsableUid) {
-        return false;
-      }
-      return true;
-    }).toList(growable: false);
-  }
-
-  /// Saldo consolidado de las cajas **abiertas** (RF-10).
+  /// Saldo consolidado de las cajas **abiertas**.
   Future<double> saldoConsolidado(String empresaId) async {
     final cajas = await _leerCajas(empresaId);
     return cajas
@@ -320,14 +228,4 @@ class CajaRepository {
       .map((DocumentSnapshot<Map<String, dynamic>> d) =>
           Caja.fromMap(d.id, d.data()!))
       .toList(growable: false);
-
-  List<MovimientoCaja> _aListaMovs(QuerySnapshot<Map<String, dynamic>> snap) {
-    final lista = snap.docs
-        .map((DocumentSnapshot<Map<String, dynamic>> d) =>
-            MovimientoCaja.fromMap(d.id, d.data()!))
-        .toList();
-    lista.sort((MovimientoCaja a, MovimientoCaja b) =>
-        (b.fecha ?? DateTime(0)).compareTo(a.fecha ?? DateTime(0)));
-    return lista;
-  }
 }

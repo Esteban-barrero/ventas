@@ -76,6 +76,7 @@ class ItemVenta {
     required this.cantidad,
     required this.precioUnitario,
     this.iva = 0,
+    this.costoUnitario = 0,
   });
 
   final String productoId;
@@ -87,11 +88,17 @@ class ItemVenta {
   /// IVA aplicado a la línea (porcentaje), tomado del producto.
   final double iva;
 
+  /// Costo del producto **al momento de la venta** (snapshot, spec 016).
+  final double costoUnitario;
+
   /// Subtotal de la línea (`cantidad × precioUnitario`).
   double get subtotal => cantidad * precioUnitario;
 
   /// Impuesto de la línea según su IVA.
   double get impuesto => subtotal * iva / 100;
+
+  /// Utilidad de la línea (`cantidad × (precioUnitario − costoUnitario)`).
+  double get utilidad => cantidad * (precioUnitario - costoUnitario);
 
   Map<String, dynamic> toMap() => <String, dynamic>{
         'productoId': productoId,
@@ -100,8 +107,10 @@ class ItemVenta {
         'cantidad': cantidad,
         'precioUnitario': precioUnitario,
         'iva': iva,
+        'costoUnitario': costoUnitario,
         'subtotal': subtotal,
         'impuesto': impuesto,
+        'utilidad': utilidad,
       };
 
   factory ItemVenta.fromMap(Map<String, dynamic> data) {
@@ -112,6 +121,7 @@ class ItemVenta {
       cantidad: (data['cantidad'] as num?)?.toInt() ?? 0,
       precioUnitario: (data['precioUnitario'] as num?)?.toDouble() ?? 0,
       iva: (data['iva'] as num?)?.toDouble() ?? 0,
+      costoUnitario: (data['costoUnitario'] as num?)?.toDouble() ?? 0,
     );
   }
 }
@@ -137,6 +147,9 @@ class Venta {
     this.descuento = 0,
     this.impuestos = 0,
     this.total = 0,
+    this.costoTotal = 0,
+    this.utilidadTotal = 0,
+    this.margenPct = 0,
     this.empresaEnvio = '',
     this.fechaEnvio,
     this.estadoEnvio = '',
@@ -170,6 +183,15 @@ class Venta {
   final double impuestos;
   final double total;
 
+  /// Costo de la mercancía vendida (suma de `costoUnitario × cantidad`).
+  final double costoTotal;
+
+  /// Utilidad total de la venta (`total de líneas − costoTotal`).
+  final double utilidadTotal;
+
+  /// Margen promedio en porcentaje (`utilidadTotal / subtotal × 100`).
+  final double margenPct;
+
   final String empresaEnvio;
   final DateTime? fechaEnvio;
   final String estadoEnvio;
@@ -200,6 +222,9 @@ class Venta {
         'descuento': descuento,
         'impuestos': impuestos,
         'total': total,
+        'costoTotal': costoTotal,
+        'utilidadTotal': utilidadTotal,
+        'margenPct': margenPct,
         'empresaEnvio': empresaEnvio,
         'fechaEnvio': fechaEnvio?.toUtc().toIso8601String(),
         'estadoEnvio': estadoEnvio,
@@ -232,6 +257,9 @@ class Venta {
       descuento: (data['descuento'] as num?)?.toDouble() ?? 0,
       impuestos: (data['impuestos'] as num?)?.toDouble() ?? 0,
       total: (data['total'] as num?)?.toDouble() ?? 0,
+      costoTotal: (data['costoTotal'] as num?)?.toDouble() ?? 0,
+      utilidadTotal: (data['utilidadTotal'] as num?)?.toDouble() ?? 0,
+      margenPct: (data['margenPct'] as num?)?.toDouble() ?? 0,
       empresaEnvio: (data['empresaEnvio'] as String?) ?? '',
       fechaEnvio: _aFecha(data['fechaEnvio']),
       estadoEnvio: (data['estadoEnvio'] as String?) ?? '',

@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../core/formato/fechas.dart';
 import '../../auth/domain/permisos.dart';
 import '../../auth/domain/usuario.dart';
-import '../../caja/data/caja_repository.dart';
-import '../../caja/domain/caja.dart';
 import '../../empresas/presentation/widgets/tarjeta_datos.dart';
+import '../../tesoreria/data/tesoreria_repository.dart';
+import '../../tesoreria/domain/movimiento_dinero.dart';
+import '../../tesoreria/domain/posiciones.dart';
 import '../../ventas/domain/venta.dart' show MedioPago;
 import '../data/creditos_repository.dart';
 import '../domain/credito.dart';
@@ -18,13 +19,13 @@ class CreditoDetalleScreen extends StatefulWidget {
     required this.creditoId,
     required this.usuario,
     this.creditosRepository,
-    this.cajaRepository,
+    this.tesoreriaRepository,
   });
 
   final String creditoId;
   final Usuario usuario;
   final CreditosRepository? creditosRepository;
-  final CajaRepository? cajaRepository;
+  final TesoreriaRepository? tesoreriaRepository;
 
   @override
   State<CreditoDetalleScreen> createState() => _CreditoDetalleScreenState();
@@ -33,8 +34,8 @@ class CreditoDetalleScreen extends StatefulWidget {
 class _CreditoDetalleScreenState extends State<CreditoDetalleScreen> {
   late final CreditosRepository _repo =
       widget.creditosRepository ?? CreditosRepository();
-  late final CajaRepository _caja =
-      widget.cajaRepository ?? CajaRepository();
+  late final TesoreriaRepository _tesoreria =
+      widget.tesoreriaRepository ?? TesoreriaRepository();
 
   Credito? _credito;
   bool _cargando = true;
@@ -167,16 +168,21 @@ class _CreditoDetalleScreenState extends State<CreditoDetalleScreen> {
         medio,
         cobradorUid: widget.usuario.uid,
       );
-      // Caja (best-effort): ingreso por el cobro si hay caja abierta.
+      // Tesorería: el cobro ingresa al libro único (spec 016).
       try {
-        await _caja.registrarIngresoSiAbierta(
+        await _tesoreria.registrarMovimiento(
           empresaId: widget.usuario.empresaId ?? '',
-          usuarioUid: widget.usuario.uid,
+          tipo: TipoMovimientoDinero.ingreso,
           monto: valor,
-          concepto: 'Cobro de crédito',
-          medioPago: MedioPagoCaja.desdeVenta(medio),
-          referenciaTipo: ReferenciaCaja.cobro,
+          ubicacion: ubicacionDeCobro(medio),
+          medioPago: MedioDinero.desdeVenta(medio),
+          referenciaTipo: ReferenciaDinero.cobro,
           referenciaId: credito.id,
+          usuarioUid: widget.usuario.uid,
+          usuarioNombre: widget.usuario.nombre,
+          responsableUid: widget.usuario.uid,
+          responsableNombre: widget.usuario.nombre,
+          descripcion: 'Cobro de crédito',
         );
       } catch (_) {
         // No bloquea el cobro.

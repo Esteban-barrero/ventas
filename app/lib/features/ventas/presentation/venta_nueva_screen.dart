@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/formato/fechas.dart';
 import '../../auth/domain/usuario.dart';
-import '../../caja/data/caja_repository.dart';
-import '../../caja/domain/caja.dart';
 import '../../catalogo/data/productos_repository.dart';
 import '../../catalogo/domain/precio.dart';
 import '../../catalogo/domain/producto.dart';
@@ -14,6 +12,9 @@ import '../../creditos/data/creditos_repository.dart';
 import '../../creditos/domain/credito.dart';
 import '../../empresas/data/empresas_repository.dart';
 import '../../empresas/domain/parametros_empresa.dart';
+import '../../tesoreria/data/tesoreria_repository.dart';
+import '../../tesoreria/domain/movimiento_dinero.dart';
+import '../../tesoreria/domain/posiciones.dart';
 import '../data/ventas_repository.dart';
 import '../domain/totales.dart';
 import '../domain/venta.dart';
@@ -38,7 +39,7 @@ class VentaNuevaScreen extends StatefulWidget {
     this.clientesRepository,
     this.empresasRepository,
     this.creditosRepository,
-    this.cajaRepository,
+    this.tesoreriaRepository,
   });
 
   final Usuario usuario;
@@ -47,7 +48,7 @@ class VentaNuevaScreen extends StatefulWidget {
   final ClientesRepository? clientesRepository;
   final EmpresasRepository? empresasRepository;
   final CreditosRepository? creditosRepository;
-  final CajaRepository? cajaRepository;
+  final TesoreriaRepository? tesoreriaRepository;
 
   @override
   State<VentaNuevaScreen> createState() => _VentaNuevaScreenState();
@@ -64,8 +65,8 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
       widget.empresasRepository ?? EmpresasRepository();
   late final CreditosRepository _creditos =
       widget.creditosRepository ?? CreditosRepository();
-  late final CajaRepository _caja =
-      widget.cajaRepository ?? CajaRepository();
+  late final TesoreriaRepository _tesoreria =
+      widget.tesoreriaRepository ?? TesoreriaRepository();
 
   final List<_Linea> _lineas = <_Linea>[];
   final _costoEnvio = TextEditingController(text: '0');
@@ -143,6 +144,7 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
             cantidad: l.cantidad,
             precioUnitario: l.producto.precio(_tipoVenta, _parametros),
             iva: l.producto.ivaEfectivo(_parametros),
+            costoUnitario: l.producto.costo,
           ),
       ];
 
@@ -237,6 +239,13 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
       }
     }
 
+    final items = _items();
+    final costoTotal = items.fold<double>(
+        0, (double a, ItemVenta i) => a + i.cantidad * i.costoUnitario);
+    final utilidadTotal =
+        items.fold<double>(0, (double a, ItemVenta i) => a + i.utilidad);
+    final margenPct = t.subtotal > 0 ? utilidadTotal / t.subtotal * 100 : 0.0;
+
     final venta = Venta(
       id: '',
       empresaId: _empresaId,
@@ -245,7 +254,7 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
       clienteId: cliente?.id,
       clienteNombre: cliente?.nombreCompleto ?? 'Consumidor final',
       clienteUid: cliente?.uid,
-      items: _items(),
+      items: items,
       tipoVenta: _tipoVenta,
       tipoEntrega: _tipoEntrega,
       medioPago: _medioPago,
@@ -254,6 +263,9 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
       descuento: t.descuento,
       impuestos: t.impuestos,
       total: t.total,
+      costoTotal: costoTotal,
+      utilidadTotal: utilidadTotal,
+      margenPct: margenPct,
     );
 
     setState(() => _guardando = true);
@@ -275,17 +287,22 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
               'La venta quedó registrada, pero no se pudo crear el crédito: $e';
         }
       }
-      // Caja (best-effort): ingreso por la venta de contado si hay caja abierta.
+      // Tesorería: la venta de contado ingresa al libro único (spec 016).
       if (_tipoVenta == TipoPrecio.contado) {
         try {
-          await _caja.registrarIngresoSiAbierta(
+          await _tesoreria.registrarMovimiento(
             empresaId: _empresaId,
-            usuarioUid: widget.usuario.uid,
+            tipo: TipoMovimientoDinero.ingreso,
             monto: t.total,
-            concepto: 'Venta contado',
-            medioPago: MedioPagoCaja.desdeVenta(_medioPago),
-            referenciaTipo: ReferenciaCaja.venta,
+            ubicacion: ubicacionDeVenta(_medioPago, _tipoEntrega),
+            medioPago: MedioDinero.desdeVenta(_medioPago),
+            referenciaTipo: ReferenciaDinero.venta,
             referenciaId: ventaId,
+            usuarioUid: widget.usuario.uid,
+            usuarioNombre: widget.usuario.nombre,
+            responsableUid: widget.usuario.uid,
+            responsableNombre: widget.usuario.nombre,
+            descripcion: 'Venta de contado',
           );
         } catch (_) {
           // No bloquea la venta.

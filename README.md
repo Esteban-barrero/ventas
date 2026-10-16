@@ -78,16 +78,23 @@ anulación), **ajustes** con motivo, **conteo físico** que genera ajustes por
 diferencia, **alertas** de stock mínimo/agotado y **valorización**. Multibodega y
 aprobación de conteo quedan para después.
 
-**Spec 009 — Caja y Trazabilidad del dinero:** implementada (núcleo). **Apertura**
-de caja por cajero (una abierta por usuario), **movimientos** (ingreso, egreso,
-retiro, gasto) con medios de pago (efectivo, Nequi, Bancolombia, tarjeta) que
-recalculan el **saldo** en transacción, **cierre con arqueo** (sobrante/cuadre/
-faltante y justificación obligatoria si hay diferencia) y **trazabilidad** del
-dinero (responsable y estado: en caja, en tránsito, en banco, entregado). Las
-**ventas de contado** y los **cobros de crédito** ingresan a caja de forma
-best-effort (solo si el usuario tiene caja abierta, sin bloquear la operación). El
-**comprobante de cierre en PDF** y el egreso por pago a proveedor quedan
-pendientes.
+**Spec 009 — Caja por turno:** implementada (núcleo). **Apertura** de caja por
+cajero (una abierta por usuario), **movimientos** (ingreso, egreso, retiro, gasto)
+que recalculan el **saldo** en transacción y **cierre con arqueo**
+(sobrante/cuadre/faltante y justificación obligatoria si hay diferencia). Escribe
+en el **libro único del dinero** (spec 016) con ubicación *caja física*. El
+**comprobante de cierre en PDF** queda pendiente.
+
+**Spec 016 — Tesorería y flujo del dinero:** implementada (núcleo). Un **libro
+único** de movimientos (`movimientos_dinero`) con **ingresos**, **egresos** y
+**traslados**, cada uno con **ubicación** (caja física, efectivo con el vendedor,
+pago contra entrega, Nequi, banco, tarjeta por consignar) y **responsable**. La
+pantalla de **Tesorería** muestra el **total** de la empresa y el desglose **por
+ubicación y responsable** ("dónde está la plata y quién la tiene"). Las **ventas
+de contado** y los **cobros** ingresan automáticamente; la venta guarda su
+**snapshot de costo, utilidad y margen %**. La caja por turno (009) es la ubicación
+*caja física* dentro del mismo libro. El **pago a proveedor** (egreso) y la
+**conciliación bancaria** quedan pendientes.
 
 | Funcionalidad | Estado |
 |---|---|
@@ -107,6 +114,8 @@ pendientes.
 | Interfaz de administración de usuarios (CA-06) | ✅ |
 | Cloud Functions desplegadas | ✅ |
 | Reglas de Firestore y Storage desplegadas | ✅ |
+| Caja por turno: apertura, movimientos y arqueo (009) | ✅ |
+| Tesorería: libro único del dinero y trazabilidad (016) | ✅ |
 
 Las demás especificaciones (010 a 015) están definidas y pendientes de
 implementación. Ver [`specs/`](./specs).
@@ -505,13 +514,14 @@ para los archivos) y se despliegan con Firebase CLI. El detalle de campos está 
 | 006 | [Créditos y Cobros](./specs/006-creditos-cobros/) |
 | 007 | [Proveedores y Compras](./specs/007-proveedores-compras/) |
 | 008 | [Inventario](./specs/008-inventario/) |
-| 009 | [Caja y Trazabilidad](./specs/009-caja-trazabilidad/) |
+| 009 | [Caja por turno](./specs/009-caja-trazabilidad/) |
 | 010 | [Carrito y Pedidos](./specs/010-carrito-pedidos/) |
 | 011 | [Envíos y Entregas](./specs/011-envios-entregas/) |
 | 012 | [Auditoría](./specs/012-auditoria/) |
 | 013 | [Logs de Errores](./specs/013-logs-errores/) |
 | 014 | [Parámetros y Tema](./specs/014-parametros-tema/) |
 | 015 | [Reportes](./specs/015-reportes/) |
+| 016 | [Tesorería y flujo del dinero](./specs/016-tesoreria-flujo-dinero/) |
 
 Cada carpeta contiene `spec.md`, `plan.md` y `tasks.md`.
 

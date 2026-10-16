@@ -17,6 +17,7 @@ import '../empresas/presentation/mi_empresa_screen.dart';
 import '../inventario/presentation/inventario_list_screen.dart';
 import '../licencia/domain/licencia.dart';
 import '../licencia/presentation/aviso_licencia.dart';
+import '../tesoreria/presentation/tesoreria_screen.dart';
 import '../ventas/presentation/ventas_list_screen.dart';
 import 'modulo_screen.dart';
 
@@ -72,6 +73,9 @@ class HomePage extends StatelessWidget {
       _Modulo('Caja', Icons.account_balance_wallet_outlined, Permiso.cajaVer,
           requiereEmpresa: true,
           constructor: (_, u) => CajaPanelScreen(usuario: u)),
+      _Modulo('Tesorería', Icons.account_balance_outlined, Permiso.cajaVer,
+          requiereEmpresa: true,
+          constructor: (_, u) => TesoreriaScreen(usuario: u)),
       _Modulo('Reportes', Icons.bar_chart_outlined, Permiso.reportesVer,
           requiereEmpresa: true),
       _Modulo(

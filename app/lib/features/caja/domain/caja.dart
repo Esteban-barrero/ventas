@@ -1,10 +1,11 @@
-/// Dominio de caja y trazabilidad del dinero (spec 009).
+/// Dominio de caja por turno (spec 009) sobre el libro único de tesorería (016).
 ///
-/// Una **caja** es un turno con `estado: abierta`. Cada ingreso/egreso escribe
-/// en `movimientos_caja` (inmutable) y recalcula el saldo de la caja.
+/// Una **caja** es un turno con `estado: abierta`. Sus movimientos viven en el
+/// libro `movimientos_dinero` (spec 016) con `ubicacion: cajaFisica` y el
+/// `cajaId` del turno; el saldo del turno es la suma de esos movimientos.
 library;
 
-import '../../ventas/domain/venta.dart' show MedioPago;
+import '../../tesoreria/domain/movimiento_dinero.dart';
 
 /// Estado de la caja (RF-01, RF-02).
 enum EstadoCaja {
@@ -24,97 +25,6 @@ enum EstadoCaja {
   }
 }
 
-/// Tipo de movimiento de caja (RF-03).
-enum TipoMovimientoCaja {
-  ingreso('ingreso', 'Ingreso'),
-  egreso('egreso', 'Egreso'),
-  retiro('retiro', 'Retiro'),
-  gasto('gasto', 'Gasto');
-
-  const TipoMovimientoCaja(this.id, this.nombre);
-
-  final String id;
-  final String nombre;
-
-  /// `true` si el movimiento **aumenta** el saldo de la caja.
-  bool get suma => this == TipoMovimientoCaja.ingreso;
-
-  static TipoMovimientoCaja desdeId(String? id) {
-    for (final t in values) {
-      if (t.id == id) return t;
-    }
-    return TipoMovimientoCaja.ingreso;
-  }
-}
-
-/// Medio de pago de la caja (RF-04).
-enum MedioPagoCaja {
-  efectivo('efectivo', 'Efectivo'),
-  nequi('nequi', 'Nequi'),
-  bancolombia('bancolombia', 'Bancolombia'),
-  tarjeta('tarjeta', 'Tarjeta');
-
-  const MedioPagoCaja(this.id, this.nombre);
-
-  final String id;
-  final String nombre;
-
-  static MedioPagoCaja desdeId(String? id) {
-    for (final m in values) {
-      if (m.id == id) return m;
-    }
-    return MedioPagoCaja.efectivo;
-  }
-
-  /// Equivalencia con el medio de pago de las ventas (spec 005).
-  static MedioPagoCaja desdeVenta(MedioPago medio) => switch (medio) {
-        MedioPago.efectivo => MedioPagoCaja.efectivo,
-        MedioPago.tarjeta => MedioPagoCaja.tarjeta,
-        MedioPago.transferenciaNequi => MedioPagoCaja.nequi,
-        MedioPago.transferenciaBancolombia => MedioPagoCaja.bancolombia,
-      };
-}
-
-/// Estado del dinero (RF-06, trazabilidad).
-enum EstadoDinero {
-  enCaja('en_caja', 'En caja'),
-  enTransito('en_transito', 'En tránsito'),
-  enBanco('en_banco', 'En banco'),
-  entregado('entregado', 'Entregado');
-
-  const EstadoDinero(this.id, this.nombre);
-
-  final String id;
-  final String nombre;
-
-  static EstadoDinero desdeId(String? id) {
-    for (final e in values) {
-      if (e.id == id) return e;
-    }
-    return EstadoDinero.enCaja;
-  }
-}
-
-/// Origen del movimiento (RF-09).
-enum ReferenciaCaja {
-  venta('venta', 'Venta'),
-  cobro('cobro', 'Cobro'),
-  compra('compra', 'Compra'),
-  manual('manual', 'Manual');
-
-  const ReferenciaCaja(this.id, this.nombre);
-
-  final String id;
-  final String nombre;
-
-  static ReferenciaCaja desdeId(String? id) {
-    for (final r in values) {
-      if (r.id == id) return r;
-    }
-    return ReferenciaCaja.manual;
-  }
-}
-
 /// Caja/turno (`cajas/{id}`). Spec 009.
 class Caja {
   const Caja({
@@ -126,7 +36,7 @@ class Caja {
     this.estado = EstadoCaja.abierta,
     this.montoInicial = 0,
     this.saldo = 0,
-    this.medioPredominante = MedioPagoCaja.efectivo,
+    this.medioPredominante = MedioDinero.efectivo,
     this.fechaApertura,
     this.fechaCierre,
     this.cerradoPor = '',
@@ -141,7 +51,7 @@ class Caja {
   final EstadoCaja estado;
   final double montoInicial;
   final double saldo;
-  final MedioPagoCaja medioPredominante;
+  final MedioDinero medioPredominante;
   final DateTime? fechaApertura;
   final DateTime? fechaCierre;
   final String cerradoPor;
@@ -201,94 +111,11 @@ class Caja {
       montoInicial: (data['montoInicial'] as num?)?.toDouble() ?? 0,
       saldo: (data['saldo'] as num?)?.toDouble() ?? 0,
       medioPredominante:
-          MedioPagoCaja.desdeId(data['medioPredominante'] as String?),
+          MedioDinero.desdeId(data['medioPredominante'] as String?),
       fechaApertura: aFechaCaja(data['fechaApertura']),
       fechaCierre: aFechaCaja(data['fechaCierre']),
       cerradoPor: (data['cerradoPor'] as String?) ?? '',
       diferenciaCierre: (data['diferenciaCierre'] as num?)?.toDouble() ?? 0,
-    );
-  }
-}
-
-/// Movimiento de caja (`movimientos_caja/{id}`). Inmutable (ADR-002).
-class MovimientoCaja {
-  const MovimientoCaja({
-    required this.id,
-    required this.empresaId,
-    required this.cajaId,
-    this.tipo = TipoMovimientoCaja.ingreso,
-    this.concepto = '',
-    this.monto = 0,
-    this.medioPago = MedioPagoCaja.efectivo,
-    this.referenciaTipo = ReferenciaCaja.manual,
-    this.referenciaId = '',
-    this.responsableUid = '',
-    this.estadoDinero = EstadoDinero.enCaja,
-    this.empresaEnvio = '',
-    this.domiciliario = '',
-    this.saldoResultante = 0,
-    this.usuarioUid = '',
-    this.fecha,
-  });
-
-  final String id;
-  final String empresaId;
-  final String cajaId;
-  final TipoMovimientoCaja tipo;
-  final String concepto;
-  final double monto;
-  final MedioPagoCaja medioPago;
-  final ReferenciaCaja referenciaTipo;
-  final String referenciaId;
-
-  /// Quién tiene o recibe el dinero (RF-05).
-  final String responsableUid;
-  final EstadoDinero estadoDinero;
-  final String empresaEnvio;
-  final String domiciliario;
-  final double saldoResultante;
-  final String usuarioUid;
-  final DateTime? fecha;
-
-  bool get suma => tipo.suma;
-
-  Map<String, dynamic> toMap({DateTime? ahora}) => <String, dynamic>{
-        'id': id,
-        'empresaId': empresaId,
-        'cajaId': cajaId,
-        'tipo': tipo.id,
-        'concepto': concepto,
-        'monto': monto,
-        'medioPago': medioPago.id,
-        'referenciaTipo': referenciaTipo.id,
-        'referenciaId': referenciaId,
-        'responsableUid': responsableUid,
-        'estadoDinero': estadoDinero.id,
-        'empresaEnvio': empresaEnvio,
-        'domiciliario': domiciliario,
-        'saldoResultante': saldoResultante,
-        'usuarioUid': usuarioUid,
-        'fecha': (fecha ?? ahora ?? DateTime.now()).toUtc().toIso8601String(),
-      };
-
-  factory MovimientoCaja.fromMap(String id, Map<String, dynamic> data) {
-    return MovimientoCaja(
-      id: (data['id'] as String?) ?? id,
-      empresaId: (data['empresaId'] as String?) ?? '',
-      cajaId: (data['cajaId'] as String?) ?? '',
-      tipo: TipoMovimientoCaja.desdeId(data['tipo'] as String?),
-      concepto: (data['concepto'] as String?) ?? '',
-      monto: (data['monto'] as num?)?.toDouble() ?? 0,
-      medioPago: MedioPagoCaja.desdeId(data['medioPago'] as String?),
-      referenciaTipo: ReferenciaCaja.desdeId(data['referenciaTipo'] as String?),
-      referenciaId: (data['referenciaId'] as String?) ?? '',
-      responsableUid: (data['responsableUid'] as String?) ?? '',
-      estadoDinero: EstadoDinero.desdeId(data['estadoDinero'] as String?),
-      empresaEnvio: (data['empresaEnvio'] as String?) ?? '',
-      domiciliario: (data['domiciliario'] as String?) ?? '',
-      saldoResultante: (data['saldoResultante'] as num?)?.toDouble() ?? 0,
-      usuarioUid: (data['usuarioUid'] as String?) ?? '',
-      fecha: aFechaCaja(data['fecha']),
     );
   }
 }
@@ -304,7 +131,7 @@ class Arqueo {
     this.totalContado = 0,
     this.diferencia = 0,
     this.justificacion = '',
-    this.desgloseEfectivo = const <String, num>{},
+    this.desglose = const <String, num>{},
     this.usuarioUid = '',
     this.aprobadoPor = '',
   });
@@ -317,7 +144,7 @@ class Arqueo {
   final double totalContado;
   final double diferencia;
   final String justificacion;
-  final Map<String, num> desgloseEfectivo;
+  final Map<String, num> desglose;
   final String usuarioUid;
   final String aprobadoPor;
 
@@ -330,7 +157,7 @@ class Arqueo {
         'totalContado': totalContado,
         'diferencia': diferencia,
         'justificacion': justificacion,
-        'desgloseEfectivo': desgloseEfectivo,
+        'desgloseEfectivo': desglose,
         'usuarioUid': usuarioUid,
         'aprobadoPor': aprobadoPor,
       };
@@ -345,9 +172,8 @@ class Arqueo {
       totalContado: (data['totalContado'] as num?)?.toDouble() ?? 0,
       diferencia: (data['diferencia'] as num?)?.toDouble() ?? 0,
       justificacion: (data['justificacion'] as String?) ?? '',
-      desgloseEfectivo:
-          (data['desgloseEfectivo'] as Map?)?.cast<String, num>() ??
-              const <String, num>{},
+      desglose: (data['desgloseEfectivo'] as Map?)?.cast<String, num>() ??
+          const <String, num>{},
       usuarioUid: (data['usuarioUid'] as String?) ?? '',
       aprobadoPor: (data['aprobadoPor'] as String?) ?? '',
     );

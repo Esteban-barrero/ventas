@@ -144,7 +144,7 @@ void main() {
       HomePage(usuario: usuario, onCerrarSesion: _dummy),
     );
 
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -400));
+    await tester.ensureVisible(find.text('Reportes'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Reportes'));
     await tester.pumpAndSettle();
