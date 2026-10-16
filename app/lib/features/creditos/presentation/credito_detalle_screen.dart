@@ -284,18 +284,6 @@ class _CreditoDetalleScreenState extends State<CreditoDetalleScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            TarjetaDatos(
-              titulo: 'Plan de cuotas',
-              icono: Icons.list_alt_outlined,
-              filas: <FilaDato>[
-                for (final c in cuotas)
-                  FilaDato(
-                    '#${c.numero} · ${formatearFecha(c.fechaVencimiento)}',
-                    '${formatearValor(c.pagado)}/${formatearValor(c.monto)} · ${c.estado.nombre}',
-                  ),
-              ],
-            ),
-            const SizedBox(height: 24),
             if (!credito.aprobado && _puedeAprobar)
               FilledButton.icon(
                 onPressed: _aprobar,
@@ -319,6 +307,18 @@ class _CreditoDetalleScreenState extends State<CreditoDetalleScreen> {
                 style: OutlinedButton.styleFrom(foregroundColor: scheme.error),
               ),
             ],
+            const SizedBox(height: 12),
+            TarjetaDatos(
+              titulo: 'Plan de cuotas',
+              icono: Icons.list_alt_outlined,
+              filas: <FilaDato>[
+                for (final c in cuotas)
+                  FilaDato(
+                    '#${c.numero} · ${formatearFecha(c.fechaVencimiento)}',
+                    '${formatearValor(c.pagado)}/${formatearValor(c.monto)} · ${c.estado.nombre}',
+                  ),
+              ],
+            ),
             const SizedBox(height: 32),
           ],
         );
