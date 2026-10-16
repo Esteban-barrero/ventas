@@ -22,10 +22,15 @@ class ResultadoCrearEmpresa {
     this.adminUid = '',
     this.desdeRespaldo = false,
     this.aviso,
+    this.enlaceActivacion,
   });
 
   final Empresa? empresa;
   final String adminUid;
+
+  /// Enlace para que el **administrador** defina su contraseña (lo genera la
+  /// Cloud Function `crearEmpresa` con `generatePasswordResetLink`).
+  final String? enlaceActivacion;
 
   /// `true` si la empresa y su administrador se crearon con el respaldo local
   /// (la Cloud Function `crearEmpresa` todavía no está desplegada).
@@ -160,6 +165,7 @@ class EmpresasRepository {
       return ResultadoCrearEmpresa(
         empresa: await obtener(id),
         adminUid: (data['adminUid'] as String?) ?? '',
+        enlaceActivacion: data['enlaceActivacion'] as String?,
       );
     } on FirebaseFunctionsException catch (e) {
       // La función existe y rechazó la petición: se respeta el motivo.

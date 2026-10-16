@@ -1,7 +1,6 @@
-import 'dart:typed_data';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/formato/entrada_miles.dart';
@@ -313,9 +312,36 @@ class _EmpresaFormScreenState extends State<EmpresaFormScreen> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
+            if (resultado.enlaceActivacion != null) ...<Widget>[
+              const SizedBox(height: 8),
+              const Text(
+                'El administrador debe definir su contraseña. Compártele este '
+                'enlace de activación:',
+              ),
+              const SizedBox(height: 8),
+              SelectableText(
+                resultado.enlaceActivacion!,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
           ],
         ),
         actions: <Widget>[
+          if (resultado.enlaceActivacion != null)
+            TextButton.icon(
+              onPressed: () async {
+                await Clipboard.setData(
+                  ClipboardData(text: resultado.enlaceActivacion!),
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Enlace copiado.')),
+                  );
+                }
+              },
+              icon: const Icon(Icons.copy_outlined, size: 18),
+              label: const Text('Copiar enlace'),
+            ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Entendido'),
