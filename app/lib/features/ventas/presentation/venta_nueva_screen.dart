@@ -63,7 +63,6 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
   final List<_Linea> _lineas = <_Linea>[];
   final _costoEnvio = TextEditingController(text: '0');
   final _descuento = TextEditingController(text: '0');
-  final _impuestos = TextEditingController(text: '0');
   final _numeroCuotas = TextEditingController(text: '3');
   final _tasaInteres = TextEditingController(text: '0');
   Periodicidad _periodicidad = Periodicidad.mensual;
@@ -91,7 +90,6 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
   void dispose() {
     _costoEnvio.dispose();
     _descuento.dispose();
-    _impuestos.dispose();
     _numeroCuotas.dispose();
     _tasaInteres.dispose();
     super.dispose();
@@ -142,13 +140,17 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
 
   double _precioLinea(Producto p) => p.precio(_tipoVenta, _parametros);
 
-  TotalesVenta get _totales => calcularTotales(
-        items: _items(),
-        tipoEntrega: _tipoEntrega,
-        costoEnvio: double.tryParse(_costoEnvio.text.trim()) ?? 0,
-        descuento: double.tryParse(_descuento.text.trim()) ?? 0,
-        impuestos: double.tryParse(_impuestos.text.trim()) ?? 0,
-      );
+  TotalesVenta get _totales {
+    final items = _items();
+    final subtotal = subtotalDe(items);
+    return calcularTotales(
+      items: items,
+      tipoEntrega: _tipoEntrega,
+      costoEnvio: double.tryParse(_costoEnvio.text.trim()) ?? 0,
+      descuento: double.tryParse(_descuento.text.trim()) ?? 0,
+      impuestos: impuestosPorIva(subtotal, _parametros.iva),
+    );
+  }
 
   Future<void> _agregarProducto() async {
     final producto = await showModalBottomSheet<Producto>(
@@ -411,32 +413,20 @@ class _VentaNuevaScreenState extends State<VentaNuevaScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: TextField(
-                  controller: _descuento,
-                  keyboardType: TextInputType.number,
-                  onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'Descuento',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: _impuestos,
-                  keyboardType: TextInputType.number,
-                  onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'Impuestos',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-            ],
+          TextField(
+            controller: _descuento,
+            keyboardType: TextInputType.number,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              labelText: 'Descuento',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Los impuestos se calculan con el IVA de la empresa '
+            '(${_parametros.iva.round()}%).',
+            style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
           Card(
