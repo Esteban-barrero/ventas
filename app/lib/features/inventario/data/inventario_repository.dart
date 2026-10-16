@@ -45,18 +45,31 @@ class InventarioRepository {
       _db.collection('productos');
 
   /// Escucha el **kardex** de un producto (más reciente primero).
-  Stream<List<MovimientoInventario>> kardex(String productoId) {
+  ///
+  /// Se filtra por `empresaId` (lo exigen las reglas de Firestore) y por
+  /// `productoId` en el cliente, para no necesitar índices compuestos.
+  Stream<List<MovimientoInventario>> kardex(
+    String empresaId,
+    String productoId,
+  ) {
     return _movimientos
-        .where('productoId', isEqualTo: productoId)
+        .where('empresaId', isEqualTo: empresaId)
         .snapshots()
-        .map(_aLista);
+        .map((QuerySnapshot<Map<String, dynamic>> snap) => _aLista(snap)
+            .where((MovimientoInventario m) => m.productoId == productoId)
+            .toList(growable: false));
   }
 
   /// Lista el kardex de un producto (lectura puntual).
-  Future<List<MovimientoInventario>> movimientos(String productoId) async {
+  Future<List<MovimientoInventario>> movimientos(
+    String empresaId,
+    String productoId,
+  ) async {
     final snap =
-        await _movimientos.where('productoId', isEqualTo: productoId).get();
-    return _aLista(snap);
+        await _movimientos.where('empresaId', isEqualTo: empresaId).get();
+    return _aLista(snap)
+        .where((MovimientoInventario m) => m.productoId == productoId)
+        .toList(growable: false);
   }
 
   /// Registra un **ajuste manual** con **motivo** (RF-05, RN-05).

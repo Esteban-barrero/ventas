@@ -143,10 +143,21 @@ class _KardexScreenState extends State<KardexScreen> {
         ],
       ),
       body: StreamBuilder<List<MovimientoInventario>>(
-        stream: _repo.kardex(widget.productoId),
+        stream: _repo.kardex(_empresaId, widget.productoId),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'No se pudo cargar el kardex: ${snap.error}',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
           }
           final movimientos = snap.data ?? const <MovimientoInventario>[];
           if (movimientos.isEmpty) {
