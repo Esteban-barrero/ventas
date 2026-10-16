@@ -45,6 +45,11 @@ service cloud.firestore {
       return roles().hasAny(['administrador', 'gerente', 'vendedor', 'cajero']);
     }
 
+    // Personal interno que trabaja con ventas (spec 005).
+    function esInternoVentas() {
+      return roles().hasAny(['administrador', 'gerente', 'vendedor', 'cajero']);
+    }
+
     // Permite solo modificar los campos indicados (update parcial controlado).
     function soloCambiaCampos(permitidos) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(permitidos);
@@ -189,6 +194,32 @@ service cloud.firestore {
             && request.resource.data.estado == resource.data.estado)
       );
       allow delete: if false;
+    }
+
+    // Ventas (spec 005).
+    // - Lee: el Super Admin, el personal interno de la empresa o el propio
+    //   cliente (clienteUid).
+    // - Crea: Administrador o Vendedor. Actualiza (anula): Administrador.
+    match /ventas/{ventaId} {
+      allow read: if autenticado() && (
+        esSuperAdmin()
+        || (esDeEmpresa(resource.data.empresaId) && esInternoVentas())
+        || resource.data.clienteUid == request.auth.uid
+      );
+      allow create: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador', 'vendedor']);
+      allow update: if autenticado()
+        && esDeEmpresa(resource.data.empresaId)
+        && roles().hasAny(['administrador']);
+      allow delete: if false;
+    }
+
+    // Consecutivos de factura por empresa (spec 005, RN-04).
+    match /consecutivos/{empresaId} {
+      allow read, write: if autenticado()
+        && esDeEmpresa(empresaId)
+        && roles().hasAny(['administrador', 'vendedor']);
     }
 
     // Todo lo demas queda denegado por defecto (incluye `mail`: solo lo escribe
