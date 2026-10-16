@@ -164,6 +164,10 @@ class _EntregasListScreenState extends State<EntregasListScreen> {
       _avisar('El monto debe ser mayor que cero.', error: true);
       return;
     }
+    if (valor > saldo + 0.001) {
+      _avisar('Solo tienes ${formatearValor(saldo)} por declarar.', error: true);
+      return;
+    }
     setState(() => _rindiendo = true);
     try {
       await _tesoreria.declararRendicion(

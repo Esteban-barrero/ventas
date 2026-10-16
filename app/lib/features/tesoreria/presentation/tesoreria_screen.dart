@@ -381,6 +381,14 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
 
   /// Confirma una rendición contando el efectivo (RF-05).
   Future<void> _confirmarRendicion(Rendicion r) async {
+    double disponible = 0;
+    try {
+      final pos = await _repo.posiciones(_empresaId);
+      disponible = pos[UbicacionDinero.vendedorEfectivo] ?? 0;
+    } catch (_) {
+      // Si no se puede leer, se confirma sin el aviso de disponible.
+    }
+    if (!mounted) return;
     final contado = TextEditingController(text: numeroParaEditar(r.montoDeclarado));
     final justificacion = TextEditingController();
     final ok = await showDialog<bool>(
@@ -390,6 +398,7 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
         builder: (context, setDialogState) {
           final valor = parsearNumero(contado.text) ?? r.montoDeclarado;
           final diferencia = r.montoDeclarado - valor;
+          final excede = valor > disponible + 0.001;
           return AlertDialog(
             title: const Text('Confirmar rendición'),
             content: SingleChildScrollView(
@@ -399,6 +408,24 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
                 children: <Widget>[
                   Text('${r.domiciliarioNombre} declara '
                       '${formatearValor(r.montoDeclarado)}.'),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Disponible con el vendedor: ${formatearValor(disponible)}.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  if (excede)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        'El monto supera lo disponible. Ajusta el valor o '
+                        'rechaza la rendición y pídele al domiciliario que la '
+                        'declare de nuevo.',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: contado,
@@ -440,7 +467,8 @@ class _TesoreriaScreenState extends State<TesoreriaScreen> {
                 child: const Text('Cancelar'),
               ),
               FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
+                onPressed:
+                    excede ? null : () => Navigator.of(context).pop(true),
                 child: const Text('Confirmar recepción'),
               ),
             ],
