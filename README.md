@@ -329,7 +329,7 @@ sus roles (`permisosDeRoles`). Un usuario puede tener varios roles, por ejemplo
 
 | Permiso | Super Admin | Admin. | Gerente | Vendedor | Marketing | Cajero | Domic. | Cliente | Invitado | Developer |
 |---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| Ver catálogo | ● | ● | ● | ● | ● | — | — | ● | ● | — |
+| Ver catálogo | ● | ● | ● | ● | ● | — | — | — | — | — |
 | Editar catálogo | ● | ● | — | — | ● | — | — | — | — | — |
 | Ver clientes | ● | ● | ● | ● | ● | ● | ● | — | — | — |
 | Gestionar clientes | ● | ● | — | ● | — | — | — | — | — | — |

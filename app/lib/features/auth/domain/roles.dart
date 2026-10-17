@@ -94,15 +94,18 @@ enum Rol {
             Permiso.creditosVer,
           },
 
-        // Compra y consulta de sus propios pedidos.
+        // Compra y consulta de sus propios pedidos (usa el módulo Tienda, no el
+        // Catálogo interno).
         Rol.cliente => <Permiso>{
-            Permiso.catalogoVer,
             Permiso.pedidosVer,
             Permiso.pedidosCrear,
           },
 
-        // Solo catalogo.
-        Rol.invitado => <Permiso>{Permiso.catalogoVer},
+        // Solo la tienda (compra).
+        Rol.invitado => <Permiso>{
+            Permiso.pedidosVer,
+            Permiso.pedidosCrear,
+          },
 
         // Solo logs de errores (no accede a datos del negocio).
         Rol.developer => <Permiso>{Permiso.logsVer},
