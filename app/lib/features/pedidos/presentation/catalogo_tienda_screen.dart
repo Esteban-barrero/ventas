@@ -222,8 +222,11 @@ class _CatalogoTiendaScreenState extends State<CatalogoTiendaScreen> {
         actions: <Widget>[
           TextButton.icon(
             onPressed: widget.onIngresar,
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
             icon: const Icon(Icons.login),
-            label: const Text('Ingresar'),
+            label: const Text('Iniciar sesión'),
           ),
         ],
       ),

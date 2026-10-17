@@ -79,8 +79,11 @@ class _TiendaPublicaScreenState extends State<TiendaPublicaScreen> {
         actions: <Widget>[
           TextButton.icon(
             onPressed: widget.onIngresar,
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
             icon: const Icon(Icons.login),
-            label: const Text('Ingresar'),
+            label: const Text('Iniciar sesión'),
           ),
         ],
       ),
@@ -126,6 +129,17 @@ class _TiendaPublicaScreenState extends State<TiendaPublicaScreen> {
               prefixIcon: Icon(Icons.search),
               border: OutlineInputBorder(),
               isDense: true,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: widget.onIngresar,
+              icon: const Icon(Icons.login),
+              label: const Text('Iniciar sesión (personal)'),
             ),
           ),
         ),
