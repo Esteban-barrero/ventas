@@ -69,12 +69,17 @@ class PedidosRepository {
   }
 
   /// Escucha los pedidos de un cliente (spec 010, RF-08).
+  ///
+  /// Se consulta por `clienteUid` (no por `empresaId`) porque las reglas exigen
+  /// que la consulta incluya ese campo para autorizar al cliente.
   Stream<List<Pedido>> escucharMisPedidos(String empresaId, String clienteUid) {
     return _pedidos
-        .where('empresaId', isEqualTo: empresaId)
+        .where('clienteUid', isEqualTo: clienteUid)
         .snapshots()
         .map((QuerySnapshot<Map<String, dynamic>> snap) => _aLista(snap)
-            .where((Pedido p) => p.clienteUid == clienteUid)
+            .where((Pedido p) =>
+                p.clienteUid == clienteUid &&
+                (empresaId.isEmpty || p.empresaId == empresaId))
             .toList(growable: false));
   }
 
