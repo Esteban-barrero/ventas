@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../auth/domain/permisos.dart';
 import '../../auth/domain/usuario.dart';
 import '../data/proveedores_repository.dart';
 import '../domain/proveedor.dart';
@@ -27,6 +28,9 @@ class _ProveedoresListScreenState extends State<ProveedoresListScreen> {
   final TextEditingController _busqueda = TextEditingController();
 
   String get _empresaId => widget.usuario.empresaId ?? '';
+
+  /// Solo el Administrador puede crear/editar proveedores (reglas).
+  bool get _puedeEditar => widget.usuario.puede(Permiso.comprasEditar);
 
   @override
   void initState() {
@@ -63,11 +67,13 @@ class _ProveedoresListScreenState extends State<ProveedoresListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Proveedores')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _nuevo,
-        icon: const Icon(Icons.add),
-        label: const Text('Nuevo proveedor'),
-      ),
+      floatingActionButton: _puedeEditar
+          ? FloatingActionButton.extended(
+              onPressed: _nuevo,
+              icon: const Icon(Icons.add),
+              label: const Text('Nuevo proveedor'),
+            )
+          : null,
       body: Column(
         children: <Widget>[
           Padding(
@@ -98,11 +104,24 @@ class _ProveedoresListScreenState extends State<ProveedoresListScreen> {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text(
-                        todos.isEmpty
-                            ? 'Todavía no hay proveedores.'
-                            : 'No se encontraron proveedores.',
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            todos.isEmpty
+                                ? 'Todavía no hay proveedores.'
+                                : 'No se encontraron proveedores.',
+                            textAlign: TextAlign.center,
+                          ),
+                          if (todos.isEmpty && _puedeEditar) ...<Widget>[
+                            const SizedBox(height: 16),
+                            FilledButton.icon(
+                              onPressed: _nuevo,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Crear proveedor'),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   );
@@ -121,7 +140,7 @@ class _ProveedoresListScreenState extends State<ProveedoresListScreen> {
                           ? null
                           : const Text('Inactivo',
                               style: TextStyle(fontSize: 12)),
-                      onTap: () => _editar(p),
+                      onTap: _puedeEditar ? () => _editar(p) : null,
                     );
                   },
                 );

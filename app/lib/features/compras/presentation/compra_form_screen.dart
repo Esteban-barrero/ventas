@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/formato/fechas.dart';
+import '../../auth/domain/permisos.dart';
 import '../../auth/domain/usuario.dart';
 import '../../catalogo/data/productos_repository.dart';
 import '../../catalogo/domain/producto.dart';
@@ -11,6 +12,7 @@ import '../data/proveedores_repository.dart';
 import '../domain/compra.dart';
 import '../domain/proveedor.dart';
 import '../domain/totales_compra.dart';
+import 'proveedor_form_screen.dart';
 
 /// Una línea de la compra: producto, cantidad y costo unitario (editable).
 class _LineaCompra {
@@ -69,6 +71,19 @@ class _CompraFormScreenState extends State<CompraFormScreen> {
   bool _guardando = false;
 
   String get _empresaId => widget.usuario.empresaId ?? '';
+
+  /// Solo el Administrador puede crear proveedores (reglas).
+  bool get _puedeCrearProveedor => widget.usuario.puede(Permiso.comprasEditar);
+
+  /// Crea un proveedor y recarga la lista para poder seleccionarlo.
+  Future<void> _nuevoProveedor() async {
+    final creado = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => ProveedorFormScreen(usuario: widget.usuario),
+      ),
+    );
+    if (creado == true) await _cargar();
+  }
 
   @override
   void initState() {
@@ -208,22 +223,45 @@ class _CompraFormScreenState extends State<CompraFormScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          DropdownButtonFormField<String?>(
-            initialValue: _proveedorId,
-            isExpanded: true,
-            decoration: const InputDecoration(
-              labelText: 'Proveedor *',
-              border: OutlineInputBorder(),
-            ),
-            items: <DropdownMenuItem<String?>>[
-              const DropdownMenuItem<String?>(
-                value: null,
-                child: Text('Selecciona…'),
+          if (_proveedores.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                'No hay proveedores. Crea uno para poder comprar.',
+                style: theme.textTheme.bodySmall,
               ),
-              for (final p in _proveedores)
-                DropdownMenuItem<String?>(value: p.id, child: Text(p.nombre)),
+            ),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: DropdownButtonFormField<String?>(
+                  initialValue: _proveedorId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Proveedor *',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: <DropdownMenuItem<String?>>[
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('Selecciona…'),
+                    ),
+                    for (final p in _proveedores)
+                      DropdownMenuItem<String?>(
+                          value: p.id, child: Text(p.nombre)),
+                  ],
+                  onChanged: (String? v) => setState(() => _proveedorId = v),
+                ),
+              ),
+              if (_puedeCrearProveedor) ...<Widget>[
+                const SizedBox(width: 8),
+                IconButton.filledTonal(
+                  tooltip: 'Nuevo proveedor',
+                  onPressed: _nuevoProveedor,
+                  icon: const Icon(Icons.add_business_outlined),
+                ),
+              ],
             ],
-            onChanged: (String? v) => setState(() => _proveedorId = v),
           ),
           const SizedBox(height: 12),
           TextField(
