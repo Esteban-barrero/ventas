@@ -6,6 +6,7 @@ import '../../auth/data/auth_repository.dart';
 import '../../auth/data/usuarios_repository.dart';
 import '../../auth/domain/usuario.dart';
 import '../../catalogo/domain/precio.dart';
+import '../../clientes/data/ubicaciones/departamentos_ciudades.dart';
 import '../../clientes/domain/cliente.dart' show Direccion;
 import '../../empresas/domain/empresa.dart';
 import '../../ventas/domain/venta.dart' show MedioPago, TipoEntrega;
@@ -49,11 +50,12 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
   final _cedula = TextEditingController();
   final _telefono = TextEditingController();
   final _email = TextEditingController();
-  final _ciudad = TextEditingController();
   final _direccion = TextEditingController();
   final _barrio = TextEditingController();
   final _observaciones = TextEditingController();
 
+  String? _departamento;
+  String? _ciudad;
   bool _aDomicilio = true;
   MedioPago _medio = MedioPago.efectivo;
   bool _enviando = false;
@@ -68,7 +70,6 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
     _cedula.dispose();
     _telefono.dispose();
     _email.dispose();
-    _ciudad.dispose();
     _direccion.dispose();
     _barrio.dispose();
     _observaciones.dispose();
@@ -91,7 +92,7 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
 
   TipoEntrega get _tipoEntrega {
     if (!_aDomicilio) return TipoEntrega.recogerLocal;
-    return widget.empresa.parametros.esCiudadLocal(_ciudad.text)
+    return widget.empresa.parametros.esCiudadLocal(_ciudad)
         ? TipoEntrega.entregaLocal
         : TipoEntrega.envio;
   }
@@ -117,7 +118,7 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
         _cedula.text.trim().isEmpty ||
         _telefono.text.trim().isEmpty ||
         _direccion.text.trim().isEmpty ||
-        (_aDomicilio && _ciudad.text.trim().isEmpty)) {
+        (_aDomicilio && (_departamento == null || _ciudad == null))) {
       return _avisar('Completa nombre, cédula, teléfono y dirección.',
           error: true);
     }
@@ -174,7 +175,8 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
         cedula: _cedula.text.trim(),
         telefono: _telefono.text.trim(),
         direccion: Direccion(
-          ciudad: _ciudad.text.trim(),
+          departamento: _departamento ?? '',
+          ciudad: _ciudad ?? '',
           direccion: _direccion.text.trim(),
           barrio: _barrio.text.trim(),
         ),
@@ -253,13 +255,14 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
             onChanged: (bool v) => setState(() => _aDomicilio = v),
           ),
           if (_aDomicilio) ...<Widget>[
-            _campo(_ciudad, 'Ciudad *'),
+            _dropdownDepartamento(),
+            _dropdownCiudad(),
             _campo(_direccion, 'Dirección *'),
             _campo(_barrio, 'Barrio'),
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                widget.empresa.parametros.esCiudadLocal(_ciudad.text)
+                widget.empresa.parametros.esCiudadLocal(_ciudad)
                     ? 'Entrega local'
                     : 'Envío (otra ciudad)',
                 style: theme.textTheme.bodySmall,
@@ -313,6 +316,51 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
           ),
           const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+
+  Widget _dropdownDepartamento() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<String>(
+        initialValue: _departamento,
+        isExpanded: true,
+        decoration: const InputDecoration(
+          labelText: 'Departamento *',
+          border: OutlineInputBorder(),
+        ),
+        items: <DropdownMenuItem<String>>[
+          for (final d in departamentos)
+            DropdownMenuItem<String>(value: d, child: Text(d)),
+        ],
+        onChanged: (String? v) => setState(() {
+          _departamento = v;
+          _ciudad = null;
+        }),
+      ),
+    );
+  }
+
+  Widget _dropdownCiudad() {
+    final ciudades =
+        _departamento == null ? const <String>[] : ciudadesDe(_departamento!);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<String>(
+        initialValue: _ciudad,
+        isExpanded: true,
+        decoration: const InputDecoration(
+          labelText: 'Ciudad *',
+          border: OutlineInputBorder(),
+        ),
+        items: <DropdownMenuItem<String>>[
+          for (final c in ciudades)
+            DropdownMenuItem<String>(value: c, child: Text(c)),
+        ],
+        onChanged: _departamento == null
+            ? null
+            : (String? v) => setState(() => _ciudad = v),
       ),
     );
   }
