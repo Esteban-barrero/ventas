@@ -34,10 +34,11 @@
 ## Fase 4 — Notificaciones
 
 - [ ] T030 Cloud Function al crear pedido (notificar negocio)
-- [ ] T031 Integración WhatsApp
-- [ ] T032 Integración Telegram
-- [ ] T033 Plantilla de mensaje del pedido
-- [ ] T034 Notificación de cambio de estado al cliente
+- [~] T031 Integración WhatsApp: aviso por **wa.me** desde la app (con el número
+  configurado en la empresa). El envío automático requiere Cloud Function.
+- [ ] T032 Integración Telegram (pendiente)
+- [~] T033 Plantilla de mensaje del pedido (resumen simple)
+- [ ] T034 Notificación de cambio de estado al cliente (opcional)
 
 ## Fase 5 — Interfaz, Seguridad y Cierre
 

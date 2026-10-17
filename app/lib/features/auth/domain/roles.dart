@@ -46,6 +46,7 @@ enum Rol {
             Permiso.cajaConfirmar,
             Permiso.creditosVer,
             Permiso.comprasVer,
+            Permiso.comprasEditar,
             Permiso.enviosVer,
             Permiso.pedidosVer,
             Permiso.reportesVer,

@@ -23,6 +23,7 @@ class ParametrosEmpresa {
     this.colorPrimario = '#1A73E8',
     this.colorSecundario = '#FF6B35',
     this.ciudades = const <String>[],
+    this.whatsappPedidos = '',
   });
 
   /// Márgenes de ganancia por tipo de venta (porcentaje).
@@ -59,6 +60,9 @@ class ParametrosEmpresa {
   /// ciudades es **local**; en otra, es **envío**.
   final List<String> ciudades;
 
+  /// Número de WhatsApp del negocio para avisar de los pedidos (spec 010).
+  final String whatsappPedidos;
+
   /// `true` si la ciudad indicada es una ciudad de la empresa (local).
   bool esCiudadLocal(String? ciudad) {
     final c = (ciudad ?? '').trim().toLowerCase();
@@ -83,6 +87,7 @@ class ParametrosEmpresa {
         'reteIca': reteIca,
         'moneda': moneda,
         'ciudades': ciudades,
+        'whatsappPedidos': whatsappPedidos,
         'tema': <String, dynamic>{
           'colorPrimario': colorPrimario,
           'colorSecundario': colorSecundario,
@@ -109,6 +114,7 @@ class ParametrosEmpresa {
               ?.map((dynamic e) => e.toString())
               .toList(growable: false) ??
           const <String>[],
+      whatsappPedidos: (data['whatsappPedidos'] as String?) ?? '',
       colorPrimario: (tema['colorPrimario'] as String?) ?? '#1A73E8',
       colorSecundario: (tema['colorSecundario'] as String?) ?? '#FF6B35',
     );
@@ -129,6 +135,7 @@ class ParametrosEmpresa {
     String? colorPrimario,
     String? colorSecundario,
     List<String>? ciudades,
+    String? whatsappPedidos,
   }) {
     return ParametrosEmpresa(
       margenDetal: margenDetal ?? this.margenDetal,
@@ -143,6 +150,7 @@ class ParametrosEmpresa {
       reteIca: reteIca ?? this.reteIca,
       moneda: moneda ?? this.moneda,
       ciudades: ciudades ?? this.ciudades,
+      whatsappPedidos: whatsappPedidos ?? this.whatsappPedidos,
       colorPrimario: colorPrimario ?? this.colorPrimario,
       colorSecundario: colorSecundario ?? this.colorSecundario,
     );

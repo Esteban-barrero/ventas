@@ -278,7 +278,7 @@ service cloud.firestore {
         && (esSuperAdmin() || esDeEmpresa(resource.data.empresaId));
       allow create, update: if autenticado()
         && esDeEmpresa(request.resource.data.empresaId)
-        && roles().hasAny(['administrador']);
+        && roles().hasAny(['administrador', 'gerente']);
       allow delete: if false;
     }
 

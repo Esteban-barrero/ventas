@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../../core/archivos/descargar_texto.dart';
 import '../../../core/formato/fechas.dart';
 import '../../auth/domain/usuario.dart';
 import '../data/reportes_repository.dart';
@@ -60,8 +62,61 @@ class _ReportesScreenState extends State<ReportesScreen> {
     }
   }
 
-  void _cambiarRango(String preset) {
-    setState(() {
+  /// Exporta el panel a **CSV** (spec 015, RF-10). En web descarga el archivo;
+  /// en otras plataformas copia el contenido al portapapeles.
+  Future<void> _exportarCsv() async {
+    final datos = _datos;
+    if (datos == null) return;
+    final rv = calcularResumenVentas(datos.ventas, _rango);
+    final ri = calcularResumenInventario(datos.productos);
+    final rc = calcularResumenCartera(datos.creditos);
+    final rd = calcularResumenDinero(datos.movimientos, _rango);
+    final rp = calcularResumenPedidos(datos.pedidos, _rango);
+
+    final b = StringBuffer()
+      ..writeln('Reporte;Valor')
+      ..writeln('Ventas;${rv.total}')
+      ..writeln('Contado;${rv.contado}')
+      ..writeln('Credito;${rv.credito}')
+      ..writeln('Utilidad;${rv.utilidad}')
+      ..writeln('Numero de ventas;${rv.numero}')
+      ..writeln('Cartera;${rc.total}')
+      ..writeln('Cartera vencida;${rc.vencida}')
+      ..writeln('Clientes en mora;${rc.morosos}')
+      ..writeln('Valorizacion inventario;${ri.valorizacion}')
+      ..writeln('Bajo stock;${ri.bajoStock}')
+      ..writeln('Agotados;${ri.agotados}')
+      ..writeln('Ingresos;${rd.ingresos}')
+      ..writeln('Egresos;${rd.egresos}')
+      ..writeln('Neto;${rd.neto}')
+      ..writeln('Pedidos pendientes;${rp.pendientes}')
+      ..writeln();
+    b.writeln('Producto;Unidades;Utilidad');
+    for (final p in rv.topProductos) {
+      b.writeln('${p.nombre};${p.unidades};${p.utilidad}');
+    }
+
+    final csv = b.toString();
+    final nombre =
+        'reporte_${DateTime.now().toIso8601String().substring(0, 10)}.csv';
+    final descargado =
+        await descargarTexto(nombre, csv, mime: 'text/csv');
+    if (!mounted) return;
+    if (descargado) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Descargado: $nombre')),
+      );
+    } else {
+      await Clipboard.setData(ClipboardData(text: csv));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('CSV copiado al portapapeles.')),
+        );
+      }
+    }
+  }
+
+  void _cambiarRango(String preset) {    setState(() {
       _preset = preset;
       _rango = switch (preset) {
         'Hoy' => RangoFechas.hoy(),
@@ -85,6 +140,11 @@ class _ReportesScreenState extends State<ReportesScreen> {
       appBar: AppBar(
         title: const Text('Reportes'),
         actions: <Widget>[
+          IconButton(
+            tooltip: 'Exportar CSV',
+            icon: const Icon(Icons.download_outlined),
+            onPressed: _cargando || _datos == null ? null : _exportarCsv,
+          ),
           IconButton(
             tooltip: 'Actualizar',
             icon: const Icon(Icons.refresh),

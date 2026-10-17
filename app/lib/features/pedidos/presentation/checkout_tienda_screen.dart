@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/avisos/whatsapp.dart';
 import '../../../core/formato/fechas.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/data/usuarios_repository.dart';
@@ -259,6 +260,9 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
       await _pedidos.crear(pedido);
 
       if (!mounted) return;
+      final whatsapp = widget.empresa.parametros.whatsappPedidos.trim();
+      final resumen =
+          'Nuevo pedido de ${_nombre.text.trim()} por ${formatearValor(_total)}.';
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
@@ -270,6 +274,12 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
                 : 'La empresa revisará tu pedido y te contactará.',
           ),
           actions: <Widget>[
+            if (whatsapp.isNotEmpty)
+              TextButton.icon(
+                onPressed: () => abrirWhatsApp(whatsapp, resumen),
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: const Text('Avisar por WhatsApp'),
+              ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Entendido'),

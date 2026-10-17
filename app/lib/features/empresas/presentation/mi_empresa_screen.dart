@@ -223,6 +223,7 @@ class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
     final reteIva = TextEditingController(text: p.reteIva.toStringAsFixed(0));
     final reteIca = TextEditingController(text: p.reteIca.toStringAsFixed(0));
     final ciudades = TextEditingController(text: p.ciudades.join(', '));
+    final whatsapp = TextEditingController(text: p.whatsappPedidos);
 
     final guardar = await showDialog<bool>(
       context: context,
@@ -283,6 +284,14 @@ class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
                   helperText: 'Ej: Bogotá, Medellín. Una entrega aquí es local.',
                 ),
               ),
+              TextField(
+                controller: whatsapp,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'WhatsApp para pedidos',
+                  helperText: 'Con indicativo. Ej: 573001234567',
+                ),
+              ),
             ],
           ),
         ),
@@ -319,6 +328,7 @@ class _MiEmpresaScreenState extends State<MiEmpresaScreen> {
               .map((String e) => e.trim())
               .where((String e) => e.isNotEmpty)
               .toList(growable: false),
+          whatsappPedidos: whatsapp.text.trim(),
         ),
       );
       await _cargar();

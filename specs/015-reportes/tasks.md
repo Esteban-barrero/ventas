@@ -37,7 +37,7 @@
 - [ ] T031 Gráficos (pendiente)
 - [ ] T032 Exportación a PDF (pendiente)
 - [ ] T033 Exportación a Excel (pendiente)
-- [ ] T034 Exportación a CSV (pendiente)
+- [x] T034 Exportación a CSV (descarga en web; copia al portapapeles en otras)
 - [ ] T035 Reportes programados por correo (pendiente)
 
 ## Fase 5 — Seguridad y Cierre
