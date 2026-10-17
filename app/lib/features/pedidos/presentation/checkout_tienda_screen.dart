@@ -101,8 +101,9 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
     }
   }
 
-  /// Crea o actualiza la ficha del cliente para recordar sus datos.
-  Future<void> _guardarCliente(String uid) async {
+  /// Crea o actualiza la ficha del cliente para recordar sus datos. Devuelve el
+  /// id de la ficha (vacío si no se pudo guardar).
+  Future<String> _guardarCliente(String uid) async {
     final cliente = Cliente(
       id: _cliente?.id ?? '',
       empresaId: _empresaId,
@@ -119,9 +120,10 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
       ),
     );
     try {
-      await _clientes.guardarPropio(cliente);
+      return await _clientes.guardarPropio(cliente);
     } catch (_) {
       // Si falla, el pedido sigue; solo no se recuerdan los datos.
+      return '';
     }
   }
 
@@ -228,13 +230,14 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
       }
 
       // Guarda/actualiza la ficha del cliente para recordar sus datos.
-      await _guardarCliente(clienteUid);
+      final clienteId = await _guardarCliente(clienteUid);
 
       final pedido = Pedido(
         id: '',
         empresaId: _empresaId,
         origen: OrigenPedido.cliente,
         clienteUid: clienteUid,
+        clienteId: clienteId.isEmpty ? null : clienteId,
         clienteNombre: _nombre.text.trim(),
         cedula: _cedula.text.trim(),
         telefono: _telefono.text.trim(),

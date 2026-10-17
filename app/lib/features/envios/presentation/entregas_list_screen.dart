@@ -77,6 +77,7 @@ class _EntregasListScreenState extends State<EntregasListScreen> {
   }
 
   String _ciudadDe(Venta v) {
+    if (v.direccion.ciudad.trim().isNotEmpty) return v.direccion.ciudad;
     final cliente = v.clienteId == null ? null : _clientes[v.clienteId];
     return cliente?.direccion.ciudad ?? '';
   }

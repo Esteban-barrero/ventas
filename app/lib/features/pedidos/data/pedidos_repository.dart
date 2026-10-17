@@ -192,6 +192,7 @@ class PedidosRepository {
       tipoVenta: pedido.tipoPago,
       tipoEntrega: pedido.tipoEntrega,
       medioPago: pedido.medioPago,
+      direccion: pedido.direccion,
       subtotal: pedido.subtotal,
       costoEnvio: pedido.costoEnvio,
       impuestos: pedido.impuestos,

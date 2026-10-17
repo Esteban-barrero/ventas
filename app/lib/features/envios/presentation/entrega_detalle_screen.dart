@@ -162,6 +162,9 @@ class _EntregaDetalleScreenState extends State<EntregaDetalleScreen> {
     final v = widget.venta;
     final tema = Theme.of(context);
     final cliente = widget.cliente;
+    final direccionTexto = v.direccion.resumen.isNotEmpty
+        ? v.direccion.resumen
+        : (cliente?.direccion.resumen ?? '');
 
     return Scaffold(
       appBar: AppBar(title: Text(v.numeroFactura.isEmpty ? 'Entrega' : v.numeroFactura)),
@@ -194,10 +197,12 @@ class _EntregaDetalleScreenState extends State<EntregaDetalleScreen> {
                   if (cliente != null) ...<Widget>[
                     _fila('Cédula', cliente.cedula),
                     _fila('Teléfono', cliente.telefono),
-                    const SizedBox(height: 8),
-                    Text(cliente.direccion.resumen.isEmpty
-                        ? 'Sin dirección registrada'
-                        : cliente.direccion.resumen),
+                  ],
+                  const SizedBox(height: 8),
+                  Text(direccionTexto.isEmpty
+                      ? 'Sin dirección registrada'
+                      : direccionTexto),
+                  if (cliente != null) ...<Widget>[
                     const SizedBox(height: 8),
                     if (cliente.tieneUbicacion)
                       Wrap(

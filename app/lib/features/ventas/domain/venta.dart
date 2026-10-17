@@ -5,6 +5,7 @@
 library;
 
 import '../../catalogo/domain/precio.dart';
+import '../../clientes/domain/cliente.dart' show Direccion;
 
 /// Tipo de entrega de la venta (RF-06).
 enum TipoEntrega {
@@ -172,6 +173,7 @@ class Venta {
     this.empresaEnvio = '',
     this.fechaEnvio,
     this.estadoEnvio = '',
+    this.direccion = const Direccion(),
     this.repartidorUid = '',
     this.repartidorNombre = '',
     this.estado = EstadoVenta.registrada,
@@ -216,6 +218,9 @@ class Venta {
   final String empresaEnvio;
   final DateTime? fechaEnvio;
   final String estadoEnvio;
+
+  /// Dirección de entrega **congelada** al registrar la venta (spec 011).
+  final Direccion direccion;
 
   /// Repartidor / domiciliario asignado (spec 011).
   final String repartidorUid;
@@ -265,6 +270,7 @@ class Venta {
         'empresaEnvio': empresaEnvio,
         'fechaEnvio': fechaEnvio?.toUtc().toIso8601String(),
         'estadoEnvio': estadoEnvio,
+        'direccion': direccion.toMap(),
         'repartidorUid': repartidorUid,
         'repartidorNombre': repartidorNombre,
         'estado': estado.id,
@@ -302,6 +308,8 @@ class Venta {
       empresaEnvio: (data['empresaEnvio'] as String?) ?? '',
       fechaEnvio: _aFecha(data['fechaEnvio']),
       estadoEnvio: (data['estadoEnvio'] as String?) ?? '',
+      direccion: Direccion.fromMap(
+          (data['direccion'] as Map?)?.cast<String, dynamic>()),
       repartidorUid: (data['repartidorUid'] as String?) ?? '',
       repartidorNombre: (data['repartidorNombre'] as String?) ?? '',
       estado: EstadoVenta.desdeId(data['estado'] as String?),
