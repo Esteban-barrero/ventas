@@ -132,17 +132,6 @@ class _TiendaPublicaScreenState extends State<TiendaPublicaScreen> {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-          child: SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: widget.onIngresar,
-              icon: const Icon(Icons.login),
-              label: const Text('Iniciar sesión (personal)'),
-            ),
-          ),
-        ),
         Expanded(
           child: visibles.isEmpty
               ? const Center(child: Text('No se encontraron tiendas.'))
