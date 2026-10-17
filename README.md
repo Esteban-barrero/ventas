@@ -108,6 +108,13 @@ caja (spec 016). La empresa tiene un parámetro de **ciudades** (1..n): una entr
 en una de ellas es **local** y en otra es **envío**. Transportadoras, guías,
 evidencia (foto/firma) y notificaciones al cliente quedan pendientes.
 
+**Spec 015 — Reportes:** implementado el **panel de reportes** con filtro de
+fechas (Hoy/Semana/Mes/Año/Todo) y KPIs: **ventas** (total, contado/crédito, por
+medio de pago y vendedor), **utilidad** por producto, **inventario**
+(valorización, bajo stock, agotados), **cartera** (saldo, vencida, morosos),
+**dinero** (ingresos/egresos por medio) y **pedidos** por estado. Exportaciones
+(PDF/Excel/CSV), gráficos y consolidado del Super Admin quedan pendientes.
+
 **Spec 016 — Tesorería y flujo del dinero:** implementada (núcleo). Un **libro
 único** de movimientos (`movimientos_dinero`) con **ingresos**, **egresos** y
 **traslados**, cada uno con **ubicación** (caja física, efectivo con el vendedor,
@@ -150,8 +157,9 @@ física* dentro del mismo libro. El **pago a proveedor** (egreso) y la
 | Tesorería: libro único del dinero y trazabilidad (016) | ✅ |
 | Entregas: pendientes por entregar y rol domiciliario (011) | ✅ |
 | Tienda del cliente, carrito y pedidos con aprobación (010) | ✅ |
+| Panel de reportes con KPIs y filtro de fechas (015) | ✅ |
 
-Las demás especificaciones (012 a 015) están definidas y pendientes de
+Las demás especificaciones (012 a 014) están definidas y pendientes de
 implementación. Ver [`specs/`](./specs).
 
 ---

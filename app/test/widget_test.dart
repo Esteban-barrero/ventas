@@ -147,10 +147,11 @@ void main() {
     await tester.ensureVisible(find.text('Reportes'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Reportes'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Módulo en construcción.'), findsOneWidget);
-    expect(find.text('Requiere: Ver reportes'), findsOneWidget);
+    // Se abre la pantalla de Reportes (con su acción de actualizar).
+    expect(find.byTooltip('Actualizar'), findsOneWidget);
   });
 
   testWidgets('HomePage avisa cuando se muestran datos guardados sin conexión',

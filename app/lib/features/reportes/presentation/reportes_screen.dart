@@ -1,0 +1,260 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/formato/fechas.dart';
+import '../../auth/domain/usuario.dart';
+import '../data/reportes_repository.dart';
+import '../domain/reportes.dart';
+
+/// Pantalla de **Reportes** (spec 015): panel con KPIs y resúmenes de ventas,
+/// utilidad, inventario, cartera, dinero y pedidos, con filtro por fechas.
+class ReportesScreen extends StatefulWidget {
+  const ReportesScreen({
+    super.key,
+    required this.usuario,
+    this.reportesRepository,
+  });
+
+  final Usuario usuario;
+  final ReportesRepository? reportesRepository;
+
+  @override
+  State<ReportesScreen> createState() => _ReportesScreenState();
+}
+
+class _ReportesScreenState extends State<ReportesScreen> {
+  late final ReportesRepository _repo =
+      widget.reportesRepository ?? ReportesRepository();
+
+  DatosReportes? _datos;
+  bool _cargando = true;
+  String? _error;
+  RangoFechas _rango = RangoFechas.mes();
+  String _preset = 'Mes';
+
+  String get _empresaId => widget.usuario.empresaId ?? '';
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  Future<void> _cargar() async {
+    setState(() {
+      _cargando = true;
+      _error = null;
+    });
+    try {
+      final datos = await _repo.cargar(_empresaId);
+      if (!mounted) return;
+      setState(() {
+        _datos = datos;
+        _cargando = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'No se pudieron cargar los reportes: $e';
+        _cargando = false;
+      });
+    }
+  }
+
+  void _cambiarRango(String preset) {
+    setState(() {
+      _preset = preset;
+      _rango = switch (preset) {
+        'Hoy' => RangoFechas.hoy(),
+        'Semana' => RangoFechas.semana(),
+        'Año' => RangoFechas.anio(),
+        'Todo' => RangoFechas.todo,
+        _ => RangoFechas.mes(),
+      };
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_empresaId.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Reportes')),
+        body: const Center(child: Text('No perteneces a ninguna empresa.')),
+      );
+    }
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Reportes'),
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'Actualizar',
+            icon: const Icon(Icons.refresh),
+            onPressed: _cargando ? null : _cargar,
+          ),
+        ],
+      ),
+      body: _cargando
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(_error!, textAlign: TextAlign.center),
+                  ),
+                )
+              : _cuerpo(_datos!),
+    );
+  }
+
+  Widget _cuerpo(DatosReportes datos) {
+    final rv = calcularResumenVentas(datos.ventas, _rango);
+    final ri = calcularResumenInventario(datos.productos);
+    final rc = calcularResumenCartera(datos.creditos);
+    final rd = calcularResumenDinero(datos.movimientos, _rango);
+    final rp = calcularResumenPedidos(datos.pedidos, _rango);
+    final tema = Theme.of(context);
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: <Widget>[
+        Wrap(
+          spacing: 8,
+          children: <Widget>[
+            for (final p in <String>['Hoy', 'Semana', 'Mes', 'Año', 'Todo'])
+              ChoiceChip(
+                label: Text(p),
+                selected: _preset == p,
+                onSelected: (_) => _cambiarRango(p),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: <Widget>[
+            _kpi('Ventas', formatearValor(rv.total), Icons.point_of_sale_outlined),
+            _kpi('Utilidad', formatearValor(rv.utilidad), Icons.trending_up),
+            _kpi('N.º ventas', '${rv.numero}', Icons.receipt_long_outlined),
+            _kpi('Cartera', formatearValor(rc.total), Icons.request_quote_outlined),
+            _kpi('Inventario', formatearValor(ri.valorizacion), Icons.warehouse_outlined),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _seccion(tema, 'Ventas'),
+        _tarjeta(<Widget>[
+          _fila('Total', formatearValor(rv.total), negrita: true),
+          _fila('Contado', formatearValor(rv.contado)),
+          _fila('Crédito', formatearValor(rv.credito)),
+          ..._mapa('Por medio de pago', rv.porMedio),
+          ..._mapa('Por vendedor', rv.porVendedor),
+        ]),
+        _seccion(tema, 'Utilidad por producto'),
+        _tarjeta(rv.topProductos.isEmpty
+            ? <Widget>[const Text('Sin ventas en el período.')]
+            : <Widget>[
+                for (final p in rv.topProductos)
+                  _fila('${p.unidades} × ${p.nombre}', formatearValor(p.utilidad)),
+              ]),
+        _seccion(tema, 'Inventario'),
+        _tarjeta(<Widget>[
+          _fila('Valorización', formatearValor(ri.valorizacion)),
+          _fila('Productos', '${ri.productos}'),
+          _fila('Bajo stock', '${ri.bajoStock}'),
+          _fila('Agotados', '${ri.agotados}'),
+        ]),
+        _seccion(tema, 'Cartera'),
+        _tarjeta(<Widget>[
+          _fila('Saldo por cobrar', formatearValor(rc.total), negrita: true),
+          _fila('Vencida', formatearValor(rc.vencida)),
+          _fila('Clientes en mora', '${rc.morosos}'),
+          _fila('Créditos activos', '${rc.creditos}'),
+        ]),
+        _seccion(tema, 'Dinero (caja/tesorería)'),
+        _tarjeta(<Widget>[
+          _fila('Ingresos', formatearValor(rd.ingresos)),
+          _fila('Egresos', formatearValor(rd.egresos)),
+          _fila('Neto', formatearValor(rd.neto), negrita: true),
+          ..._mapa('Ingresos por medio', rd.porMedio),
+        ]),
+        _seccion(tema, 'Pedidos'),
+        _tarjeta(<Widget>[
+          _fila('Total', '${rp.total}', negrita: true),
+          _fila('Pendientes', '${rp.pendientes}'),
+          _fila('Confirmados', '${rp.confirmados}'),
+          _fila('Cancelados', '${rp.cancelados}'),
+        ]),
+        const SizedBox(height: 32),
+      ],
+    );
+  }
+
+  List<Widget> _mapa(String titulo, Map<String, double> valores) {
+    if (valores.isEmpty) return const <Widget>[];
+    return <Widget>[
+      const Divider(),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Text(titulo,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+      ),
+      for (final e in valores.entries) _fila('· ${e.key}', formatearValor(e.value)),
+    ];
+  }
+
+  Widget _kpi(String titulo, String valor, IconData icono) {
+    final tema = Theme.of(context);
+    return SizedBox(
+      width: 150,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Icon(icono, size: 20, color: tema.colorScheme.primary),
+              const SizedBox(height: 6),
+              Text(titulo, style: tema.textTheme.bodySmall),
+              const SizedBox(height: 2),
+              Text(valor,
+                  style: tema.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _seccion(ThemeData tema, String titulo) => Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 6),
+        child: Text(titulo, style: tema.textTheme.titleMedium),
+      );
+
+  Widget _tarjeta(List<Widget> filas) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: filas,
+          ),
+        ),
+      );
+
+  Widget _fila(String etiqueta, String valor, {bool negrita = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: <Widget>[
+          Expanded(child: Text(etiqueta)),
+          Text(
+            valor,
+            style: TextStyle(
+              fontWeight: negrita ? FontWeight.bold : FontWeight.normal,
+              fontSize: negrita ? 16 : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

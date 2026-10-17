@@ -2,56 +2,58 @@
 
 - **ID:** 015 | **Plan:** [`plan.md`](./plan.md)
 - **Fecha:** 2026-10-14
+- **Estado:** implementado el **panel de reportes** (ventas, utilidad, cartera,
+  inventario, dinero y pedidos) con filtro por fechas. Exportaciones, gráficos y
+  consolidado del Super Admin quedan pendientes.
 
 ---
 
 ## Fase 1 — Preparación
 
-- [ ] T001 Crear estructura de `features/reportes`
-- [ ] T002 Definir entidades `FiltroReporte` y `ResultadoReporte`
-- [ ] T003 Definir las fórmulas (utilidad, margen, rotación, valorización)
+- [x] T001 Crear estructura de `features/reportes`
+- [x] T002 Definir `RangoFechas` y los resúmenes (`domain/reportes.dart`)
+- [x] T003 Definir las fórmulas (utilidad, margen, valorización)
 
 ## Fase 2 — Lógica de Reportes
 
-- [ ] T010 Implementar reporte de **ventas** (fecha, vendedor, cliente, producto, tipo)
-- [ ] T011 Implementar reporte de **cartera/créditos** (saldos, mora, recaudo)
-- [ ] T012 Implementar reporte de **inventario** (valorización, bajo stock, rotación)
-- [ ] T013 Implementar reporte de **caja** (medios de pago, arqueos, diferencias)
-- [ ] T014 Implementar reporte de **compras** y cuentas por pagar
-- [ ] T015 Implementar reporte de **utilidades** (margen)
-- [ ] T016 Implementar reporte de **pedidos y envíos**
-- [ ] T017 Implementar **panel** de KPIs y **consolidado** (Super Admin)
+- [x] T010 Reporte de **ventas** (total, contado/crédito, por medio y vendedor)
+- [x] T011 Reporte de **cartera/créditos** (saldo, vencida, morosos)
+- [x] T012 Reporte de **inventario** (valorización, bajo stock, agotados)
+- [x] T013 Reporte de **dinero** (ingresos/egresos por medio)
+- [ ] T014 Reporte de **compras** y cuentas por pagar (pendiente)
+- [x] T015 Reporte de **utilidades** (por producto y total)
+- [x] T016 Reporte de **pedidos** por estado
+- [x] T017 **Panel** de KPIs (consolidado Super Admin pendiente)
 
 ## Fase 3 — Agregados y Rendimiento
 
-- [ ] T020 Implementar colecciones de **resumen** (diario/mensual)
-- [ ] T021 Cloud Function `generarResumenDiario`
-- [ ] T022 Paginación y límites en consultas grandes
+- [ ] T020 Colecciones de resumen (pendiente)
+- [ ] T021 Cloud Function `generarResumenDiario` (pendiente)
+- [ ] T022 Paginación y límites (pendiente)
 
 ## Fase 4 — Interfaz y Exportación
 
-- [ ] T030 Pantalla de reportes con filtros
-- [ ] T031 Gráficos (barras, líneas, torta)
-- [ ] T032 Exportación a **PDF**
-- [ ] T033 Exportación a **Excel**
-- [ ] T034 Exportación a **CSV**
-- [ ] T035 Reportes programados y envío por correo (opcional)
+- [x] T030 Pantalla de reportes con filtros (Hoy/Semana/Mes/Año/Todo)
+- [ ] T031 Gráficos (pendiente)
+- [ ] T032 Exportación a PDF (pendiente)
+- [ ] T033 Exportación a Excel (pendiente)
+- [ ] T034 Exportación a CSV (pendiente)
+- [ ] T035 Reportes programados por correo (pendiente)
 
 ## Fase 5 — Seguridad y Cierre
 
-- [ ] T040 Reglas de Firestore por rol y empresa
-- [ ] T041 Restringir al Vendedor a sus propias ventas
-- [ ] T042 Registrar auditoría de exportaciones (opcional)
-- [ ] T043 Pruebas unitarias, de widget e integración
-- [ ] T044 Ejecutar `flutter analyze`, `flutter test` y pruebas de Functions
-- [ ] T045 Actualizar documentación
+- [x] T040 Reglas: se reutilizan las de cada colección (por empresa)
+- [ ] T041 Restringir al Vendedor a sus propias ventas (pendiente)
+- [ ] T042 Auditoría de exportaciones (pendiente)
+- [x] T043 Pruebas unitarias del dominio de reportes
+- [x] T044 Ejecutar `flutter analyze` y `flutter test`
+- [x] T045 Actualizar documentación
 
 ---
 
 ## Criterio de Terminado (Definition of Done)
 
-- [ ] Todos los criterios de aceptación de `spec.md` cumplidos
-- [ ] `flutter analyze` sin errores
-- [ ] Pruebas pasando
-- [ ] Reportes, panel y exportaciones verificados
-- [ ] Commit y push realizados
+- [x] Panel y reportes principales
+- [x] `flutter analyze` sin errores
+- [x] Pruebas pasando
+- [x] Commit y push realizados

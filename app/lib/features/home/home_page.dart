@@ -22,6 +22,7 @@ import '../licencia/domain/licencia.dart';
 import '../licencia/presentation/aviso_licencia.dart';
 import '../pedidos/presentation/mi_tienda_screen.dart';
 import '../pedidos/presentation/pedidos_list_screen.dart';
+import '../reportes/presentation/reportes_screen.dart';
 import '../tesoreria/presentation/tesoreria_screen.dart';
 import '../ventas/presentation/ventas_list_screen.dart';
 import 'modulo_screen.dart';
@@ -92,7 +93,8 @@ class HomePage extends StatelessWidget {
             requiereEmpresa: true,
             constructor: (_, u) => PedidosListScreen(usuario: u)),
       _Modulo('Reportes', Icons.bar_chart_outlined, Permiso.reportesVer,
-          requiereEmpresa: true),
+          requiereEmpresa: true,
+          constructor: (_, u) => ReportesScreen(usuario: u)),
       _Modulo(
         'Usuarios',
         Icons.manage_accounts_outlined,
