@@ -111,9 +111,10 @@ evidencia (foto/firma) y notificaciones al cliente quedan pendientes.
 
 **Spec 012 — Auditoría:** implementado el **registro** de cambios (INSERT/UPDATE/
 DELETE con campo, valor anterior y nuevo) y el **módulo de consulta** con
-**filtros** (tabla, operación, fechas y búsqueda) y **exportación a CSV**. Los
-triggers de Cloud Functions, el enmascarado de campos y la retención TTL quedan
-pendientes.
+**filtros** (tabla, operación, fechas y búsqueda) y **exportación a CSV**. El
+**Super Admin** tiene una **vista consolidada** con **selector de empresa** (o
+todas). Los triggers de Cloud Functions, el enmascarado de campos y la retención
+TTL quedan pendientes.
 
 **Spec 015 — Reportes:** implementado el **panel de reportes** con filtro de
 fechas (Hoy/Semana/Mes/Año/Todo) y KPIs: **ventas** (total, contado/crédito, por

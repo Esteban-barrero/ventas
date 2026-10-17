@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import '../../../core/archivos/descargar_texto.dart';
 import '../../../core/formato/fechas.dart';
 import '../../auth/domain/usuario.dart';
+import '../../empresas/data/empresas_repository.dart';
+import '../../empresas/domain/empresa.dart';
 import '../data/auditoria_repository.dart';
 import '../domain/auditoria.dart';
 
@@ -26,6 +28,7 @@ class AuditoriaScreen extends StatefulWidget {
 class _AuditoriaScreenState extends State<AuditoriaScreen> {
   late final AuditoriaRepository _repo =
       widget.auditoriaRepository ?? AuditoriaRepository();
+  late final EmpresasRepository _empresasRepo = EmpresasRepository();
 
   final TextEditingController _busqueda = TextEditingController();
   String? _operacion;
@@ -33,12 +36,41 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
   DateTime? _desde;
   DateTime? _hasta;
 
-  String get _empresaId => widget.usuario.empresaId ?? '';
+  /// Super Admin: empresas a elegir (`null` = todas).
+  List<Empresa> _empresas = const <Empresa>[];
+  String? _empresaFiltro;
+
+  bool get _esSuper => widget.usuario.esSuperAdmin;
+  String get _empresaUsuario => widget.usuario.empresaId ?? '';
 
   @override
   void initState() {
     super.initState();
     _busqueda.addListener(() => setState(() {}));
+    if (_esSuper) _cargarEmpresas();
+  }
+
+  Future<void> _cargarEmpresas() async {
+    try {
+      final lista = await _empresasRepo.listar();
+      if (!mounted) return;
+      setState(() {
+        _empresas = lista
+          ..sort((Empresa a, Empresa b) =>
+              a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase()));
+      });
+    } catch (_) {
+      // Si no se puede leer, queda "Todas".
+    }
+  }
+
+  /// Stream de auditoría según el rol y la empresa seleccionada.
+  Stream<List<RegistroAuditoria>> _stream() {
+    if (!_esSuper) return _repo.escuchar(_empresaUsuario);
+    final id = _empresaFiltro;
+    return (id == null || id.isEmpty)
+        ? _repo.escucharTodos()
+        : _repo.escuchar(id);
   }
 
   @override
@@ -77,14 +109,31 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
 
   /// Exporta los registros filtrados a CSV (spec 012, RF-09).
   Future<void> _exportar() async {
-    final registros = await _repo.listar(
-      _empresaId,
-      busqueda: _busqueda.text,
-      operacion: _operacion,
-      tabla: _tabla,
-      desde: _desde,
-      hasta: _hasta,
-    );
+    final registros = _esSuper
+        ? ((_empresaFiltro == null || _empresaFiltro!.isEmpty)
+            ? await _repo.listarTodos(
+                busqueda: _busqueda.text,
+                operacion: _operacion,
+                tabla: _tabla,
+                desde: _desde,
+                hasta: _hasta,
+              )
+            : await _repo.listar(
+                _empresaFiltro!,
+                busqueda: _busqueda.text,
+                operacion: _operacion,
+                tabla: _tabla,
+                desde: _desde,
+                hasta: _hasta,
+              ))
+        : await _repo.listar(
+            _empresaUsuario,
+            busqueda: _busqueda.text,
+            operacion: _operacion,
+            tabla: _tabla,
+            desde: _desde,
+            hasta: _hasta,
+          );
     final b = StringBuffer()
       ..writeln('Fecha;Usuario;Operacion;Tabla;Documento;Campo;Viejo;Nuevo');
     for (final r in registros) {
@@ -115,7 +164,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_empresaId.isEmpty) {
+    if (!_esSuper && _empresaUsuario.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Auditoría')),
         body: const Center(child: Text('No perteneces a ninguna empresa.')),
@@ -133,7 +182,7 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
         ],
       ),
       body: StreamBuilder<List<RegistroAuditoria>>(
-        stream: _repo.escuchar(_empresaId),
+        stream: _stream(),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -183,6 +232,25 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
       child: Column(
         children: <Widget>[
+          if (_esSuper) ...<Widget>[
+            DropdownButtonFormField<String?>(
+              initialValue: _empresaFiltro,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'Empresa',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              items: <DropdownMenuItem<String?>>[
+                const DropdownMenuItem<String?>(
+                    value: null, child: Text('Todas las empresas')),
+                for (final e in _empresas)
+                  DropdownMenuItem<String?>(value: e.id, child: Text(e.nombre)),
+              ],
+              onChanged: (String? v) => setState(() => _empresaFiltro = v),
+            ),
+            const SizedBox(height: 8),
+          ],
           TextField(
             controller: _busqueda,
             decoration: const InputDecoration(
@@ -280,7 +348,8 @@ class _AuditoriaScreenState extends State<AuditoriaScreen> {
       title: Text('${r.tabla} · ${r.documentoId}',
           maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
-        '${r.descripcion}\n${r.usuarioMostrar} · ${formatearFecha(r.fecha)}',
+        '${r.descripcion}\n${r.usuarioMostrar} · ${formatearFecha(r.fecha)}'
+        '${_esSuper ? ' · ${r.empresaMostrar}' : ''}',
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),

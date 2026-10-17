@@ -121,9 +121,32 @@ class AuditoriaRepository {
     );
   }
 
+  /// Escucha **toda** la auditoría (todas las empresas). Solo el Super Admin lo
+  /// permite la regla (spec 012).
+  Stream<List<RegistroAuditoria>> escucharTodos() =>
+      _coleccion.snapshots().map(_aLista);
+
+  /// Lista **toda** la auditoría con filtros (Super Admin).
+  Future<List<RegistroAuditoria>> listarTodos({
+    String? busqueda,
+    String? operacion,
+    String? tabla,
+    DateTime? desde,
+    DateTime? hasta,
+  }) async {
+    final snap = await _coleccion.get();
+    return filtrar(
+      _aLista(snap),
+      busqueda: busqueda,
+      operacion: operacion,
+      tabla: tabla,
+      desde: desde,
+      hasta: hasta,
+    );
+  }
+
   /// Filtra por texto, operación, tabla y rango de fechas.
-  static List<RegistroAuditoria> filtrar(
-    List<RegistroAuditoria> registros, {
+  static List<RegistroAuditoria> filtrar(    List<RegistroAuditoria> registros, {
     String? busqueda,
     String? operacion,
     String? tabla,
