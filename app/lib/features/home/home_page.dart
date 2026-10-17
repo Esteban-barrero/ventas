@@ -20,8 +20,8 @@ import '../envios/presentation/entregas_list_screen.dart';
 import '../inventario/presentation/inventario_list_screen.dart';
 import '../licencia/domain/licencia.dart';
 import '../licencia/presentation/aviso_licencia.dart';
+import '../pedidos/presentation/mi_tienda_screen.dart';
 import '../pedidos/presentation/pedidos_list_screen.dart';
-import '../pedidos/presentation/tienda_screen.dart';
 import '../tesoreria/presentation/tesoreria_screen.dart';
 import '../ventas/presentation/ventas_list_screen.dart';
 import 'modulo_screen.dart';
@@ -86,7 +86,7 @@ class HomePage extends StatelessWidget {
           constructor: (_, u) => EntregasListScreen(usuario: u)),
       _Modulo('Tienda', Icons.storefront_outlined, Permiso.pedidosCrear,
           requiereEmpresa: true,
-          constructor: (_, u) => TiendaScreen(usuario: u)),
+          constructor: (_, u) => MiTiendaScreen(usuario: u)),
       if (usuario.puede(Permiso.ventasVer))
         _Modulo('Pedidos', Icons.receipt_long_outlined, Permiso.pedidosVer,
             requiereEmpresa: true,

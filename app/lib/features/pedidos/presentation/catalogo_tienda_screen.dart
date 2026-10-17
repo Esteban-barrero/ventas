@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/formato/fechas.dart';
+import '../../auth/domain/usuario.dart';
 import '../../catalogo/data/categorias_repository.dart';
 import '../../catalogo/data/productos_repository.dart';
 import '../../catalogo/domain/categoria.dart';
@@ -8,6 +9,7 @@ import '../../catalogo/domain/precio.dart';
 import '../../catalogo/domain/producto.dart';
 import '../../empresas/domain/empresa.dart';
 import 'checkout_tienda_screen.dart';
+import 'mis_pedidos_screen.dart';
 
 /// Línea del carrito público.
 class LineaTienda {
@@ -23,13 +25,20 @@ class CatalogoTiendaScreen extends StatefulWidget {
   const CatalogoTiendaScreen({
     super.key,
     required this.empresa,
-    required this.onIngresar,
+    this.onIngresar,
+    this.usuario,
     this.productosRepository,
     this.categoriasRepository,
   });
 
   final Empresa empresa;
-  final VoidCallback onIngresar;
+
+  /// Abre el login (solo en la tienda pública). Si es `null`, no se muestra.
+  final VoidCallback? onIngresar;
+
+  /// Cliente logueado. Si viene, se muestra "Mis pedidos" en vez de "Ingresar".
+  final Usuario? usuario;
+
   final ProductosRepository? productosRepository;
   final CategoriasRepository? categoriasRepository;
 
@@ -220,14 +229,25 @@ class _CatalogoTiendaScreenState extends State<CatalogoTiendaScreen> {
       appBar: AppBar(
         title: Text(widget.empresa.nombre),
         actions: <Widget>[
-          TextButton.icon(
-            onPressed: widget.onIngresar,
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          if (widget.usuario != null)
+            IconButton(
+              tooltip: 'Mis pedidos',
+              icon: const Icon(Icons.receipt_long_outlined),
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => MisPedidosScreen(usuario: widget.usuario!),
+                ),
+              ),
+            )
+          else if (widget.onIngresar != null)
+            TextButton.icon(
+              onPressed: widget.onIngresar,
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              ),
+              icon: const Icon(Icons.login),
+              label: const Text('Iniciar sesión'),
             ),
-            icon: const Icon(Icons.login),
-            label: const Text('Iniciar sesión'),
-          ),
         ],
       ),
       body: _cargando

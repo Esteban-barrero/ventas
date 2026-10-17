@@ -74,13 +74,11 @@ class _TiendaScreenState extends State<TiendaScreen> {
     try {
       final empresa = await _empresasRepo.obtener(_empresaId);
       final productos = await _productosRepo.listar(_empresaId, activo: true);
-      final clientes = await _clientesRepo.listar(_empresaId);
       Cliente? mio;
-      for (final c in clientes) {
-        if (c.uid != null && c.uid == widget.usuario.uid) {
-          mio = c;
-          break;
-        }
+      try {
+        mio = await _clientesRepo.porUid(widget.usuario.uid);
+      } catch (_) {
+        // Un cliente solo puede leer su propia ficha; si falla, se sigue.
       }
       if (!mounted) return;
       setState(() {
