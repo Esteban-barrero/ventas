@@ -358,6 +358,31 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Pedidos de la tienda (spec 010). El cliente crea el pedido; el personal
+    // interno lo lee y lo aprueba (lo convierte en venta → Entregas).
+    match /pedidos/{pedidoId} {
+      allow read: if autenticado() && (
+        esSuperAdmin()
+        || (esDeEmpresa(resource.data.empresaId) && esInternoVentas())
+        || resource.data.clienteUid == request.auth.uid);
+      allow create: if autenticado()
+        && esDeEmpresa(request.resource.data.empresaId)
+        && roles().hasAny(['administrador', 'gerente', 'vendedor', 'cajero', 'cliente', 'invitado']);
+      allow update: if autenticado() && (
+        (esDeEmpresa(resource.data.empresaId)
+          && roles().hasAny(['administrador', 'gerente', 'vendedor']))
+        || (resource.data.clienteUid == request.auth.uid
+            && request.resource.data.estado == 'cancelado'));
+      allow delete: if false;
+    }
+
+    // Consecutivo de pedidos por empresa (spec 010).
+    match /consecutivos_pedidos/{empresaId} {
+      allow read, write: if autenticado()
+        && esDeEmpresa(empresaId)
+        && roles().hasAny(['administrador', 'gerente', 'vendedor', 'cliente', 'invitado']);
+    }
+
     // Rendiciones de efectivo (spec 016). El domiciliario declara; un
     // responsable (Cajero/Gerente/Admin) confirma la recepción.
     match /rendiciones/{rendicionId} {

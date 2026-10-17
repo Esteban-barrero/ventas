@@ -85,6 +85,15 @@ que recalculan el **saldo** en transacción y **cierre con arqueo**
 en el **libro único del dinero** (spec 016) con ubicación *caja física*. El
 **comprobante de cierre en PDF** queda pendiente.
 
+**Spec 010 — Carrito y Pedidos (MVP):** implementado el flujo de **tienda** para
+el cliente: catálogo, **carrito**, **checkout** con datos de contacto/entrega y
+**pedido** con número consecutivo (`PED-`); el cliente ve **"Mis pedidos"**. La
+empresa revisa los pedidos en el módulo **Pedidos** y al **aprobarlos** se genera
+la **venta** (spec 005), el dinero entra a **tesorería** (016) y el pedido queda
+**pendiente por entregar** en **Entregas** (011). La entrega es **local** o
+**envío** según las **ciudades** de la empresa. La persistencia del carrito y las
+**notificaciones** (WhatsApp/Telegram) quedan pendientes.
+
 **Spec 011 — Envíos y Entregas (MVP):** implementado el módulo **"Pendientes por
 entregar"** con el rol **`domiciliario`**: lista de ventas con entrega pendiente
 (entrega local o envío), **filtro por estado y ciudad**, detalle del pedido con
@@ -136,8 +145,9 @@ física* dentro del mismo libro. El **pago a proveedor** (egreso) y la
 | Caja por turno: apertura, movimientos y arqueo (009) | ✅ |
 | Tesorería: libro único del dinero y trazabilidad (016) | ✅ |
 | Entregas: pendientes por entregar y rol domiciliario (011) | ✅ |
+| Tienda del cliente, carrito y pedidos con aprobación (010) | ✅ |
 
-Las demás especificaciones (010, 012 a 015) están definidas y pendientes de
+Las demás especificaciones (012 a 015) están definidas y pendientes de
 implementación. Ver [`specs/`](./specs).
 
 ---
