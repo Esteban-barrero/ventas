@@ -86,7 +86,7 @@ class UsuariosRepository {
         email: user.email ?? '',
         // TODO(spec-002): al crear empresas, el rol dependera de quien crea la
         // cuenta. Por ahora el primer usuario queda como Administrador.
-        roles: const <String>['administrador'],
+        roles: const <String>[],
         activo: true,
         fechaCreacion: DateTime.now(),
       );

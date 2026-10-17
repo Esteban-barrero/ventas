@@ -91,8 +91,12 @@ el cliente: catálogo, **carrito**, **checkout** con datos de contacto/entrega y
 empresa revisa los pedidos en el módulo **Pedidos** y al **aprobarlos** se genera
 la **venta** (spec 005), el dinero entra a **tesorería** (016) y el pedido queda
 **pendiente por entregar** en **Entregas** (011). La entrega es **local** o
-**envío** según las **ciudades** de la empresa. La persistencia del carrito y las
-**notificaciones** (WhatsApp/Telegram) quedan pendientes.
+**envío** según las **ciudades** de la empresa. Además, la app arranca en **modo
+invitado** (autenticación anónima de Firebase): el visitante ve el **selector de
+tiendas** —o entra directo al catálogo si solo hay una— con **fotos, buscador y
+filtro por categoría**; al confirmar el pedido se **crea su cuenta de cliente** y
+se le envía el **enlace para definir la contraseña**. La persistencia del carrito
+y las **notificaciones** (WhatsApp/Telegram) quedan pendientes.
 
 **Spec 011 — Envíos y Entregas (MVP):** implementado el módulo **"Pendientes por
 entregar"** con el rol **`domiciliario`**: lista de ventas con entrega pendiente

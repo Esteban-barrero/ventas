@@ -5,6 +5,7 @@ import '../../home/home_page.dart';
 import '../../licencia/data/licencias_repository.dart';
 import '../../licencia/domain/licencia.dart';
 import '../../licencia/presentation/licencia_bloqueada_screen.dart';
+import '../../pedidos/presentation/tienda_publica_screen.dart';
 import '../data/auth_repository.dart';
 import '../data/cache_sesion.dart';
 import '../data/usuarios_repository.dart';
@@ -43,6 +44,12 @@ class _AuthGateState extends State<AuthGate> {
       widget.licenciasRepository ?? LicenciasRepository();
   final CacheSesion _cache = CacheSesion();
 
+  /// `true` cuando el usuario pidió ingresar (desde la tienda). Si no, sin
+  /// sesión se entra como **invitado** (spec 010).
+  bool _modoLogin = false;
+  bool _intentandoAnonimo = false;
+  bool _errorInvitado = false;
+
   /// Cierra la sesión y borra la copia local de datos (spec 001, T014).
   Future<void> _cerrarSesion() async {
     await _cache.limpiar();
@@ -60,7 +67,40 @@ class _AuthGateState extends State<AuthGate> {
 
         final user = snapshot.data;
         if (user == null) {
-          return LoginScreen(repository: _auth);
+          if (_modoLogin) {
+            return LoginScreen(
+              repository: _auth,
+              onVerTienda: () => setState(() => _modoLogin = false),
+            );
+          }
+          // Sin sesión: se entra como **invitado** a la tienda (spec 010).
+          if (!_intentandoAnonimo && !_errorInvitado) {
+            _intentandoAnonimo = true;
+            WidgetsBinding.instance
+                .addPostFrameCallback((_) => _entrarComoInvitado());
+          }
+          if (_errorInvitado) {
+            return _ErrorInvitado(
+              onReintentar: () => setState(() {
+                _errorInvitado = false;
+                _intentandoAnonimo = false;
+              }),
+              onIngresar: () => setState(() => _modoLogin = true),
+            );
+          }
+          return const _Cargando();
+        }
+
+        if (user.isAnonymous) {
+          if (_modoLogin) {
+            return LoginScreen(
+              repository: _auth,
+              onVerTienda: () => setState(() => _modoLogin = false),
+            );
+          }
+          return TiendaPublicaScreen(
+            onIngresar: () => setState(() => _modoLogin = true),
+          );
         }
 
         return _SesionLoader(
@@ -71,6 +111,56 @@ class _AuthGateState extends State<AuthGate> {
           onCerrarSesion: _cerrarSesion,
         );
       },
+    );
+  }
+
+  /// Inicia la sesión anónima del modo invitado.
+  Future<void> _entrarComoInvitado() async {
+    try {
+      await _auth.iniciarSesionAnonima();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _intentandoAnonimo = false;
+        _errorInvitado = true;
+      });
+    }
+  }
+}
+
+/// Pantalla de error al no poder abrir la tienda como invitado.
+class _ErrorInvitado extends StatelessWidget {
+  const _ErrorInvitado({required this.onReintentar, required this.onIngresar});
+
+  final VoidCallback onReintentar;
+  final VoidCallback onIngresar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Text(
+                'No se pudo abrir la tienda. Revisa tu conexión.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: onReintentar,
+                child: const Text('Reintentar'),
+              ),
+              TextButton(
+                onPressed: onIngresar,
+                child: const Text('Ingresar'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

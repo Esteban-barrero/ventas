@@ -6,13 +6,21 @@ import '../data/preferencias_login.dart';
 
 /// Pantalla de inicio de sesion / registro (spec 001).
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.repository, this.preferencias});
+  const LoginScreen({
+    super.key,
+    this.repository,
+    this.preferencias,
+    this.onVerTienda,
+  });
 
   /// Permite inyectar un repositorio distinto en las pruebas.
   final AuthRepository? repository;
 
   /// Permite inyectar las preferencias en las pruebas.
   final PreferenciasLogin? preferencias;
+
+  /// Si se indica, muestra un botón para volver a la tienda (modo invitado).
+  final VoidCallback? onVerTienda;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -294,6 +302,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           : '¿No tienes cuenta? Regístrate',
                     ),
                   ),
+                  if (widget.onVerTienda != null)
+                    TextButton.icon(
+                      onPressed: widget.onVerTienda,
+                      icon: const Icon(Icons.storefront_outlined),
+                      label: const Text('Ver la tienda'),
+                    ),
                 ],
               ),
             ),

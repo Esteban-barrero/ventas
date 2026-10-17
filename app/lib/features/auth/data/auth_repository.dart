@@ -35,6 +35,10 @@ class AuthRepository {
     );
   }
 
+  /// Inicia una sesión **anónima** (modo invitado de la tienda, spec 010).
+  Future<UserCredential> iniciarSesionAnonima() =>
+      _auth.signInAnonymously();
+
   /// Inicia sesion con Google (RF-01).
   ///
   /// En web abre una ventana emergente; en Android/iOS usa el flujo nativo.
