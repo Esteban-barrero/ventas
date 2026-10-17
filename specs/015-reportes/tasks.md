@@ -34,8 +34,8 @@
 ## Fase 4 — Interfaz y Exportación
 
 - [x] T030 Pantalla de reportes con filtros (Hoy/Semana/Mes/Año/Todo)
-- [ ] T031 Gráficos (pendiente)
-- [ ] T032 Exportación a PDF (pendiente)
+- [x] T031 Gráficos de barras (medios, vendedores y utilidad)
+- [ ] T032 Exportación a PDF (pendiente: conflicto image/archive)
 - [ ] T033 Exportación a Excel (pendiente)
 - [x] T034 Exportación a CSV (descarga en web; copia al portapapeles en otras)
 - [ ] T035 Reportes programados por correo (pendiente)

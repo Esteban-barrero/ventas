@@ -113,9 +113,10 @@ evidencia (foto/firma) y notificaciones al cliente quedan pendientes.
 fechas (Hoy/Semana/Mes/Año/Todo) y KPIs: **ventas** (total, contado/crédito, por
 medio de pago y vendedor), **utilidad** por producto, **inventario**
 (valorización, bajo stock, agotados), **cartera** (saldo, vencida, morosos),
-**dinero** (ingresos/egresos por medio) y **pedidos** por estado. Incluye la
-**exportación a CSV** del panel. Exportaciones PDF/Excel, gráficos y consolidado
-del Super Admin quedan pendientes.
+**dinero** (ingresos/egresos por medio) y **pedidos** por estado. Incluye
+**gráficos de barras** (por medio, vendedor y utilidad) y **exportación a CSV**
+del panel. Exportaciones PDF/Excel y consolidado del Super Admin quedan
+pendientes.
 
 **Spec 016 — Tesorería y flujo del dinero:** implementada (núcleo). Un **libro
 único** de movimientos (`movimientos_dinero`) con **ingresos**, **egresos** y

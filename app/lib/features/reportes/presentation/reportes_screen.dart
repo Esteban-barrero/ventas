@@ -116,7 +116,8 @@ class _ReportesScreenState extends State<ReportesScreen> {
     }
   }
 
-  void _cambiarRango(String preset) {    setState(() {
+  void _cambiarRango(String preset) {
+    setState(() {
       _preset = preset;
       _rango = switch (preset) {
         'Hoy' => RangoFechas.hoy(),
@@ -205,15 +206,22 @@ class _ReportesScreenState extends State<ReportesScreen> {
           _fila('Total', formatearValor(rv.total), negrita: true),
           _fila('Contado', formatearValor(rv.contado)),
           _fila('Crédito', formatearValor(rv.credito)),
-          ..._mapa('Por medio de pago', rv.porMedio),
-          ..._mapa('Por vendedor', rv.porVendedor),
+          ..._barras('Por medio de pago', rv.porMedio, tema.colorScheme.primary),
+          ..._barras('Por vendedor', rv.porVendedor, tema.colorScheme.secondary),
         ]),
         _seccion(tema, 'Utilidad por producto'),
         _tarjeta(rv.topProductos.isEmpty
             ? <Widget>[const Text('Sin ventas en el período.')]
             : <Widget>[
                 for (final p in rv.topProductos)
-                  _fila('${p.unidades} × ${p.nombre}', formatearValor(p.utilidad)),
+                  _barra(
+                    '${p.unidades} × ${p.nombre}',
+                    p.utilidad,
+                    rv.topProductos
+                        .map((ProductoVendido x) => x.utilidad)
+                        .reduce((double a, double b) => a > b ? a : b),
+                    tema.colorScheme.tertiary,
+                  ),
               ]),
         _seccion(tema, 'Inventario'),
         _tarjeta(<Widget>[
@@ -234,7 +242,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
           _fila('Ingresos', formatearValor(rd.ingresos)),
           _fila('Egresos', formatearValor(rd.egresos)),
           _fila('Neto', formatearValor(rd.neto), negrita: true),
-          ..._mapa('Ingresos por medio', rd.porMedio),
+          ..._barras('Ingresos por medio', rd.porMedio, tema.colorScheme.primary),
         ]),
         _seccion(tema, 'Pedidos'),
         _tarjeta(<Widget>[
@@ -248,8 +256,13 @@ class _ReportesScreenState extends State<ReportesScreen> {
     );
   }
 
-  List<Widget> _mapa(String titulo, Map<String, double> valores) {
+  /// Barras horizontales con el valor de cada elemento.
+  List<Widget> _barras(String titulo, Map<String, double> valores, Color color) {
     if (valores.isEmpty) return const <Widget>[];
+    final ordenados = valores.entries.toList()
+      ..sort((MapEntry<String, double> a, MapEntry<String, double> b) =>
+          b.value.compareTo(a.value));
+    final max = ordenados.first.value;
     return <Widget>[
       const Divider(),
       Padding(
@@ -257,8 +270,42 @@ class _ReportesScreenState extends State<ReportesScreen> {
         child: Text(titulo,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
       ),
-      for (final e in valores.entries) _fila('· ${e.key}', formatearValor(e.value)),
+      for (final e in ordenados) _barra(e.key, e.value, max, color),
     ];
+  }
+
+  Widget _barra(String etiqueta, double valor, double max, Color color) {
+    final factor = max <= 0 ? 0.0 : (valor / max).clamp(0.0, 1.0);
+    final tema = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(etiqueta,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tema.textTheme.bodySmall),
+              ),
+              Text(formatearValor(valor), style: tema.textTheme.bodySmall),
+            ],
+          ),
+          const SizedBox(height: 3),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: factor,
+              minHeight: 8,
+              backgroundColor: tema.colorScheme.surfaceContainerHighest,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _kpi(String titulo, String valor, IconData icono) {
