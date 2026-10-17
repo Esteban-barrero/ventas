@@ -201,28 +201,27 @@ class _ReportesScreenState extends State<ReportesScreen> {
           ],
         ),
         const SizedBox(height: 16),
+        _seccion(tema, 'Gráficos'),
+        _tarjeta(<Widget>[
+          ..._grafico('Ventas por medio de pago', rv.porMedio,
+              tema.colorScheme.primary),
+          ..._grafico('Ventas por vendedor', rv.porVendedor,
+              tema.colorScheme.secondary),
+          ..._grafico(
+            'Utilidad por producto',
+            <String, double>{
+              for (final p in rv.topProductos)
+                '${p.unidades} × ${p.nombre}': p.utilidad,
+            },
+            tema.colorScheme.tertiary,
+          ),
+        ]),
         _seccion(tema, 'Ventas'),
         _tarjeta(<Widget>[
           _fila('Total', formatearValor(rv.total), negrita: true),
           _fila('Contado', formatearValor(rv.contado)),
           _fila('Crédito', formatearValor(rv.credito)),
-          ..._barras('Por medio de pago', rv.porMedio, tema.colorScheme.primary),
-          ..._barras('Por vendedor', rv.porVendedor, tema.colorScheme.secondary),
         ]),
-        _seccion(tema, 'Utilidad por producto'),
-        _tarjeta(rv.topProductos.isEmpty
-            ? <Widget>[const Text('Sin ventas en el período.')]
-            : <Widget>[
-                for (final p in rv.topProductos)
-                  _barra(
-                    '${p.unidades} × ${p.nombre}',
-                    p.utilidad,
-                    rv.topProductos
-                        .map((ProductoVendido x) => x.utilidad)
-                        .reduce((double a, double b) => a > b ? a : b),
-                    tema.colorScheme.tertiary,
-                  ),
-              ]),
         _seccion(tema, 'Inventario'),
         _tarjeta(<Widget>[
           _fila('Valorización', formatearValor(ri.valorizacion)),
@@ -254,6 +253,37 @@ class _ReportesScreenState extends State<ReportesScreen> {
         const SizedBox(height: 32),
       ],
     );
+  }
+
+  /// Un gráfico con su título; avisa si no hay datos en el período.
+  List<Widget> _grafico(
+    String titulo,
+    Map<String, double> valores,
+    Color color,
+  ) {
+    final tema = Theme.of(context);
+    final header = Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(titulo,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+    );
+    if (valores.isEmpty) {
+      return <Widget>[
+        header,
+        Text('Sin datos para graficar en el período.',
+            style: tema.textTheme.bodySmall),
+        const SizedBox(height: 10),
+      ];
+    }
+    final max = valores.values.reduce((double a, double b) => a > b ? a : b);
+    final ordenados = valores.entries.toList()
+      ..sort((MapEntry<String, double> a, MapEntry<String, double> b) =>
+          b.value.compareTo(a.value));
+    return <Widget>[
+      header,
+      for (final e in ordenados.take(8)) _barra(e.key, e.value, max, color),
+      const SizedBox(height: 10),
+    ];
   }
 
   /// Barras horizontales con el valor de cada elemento.
