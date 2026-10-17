@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ventas_app/features/auditoria/data/auditoria_repository.dart';
 import 'package:ventas_app/features/auditoria/domain/auditoria.dart';
 
 void main() {
@@ -100,6 +101,54 @@ void main() {
       expect(OperacionAuditoria.insert.id, 'INSERT');
       expect(OperacionAuditoria.update.id, 'UPDATE');
       expect(OperacionAuditoria.delete.id, 'DELETE');
+    });
+  });
+
+  group('RegistroAuditoria y filtros (spec 012)', () {
+    RegistroAuditoria reg({
+      String operacion = 'UPDATE',
+      String tabla = 'productos',
+      DateTime? fecha,
+      String usuario = 'u1',
+      String campo = 'precio',
+    }) =>
+        RegistroAuditoria(
+          id: 'a${fecha?.day ?? 0}',
+          empresaId: 'e1',
+          usuario: usuario,
+          fecha: fecha ?? DateTime(2026, 10, 15),
+          operacion: operacion,
+          tabla: tabla,
+          documentoId: 'doc',
+          campo: campo,
+          valorViejo: 100,
+          valorNuevo: 120,
+        );
+
+    test('serializa y describe el cambio', () {
+      final r = reg();
+      final copia = RegistroAuditoria.fromMap('a1', r.toMap());
+      expect(copia.tabla, 'productos');
+      expect(copia.campo, 'precio');
+      expect(copia.descripcion, 'precio: 100 → 120');
+    });
+
+    test('filtra por operacion, tabla, texto y fechas', () {
+      final lista = <RegistroAuditoria>[
+        reg(operacion: 'INSERT', tabla: 'ventas', fecha: DateTime(2026, 10, 10)),
+        reg(operacion: 'UPDATE', tabla: 'productos', fecha: DateTime(2026, 10, 15)),
+        reg(operacion: 'DELETE', tabla: 'clientes', fecha: DateTime(2026, 9, 1)),
+      ];
+      expect(
+          AuditoriaRepository.filtrar(lista, operacion: 'UPDATE').length, 1);
+      expect(AuditoriaRepository.filtrar(lista, tabla: 'ventas').length, 1);
+      expect(AuditoriaRepository.filtrar(lista, busqueda: 'clientes').length, 1);
+      expect(
+          AuditoriaRepository.filtrar(lista, desde: DateTime(2026, 10, 1)).length,
+          2);
+      expect(
+          AuditoriaRepository.filtrar(lista, hasta: DateTime(2026, 9, 30)).length,
+          1);
     });
   });
 }

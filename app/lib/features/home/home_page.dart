@@ -8,6 +8,7 @@ import '../auth/domain/roles.dart';
 import '../auth/domain/usuario.dart';
 import '../auth/presentation/mi_perfil_screen.dart';
 import '../auth/presentation/usuarios_list_screen.dart';
+import '../auditoria/presentation/auditoria_screen.dart';
 import '../caja/presentation/caja_panel_screen.dart';
 import '../catalogo/presentation/catalogo_screen.dart';
 import '../clientes/presentation/clientes_list_screen.dart';
@@ -77,6 +78,9 @@ class HomePage extends StatelessWidget {
       _Modulo('Proveedores', Icons.handshake_outlined, Permiso.comprasVer,
           requiereEmpresa: true,
           constructor: (_, u) => ProveedoresListScreen(usuario: u)),
+      _Modulo('Auditoría', Icons.history, Permiso.auditoriaVer,
+          requiereEmpresa: true,
+          constructor: (_, u) => AuditoriaScreen(usuario: u)),
       _Modulo('Inventario', Icons.warehouse_outlined, Permiso.inventarioVer,
           requiereEmpresa: true,
           constructor: (_, u) => InventarioListScreen(usuario: u)),

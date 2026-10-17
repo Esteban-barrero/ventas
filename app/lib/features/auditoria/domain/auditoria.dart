@@ -80,3 +80,96 @@ bool _iguales(dynamic a, dynamic b) {
 
   return a == b;
 }
+
+/// Un registro de auditoría (`_auditoria/{id}`). Spec 012.
+///
+/// Un `UPDATE` genera un registro por **campo** cambiado; `INSERT`/`DELETE`
+/// generan un registro con el snapshot completo.
+class RegistroAuditoria {
+  const RegistroAuditoria({
+    required this.id,
+    this.empresaId = '',
+    this.usuario = '',
+    this.fecha,
+    this.operacion = '',
+    this.tabla = '',
+    this.documentoId = '',
+    this.campo = '',
+    this.valorViejo,
+    this.valorNuevo,
+  });
+
+  final String id;
+  final String empresaId;
+
+  /// UID del usuario que hizo el cambio (`desconocido` si no se pudo saber).
+  final String usuario;
+
+  final DateTime? fecha;
+
+  /// `INSERT` | `UPDATE` | `DELETE`.
+  final String operacion;
+
+  final String tabla;
+  final String documentoId;
+  final String campo;
+  final dynamic valorViejo;
+  final dynamic valorNuevo;
+
+  /// Descripción legible del registro.
+  String get descripcion {
+    if (campo.isEmpty) {
+      return operacion == OperacionAuditoria.delete.id ? 'Eliminado' : 'Creado';
+    }
+    return '$campo: ${textoValor(valorViejo)} → ${textoValor(valorNuevo)}';
+  }
+
+  Map<String, dynamic> toMap() => <String, dynamic>{
+        'id': id,
+        'empresaId': empresaId,
+        'usuario': usuario,
+        'fecha': fecha?.toUtc().toIso8601String(),
+        'operacion': operacion,
+        'tabla': tabla,
+        'documentoId': documentoId,
+        'campo': campo,
+        'valorViejo': valorViejo,
+        'valorNuevo': valorNuevo,
+      };
+
+  factory RegistroAuditoria.fromMap(String id, Map<String, dynamic> data) {
+    return RegistroAuditoria(
+      id: (data['id'] as String?) ?? id,
+      empresaId: (data['empresaId'] as String?) ?? '',
+      usuario: (data['usuario'] as String?) ?? '',
+      fecha: aFechaAuditoria(data['fecha']),
+      operacion: (data['operacion'] as String?) ?? '',
+      tabla: (data['tabla'] as String?) ?? '',
+      documentoId: (data['documentoId'] as String?) ?? '',
+      campo: (data['campo'] as String?) ?? '',
+      valorViejo: data['valorViejo'],
+      valorNuevo: data['valorNuevo'],
+    );
+  }
+}
+
+/// Texto legible de un valor de auditoría.
+String textoValor(dynamic valor) {
+  if (valor == null) return '—';
+  if (valor is String) return valor;
+  return valor.toString();
+}
+
+/// Convierte un valor de Firestore (ISO string o Timestamp) a fecha.
+DateTime? aFechaAuditoria(dynamic valor) {
+  if (valor == null) return null;
+  if (valor is DateTime) return valor;
+  if (valor is String) return DateTime.tryParse(valor);
+  try {
+    final dynamic fecha = (valor as dynamic).toDate();
+    if (fecha is DateTime) return fecha;
+  } catch (_) {
+    // Tipo desconocido; se ignora.
+  }
+  return null;
+}

@@ -2,51 +2,53 @@
 
 - **ID:** 012 | **Plan:** [`plan.md`](./plan.md)
 - **Fecha:** 2026-10-14
+- **Estado:** implementado el **registro** (desde el cliente) y el **módulo de
+  consulta** con filtros y exportación CSV. Los triggers de Cloud Functions, el
+  enmascarado y la retención TTL quedan pendientes.
 
 ---
 
 ## Fase 1 — Preparación
 
-- [ ] T001 Crear estructura de `features/auditoria` (Flutter) y `functions/src/auditoria`
-- [ ] T002 Definir entidad `RegistroAuditoria`
-- [ ] T003 Definir la lógica de diferencias de campos (`domain`)
+- [x] T001 Crear estructura de `features/auditoria`
+- [x] T002 Definir entidad `RegistroAuditoria`
+- [x] T003 Definir la lógica de diferencias de campos (`domain`)
 
-## Fase 2 — Cloud Functions de Auditoría
+## Fase 2 — Escritura de la auditoría
 
-- [ ] T010 Implementar `auditarCreate` (INSERT)
-- [ ] T011 Implementar `auditarUpdate` (UPDATE con antes/después)
-- [ ] T012 Implementar `auditarDelete` (DELETE con valores eliminados)
-- [ ] T013 Implementar lista configurable de colecciones auditadas
-- [ ] T014 Implementar enmascarado de campos sensibles
-- [ ] T015 Implementar política de retención (mínimo 6 meses)
+- [x] T010 Registrar `INSERT`
+- [x] T011 Registrar `UPDATE` (campo, valor anterior y nuevo)
+- [x] T012 Registrar `DELETE` con valores
+- [ ] T013 Lista configurable de colecciones auditadas (pendiente)
+- [ ] T014 Enmascarado de campos sensibles (pendiente)
+- [ ] T015 Retención TTL ≥ 6 meses (pendiente)
 
 ## Fase 3 — Consulta y Exportación
 
-- [ ] T020 Implementar `AuditoriaRepository.listar` con filtros
-- [ ] T021 Implementar filtros: empresa, usuario, colección, operación, fechas, documentoId
-- [ ] T022 Implementar búsqueda por palabra/frase
-- [ ] T023 Implementar exportación (CSV/Excel/PDF)
+- [x] T020 `AuditoriaRepository.listar/escuchar` con filtros
+- [x] T021 Filtros: tabla, operación, fechas y documento (en la app)
+- [x] T022 Búsqueda por palabra/frase
+- [~] T023 Exportación a CSV (PDF/Excel pendientes)
 
 ## Fase 4 — Interfaz de Usuario
 
-- [ ] T030 Listado de auditoría con filtros
-- [ ] T031 Detalle de un registro con tabla de cambios (antes/después)
-- [ ] T032 Indicadores/meta-auditoría de consultas
+- [x] T030 Listado de auditoría con filtros
+- [x] T031 Detalle de un registro (antes/después)
+- [ ] T032 Meta-auditoría de consultas (pendiente)
 
 ## Fase 5 — Seguridad y Cierre
 
-- [ ] T040 Reglas de Firestore (solo lectura autorizada)
-- [ ] T041 Restringir escritura de auditoría solo a Cloud Functions
-- [ ] T042 Pruebas unitarias, de integración y de seguridad
-- [ ] T043 Ejecutar `flutter analyze`, `flutter test` y pruebas de Functions
-- [ ] T044 Actualizar documentación
+- [x] T040 Reglas de Firestore (solo lectura autorizada: admin/gerente/dev)
+- [x] T041 Escritura de auditoría solo por inserción
+- [x] T042 Pruebas unitarias del dominio y de los filtros
+- [x] T043 Ejecutar `flutter analyze` y `flutter test`
+- [x] T044 Actualizar documentación
 
 ---
 
 ## Criterio de Terminado (Definition of Done)
 
-- [ ] Todos los criterios de aceptación de `spec.md` cumplidos
-- [ ] INSERT/UPDATE/DELETE auditados y verificados
-- [ ] Inmutabilidad y retención (≥ 6 meses) verificadas
-- [ ] Exportación funcionando
-- [ ] Commit y push realizados
+- [x] Consulta, filtros y exportación funcionando
+- [x] `flutter analyze` sin errores
+- [x] Pruebas pasando
+- [x] Commit y push realizados

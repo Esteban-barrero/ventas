@@ -30,7 +30,7 @@ service cloud.firestore {
 
     // Gestiona (Administrador) o audita (Developer) una empresa.
     function gestionaEmpresa(empresaId) {
-      return esDeEmpresa(empresaId) && roles().hasAny(['administrador', 'developer']);
+      return esDeEmpresa(empresaId) && roles().hasAny(['administrador', 'gerente', 'developer']);
     }
 
     // Puede gestionar el catálogo (Administrador o Marketing) de una empresa.
