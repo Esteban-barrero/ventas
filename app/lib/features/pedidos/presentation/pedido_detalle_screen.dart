@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/formato/fechas.dart';
 import '../../auth/domain/permisos.dart';
 import '../../auth/domain/usuario.dart';
+import '../../ventas/data/ventas_repository.dart';
+import '../../ventas/domain/venta.dart';
 import '../data/pedidos_repository.dart';
 import '../domain/pedido.dart';
 
@@ -28,8 +30,29 @@ class PedidoDetalleScreen extends StatefulWidget {
 class _PedidoDetalleScreenState extends State<PedidoDetalleScreen> {
   late final PedidosRepository _repo =
       widget.pedidosRepository ?? PedidosRepository();
+  late final VentasRepository _ventas = VentasRepository();
+
+  /// Estado del **envío** (spec 011), si el pedido ya se convirtió en venta.
+  EstadoEnvio? _envio;
 
   bool _procesando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarEnvio();
+  }
+
+  Future<void> _cargarEnvio() async {
+    if (widget.pedido.ventaId.isEmpty) return;
+    try {
+      final venta = await _ventas.obtener(widget.pedido.ventaId);
+      if (!mounted || venta == null) return;
+      setState(() => _envio = venta.estadoEnvioActual);
+    } catch (_) {
+      // Si no se puede leer la venta, se omite el estado del envío.
+    }
+  }
 
   bool get _puedeGestionar => widget.usuario.puede(Permiso.ventasVer);
 
@@ -124,6 +147,7 @@ class _PedidoDetalleScreenState extends State<PedidoDetalleScreen> {
               child: Column(
                 children: <Widget>[
                   _fila('Estado', p.estado.nombre, negrita: true),
+                  if (_envio != null) _fila('Envío', _envio!.nombre),
                   _fila('Fecha', formatearFecha(p.fechaCreacion)),
                   _fila('Entrega', p.tipoEntrega.nombre),
                   _fila('Pago', p.tipoPago.nombre),
