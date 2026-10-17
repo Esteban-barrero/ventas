@@ -6,8 +6,9 @@ import '../../auth/data/auth_repository.dart';
 import '../../auth/data/usuarios_repository.dart';
 import '../../auth/domain/usuario.dart';
 import '../../catalogo/domain/precio.dart';
+import '../../clientes/data/clientes_repository.dart';
 import '../../clientes/data/ubicaciones/departamentos_ciudades.dart';
-import '../../clientes/domain/cliente.dart' show Direccion;
+import '../../clientes/domain/cliente.dart';
 import '../../empresas/domain/empresa.dart';
 import '../../ventas/domain/venta.dart' show MedioPago, TipoEntrega;
 import '../data/pedidos_repository.dart';
@@ -26,6 +27,7 @@ class CheckoutTiendaScreen extends StatefulWidget {
     this.pedidosRepository,
     this.authRepository,
     this.usuariosRepository,
+    this.clientesRepository,
   });
 
   final Empresa empresa;
@@ -34,6 +36,7 @@ class CheckoutTiendaScreen extends StatefulWidget {
   final PedidosRepository? pedidosRepository;
   final AuthRepository? authRepository;
   final UsuariosRepository? usuariosRepository;
+  final ClientesRepository? clientesRepository;
 
   @override
   State<CheckoutTiendaScreen> createState() => _CheckoutTiendaScreenState();
@@ -45,6 +48,8 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
   late final AuthRepository _auth = widget.authRepository ?? AuthRepository();
   late final UsuariosRepository _usuarios =
       widget.usuariosRepository ?? UsuariosRepository();
+  late final ClientesRepository _clientes =
+      widget.clientesRepository ?? ClientesRepository();
 
   final _nombre = TextEditingController();
   final _cedula = TextEditingController();
@@ -56,6 +61,7 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
 
   String? _departamento;
   String? _ciudad;
+  Cliente? _cliente;
   bool _aDomicilio = true;
   MedioPago _medio = MedioPago.efectivo;
   bool _enviando = false;
@@ -63,6 +69,61 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
   String get _empresaId => widget.empresa.id;
   bool get _esInvitado =>
       FirebaseAuth.instance.currentUser?.isAnonymous ?? true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_esInvitado) _cargarPerfil();
+  }
+
+  /// Precarga los datos del cliente logueado (para no pedirlos de nuevo).
+  Future<void> _cargarPerfil() async {
+    try {
+      final c = await _clientes.porUid(FirebaseAuth.instance.currentUser!.uid);
+      if (c == null || !mounted) return;
+      setState(() {
+        _cliente = c;
+        _nombre.text = c.nombreCompleto;
+        _cedula.text = c.cedula;
+        _telefono.text = c.telefono;
+        _direccion.text = c.direccion.direccion;
+        _barrio.text = c.direccion.barrio;
+        final dep = c.direccion.departamento.trim();
+        _departamento = departamentos.contains(dep) ? dep : null;
+        final ciu = c.direccion.ciudad.trim();
+        _ciudad = (_departamento != null &&
+                ciudadesDe(_departamento!).contains(ciu))
+            ? ciu
+            : null;
+      });
+    } catch (_) {
+      // Si no se puede leer, se llena a mano.
+    }
+  }
+
+  /// Crea o actualiza la ficha del cliente para recordar sus datos.
+  Future<void> _guardarCliente(String uid) async {
+    final cliente = Cliente(
+      id: _cliente?.id ?? '',
+      empresaId: _empresaId,
+      uid: uid,
+      nombreCompleto: _nombre.text.trim(),
+      cedula: _cedula.text.trim(),
+      telefono: _telefono.text.trim(),
+      correo: FirebaseAuth.instance.currentUser?.email ?? '',
+      direccion: Direccion(
+        departamento: _departamento ?? '',
+        ciudad: _ciudad ?? '',
+        direccion: _direccion.text.trim(),
+        barrio: _barrio.text.trim(),
+      ),
+    );
+    try {
+      await _clientes.guardarPropio(cliente);
+    } catch (_) {
+      // Si falla, el pedido sigue; solo no se recuerdan los datos.
+    }
+  }
 
   @override
   void dispose() {
@@ -165,6 +226,9 @@ class _CheckoutTiendaScreenState extends State<CheckoutTiendaScreen> {
           // Si no se puede enviar el correo, la cuenta ya quedó creada.
         }
       }
+
+      // Guarda/actualiza la ficha del cliente para recordar sus datos.
+      await _guardarCliente(clienteUid);
 
       final pedido = Pedido(
         id: '',

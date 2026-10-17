@@ -187,9 +187,10 @@ service cloud.firestore {
         || (esDeEmpresa(resource.data.empresaId) && esInternoClientes())
         || resource.data.uid == request.auth.uid
       );
-      allow create: if autenticado()
-        && esDeEmpresa(request.resource.data.empresaId)
-        && roles().hasAny(['administrador', 'vendedor']);
+      allow create: if autenticado() && (
+        (esDeEmpresa(request.resource.data.empresaId)
+          && roles().hasAny(['administrador', 'vendedor']))
+        || request.resource.data.uid == request.auth.uid);
       allow update: if autenticado() && (
         (esDeEmpresa(resource.data.empresaId)
           && roles().hasAny(['administrador', 'vendedor']))

@@ -131,6 +131,23 @@ class ClientesRepository {
     return ref.id;
   }
 
+  /// Crea o actualiza la ficha del **propio cliente** (rol Cliente). No valida
+  /// cédula duplicada (un cliente no puede listar clientes). Devuelve el id.
+  Future<String> guardarPropio(Cliente cliente) async {
+    final ref =
+        cliente.id.isNotEmpty ? _clientes.doc(cliente.id) : _clientes.doc();
+    final datos = cliente.toMap()..['id'] = ref.id;
+    await ref.set(datos, SetOptions(merge: true));
+    await _auditoria.registrarEvento(
+      empresaId: cliente.empresaId,
+      operacion: OperacionAuditoria.insert,
+      tabla: 'clientes',
+      documentoId: ref.id,
+      datos: datos,
+    );
+    return ref.id;
+  }
+
   /// Actualiza un cliente y registra los cambios en la auditoría.
   Future<void> actualizar(Cliente cliente) async {
     final ref = _clientes.doc(cliente.id);
