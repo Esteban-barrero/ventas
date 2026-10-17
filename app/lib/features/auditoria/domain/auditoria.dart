@@ -89,7 +89,10 @@ class RegistroAuditoria {
   const RegistroAuditoria({
     required this.id,
     this.empresaId = '',
+    this.empresaNombre = '',
     this.usuario = '',
+    this.usuarioNombre = '',
+    this.usuarioEmail = '',
     this.fecha,
     this.operacion = '',
     this.tabla = '',
@@ -102,8 +105,17 @@ class RegistroAuditoria {
   final String id;
   final String empresaId;
 
+  /// Nombre de la empresa al momento del cambio (spec 012).
+  final String empresaNombre;
+
   /// UID del usuario que hizo el cambio (`desconocido` si no se pudo saber).
   final String usuario;
+
+  /// Nombre del usuario al momento del cambio.
+  final String usuarioNombre;
+
+  /// Correo del usuario al momento del cambio.
+  final String usuarioEmail;
 
   final DateTime? fecha;
 
@@ -124,10 +136,21 @@ class RegistroAuditoria {
     return '$campo: ${textoValor(valorViejo)} → ${textoValor(valorNuevo)}';
   }
 
+  /// Nombre del usuario (o el uid si no se guardó el nombre).
+  String get usuarioMostrar =>
+      usuarioNombre.trim().isNotEmpty ? usuarioNombre : usuario;
+
+  /// Nombre de la empresa (o el id si no se guardó el nombre).
+  String get empresaMostrar =>
+      empresaNombre.trim().isNotEmpty ? empresaNombre : empresaId;
+
   Map<String, dynamic> toMap() => <String, dynamic>{
         'id': id,
         'empresaId': empresaId,
+        'empresaNombre': empresaNombre,
         'usuario': usuario,
+        'usuarioNombre': usuarioNombre,
+        'usuarioEmail': usuarioEmail,
         'fecha': fecha?.toUtc().toIso8601String(),
         'operacion': operacion,
         'tabla': tabla,
@@ -141,7 +164,10 @@ class RegistroAuditoria {
     return RegistroAuditoria(
       id: (data['id'] as String?) ?? id,
       empresaId: (data['empresaId'] as String?) ?? '',
+      empresaNombre: (data['empresaNombre'] as String?) ?? '',
       usuario: (data['usuario'] as String?) ?? '',
+      usuarioNombre: (data['usuarioNombre'] as String?) ?? '',
+      usuarioEmail: (data['usuarioEmail'] as String?) ?? '',
       fecha: aFechaAuditoria(data['fecha']),
       operacion: (data['operacion'] as String?) ?? '',
       tabla: (data['tabla'] as String?) ?? '',
